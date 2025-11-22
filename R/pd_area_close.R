@@ -1,11 +1,11 @@
-pd_close_poly <- function(df) {
+pd_area_close <- function(df) {
   df_checkup <- pd_check_df(df)
   if (df_checkup!="ok") {abort(message=df_checkup)}
   #require(geometry)
 
   # If df contains id and/or stroke, perform function on a group-by basis
   if ("stroke" %in% names(df)) { df <- df |> group_by(stroke) }
-  if (all(c("id","stroke") %in% names(df))) { df <- df |> group_by(id, stroke) }  
+  if (all(c("id","stroke") %in% names(df))) { df <- df |> group_by(id, stroke) }
 
   df |>
     group_modify(\(grp_obs, grp_var) {

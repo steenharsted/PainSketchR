@@ -1,4 +1,4 @@
-pd_overlap_resolve <- function(df) {
+pd_area_fom_overlap <- function(df) {
   # This functions assumes df is data frame with 3 or 4 four columns
   # (id,) stroke, x and y. Where stroke is a series of integers from
   # 1 to n - the number of strokes. Each stroke should
@@ -43,7 +43,7 @@ df |>
         grp_obs <- grp_obs |> filter(stroke != pair_of_polys[,'a'] & stroke != pair_of_polys[,'b']) 
         grp_obs <- bind_rows(stroke = pair_of_polys[,'a'], polyclip(coordinates_a, coordinates_b, "minus") |> flatten() |> as.data.frame())
         grp_obs <- bind_rows(stroke = pair_of_polys[,'b'], polyclip(coordinates_b, coordinates_a, "minus") |> flatten() |> as.data.frame())
-        grp_obs <- bind_rows(stroke = )
+        grp_obs <- bind_rows(stroke = paste0(pair_of_polys[,'a'],"+",pair_of_polys[,'a']), polygon_overlap |> flatten() |> as.data.frame())
         
       } else {
         grp_obs

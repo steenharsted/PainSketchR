@@ -1,10 +1,3 @@
-pd_strokes_reorder <- function(df) {
-  df |> 
-    group_by(id) |>
-    order_by(stroke) |>
-    mutate(stroke = )
-}
-
 pd_check_df <- function(df) {
   if (!is.data.frame(df)) { return("Is not a data frame")}
   if (nrow(df)<1) { return("Data frame empty")}

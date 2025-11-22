@@ -1,4 +1,4 @@
-pd_area2chull <- function(df) {
+pd_area_from_chull <- function(df) {
   df_checkup <- pd_check_df(df)
   if (df_checkup!="ok") {abort(message=df_checkup)}
   #require(geometry)
@@ -11,6 +11,6 @@ pd_area2chull <- function(df) {
     group_modify(\(grp_obs, grp_vas) {
       chull_indices <- chull(grp_obs |> ungroup() |> select(x,y) |> as.matrix())
       grp_obs |> filter(row_number() %in% chull_indices) |> # reduced to points on chull
-        as_tibble() |> pd_close_poly()
+        as_tibble() |> pd_area_close()
     }) |> ungroup()
 }

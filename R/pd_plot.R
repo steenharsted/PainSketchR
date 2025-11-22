@@ -3,7 +3,7 @@ pd_plot <- function(df) {
   # when data contains multiple ids?
 
   require(ggplot2)
-  p <- ggplot(df, aes(x=x,y=y,colour=stroke)) + geom_path() # geom_polygon(fill=NA) 
+  p <- ggplot(df, aes(x=x,y=y,colour=as.factor(stroke))) + geom_path() # geom_polygon(fill=NA) 
 
   # If df contains id, create a plot facet for each pain drawing
   if ("id" %in% names(df)) { p <- p + facet_wrap(~id) }

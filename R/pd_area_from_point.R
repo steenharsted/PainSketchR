@@ -1,7 +1,9 @@
-pd_point2area <- function(df, delta=1) {
+pd_area_from_point <- function(df, delta=1) {
   df_checkup <- pd_check_df(df)
   if (df_checkup!="ok") {abort(message=df_checkup)}
 
+  require(dplyr)
+  
   # If df contains id and/or stroke, perform function on a group-by basis
   if ("stroke" %in% names(df)) { df <- df |> group_by(stroke) }
   if (all(c("id","stroke") %in% names(df))) { df <- df |> group_by(id, stroke) }

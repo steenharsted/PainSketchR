@@ -1,4 +1,4 @@
-pd_line2area <- function(df, delta=1) {
+pd_area_from_line <- function(df, delta=1) {
   df_checkup <- pd_check_df(df)
   if (df_checkup!="ok") {abort(message=df_checkup)}
 
