@@ -31,5 +31,11 @@ Description: This package aims to aid in the quatification of pain drawings.
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
+Imports:
+    purrr,
+    dplyr,
+    tidyr,
+    jsonlite,
+    ggplot2
 Depends: 
     R (>= 3.5)
