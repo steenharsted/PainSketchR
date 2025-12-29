@@ -1,6 +1,7 @@
 pd_geom_areas <- function(pd) {
   # Calculate the combined (summed) area of stroke polygons
 
+  # Calculate the area of each stroke/points polygon
   stroke_areas <- pd$points |> 
     dplyr::group_by(id,i) |>
     dplyr::group_modify(\(points_data, grp_vars) {
@@ -8,7 +9,9 @@ pd_geom_areas <- function(pd) {
     }) |>
     ungroup()
   
+  # Add this area as a column to the strokes tibble
   pd$strokes <- dplyr::left_join(pd$strokes, stroke_areas, by=c("id","i"))
+  # Add the accumulated area of strokes/points polygons to the drawings tibble
   pd$drawings <- dplyr::left_join(pd$drawings, stroke_areas |> dplyr::group_by(id) |> dplyr::summarize(drawing_area = sum(stroke_area)), by="id")
 
   return(pd)

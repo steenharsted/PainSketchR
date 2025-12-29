@@ -1,16 +1,18 @@
 pd_geom_cleanup <- function(pd, minarea=0, pointline="buffer", delta=1) {
   # pd is assumed to be a valid pd data structure -- list of three tibbles, etc
-  # delta is the value (px) we want to add as buffer around
-  # points and lines with no area
-
-  # Run data sanity check ... to be completed
+  # Run data sanity check ? ... to be completed
+  # delta is the value (px) we want to add as buffer around points and lines with no area
 
   if (minarea>0) {
-    # Should we ...
-    # run an area calculation of each polygon and drop if less than some minimum area
+    # To be considered: Should we run an area calculation of each polygon and drop 
+    # if less than some minimum area -- for example a 3 point polygon which is almost a line
+    # or a multipoint polygon where all points a clustered very closely
     # ...?
   }
 
+  # Currently, this is not really necessary -- but in future we may want to add
+  # some other cleanup functionality beyond dropping/buffering no-area polygons
+  # In that future scenario, only identify no-area polygons if relevant 
   if (pointline=="drop" | pointline=="buffer") {
     # Identify the strokes to be dropped or buffered
     pointline_id_i <- pd$points |> 
