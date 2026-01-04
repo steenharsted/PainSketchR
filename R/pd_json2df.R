@@ -29,8 +29,31 @@ pd_json2pd <- function(files) {
   }
  
   return(list(
-    drawings = files |> purrr::map_dfr(\(le) {le |> purrr::discard_at("s")}),
+    drawings = files |> purrr::map_dfr(\(le) {le |> purrr::discard_at("s")}) |> tibble::column_to_rownames("id"),
     strokes = files |> purrr::map_dfr(\(le) {le |> purrr::keep_at(c("id", "s"))}) |> dplyr::mutate(s = s |> purrr::discard_at("p")) |> tidyr:::unnest(cols=c(s)),
     points  = files |> purrr::map_dfr(\(le) {dplyr::tibble(id=le$id, i=le$s$i, p=le$s$p)}) |> tidyr::unnest(cols=c(p)) |> dplyr::mutate(x = p[,1], y=p[,2]) |> dplyr::select(-p)
-  ))
+  ) |> pd_geom_calc_bounding_box())
+}
+
+pd_fromJSON <- function(files) {
+  if(!is.list(files) && is.character(files)) { files <- purrr::map(files, \(x) {x})} 
+
+  for (j in 1:length(files)) {
+    if (file.exists(files[[j]])) {
+      files[[j]] <- c(file=files[[j]], jsonlite::fromJSON(files[[j]]))
+    } else {
+      warning(paste0("File ", files[[j]], " not found"))
+    }
+  }
+ 
+  files <- files |> 
+    purrr::map(\(files_element) {
+      files_element$s$p <- files_element$s$p |> 
+        purrr::map(\(p_element) {
+          list(x=p_element[,1], y=p_element[,2])
+        })
+      files_element
+    })
+
+  return(files)
 }

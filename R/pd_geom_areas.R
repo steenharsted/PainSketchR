@@ -18,7 +18,7 @@ pd_geom_areas <- function(pd) {
     dplyr::group_modify(\(points_data, grp_vars) {
       dplyr::tibble(stroke_area = geometry::polyarea(points_data$x, points_data$y))
     }) |>
-    ungroup()
+    dplyr::ungroup()
   
   # Add this area as a column to the strokes tibble
   pd$strokes <- dplyr::left_join(pd$strokes, stroke_areas, by=c("id","i"))

@@ -16,39 +16,48 @@
 #' @export
 #' @examples
 #' pd_geom_manage_overlaps(my_paindrawings, "merge")
+#' 
+#' 
 pd_geom_manage_overlaps <- function(pd, method="merge") {
   # This function will take a pd data structure and for each
   # individual pain drawing merge strokes.
 
   # Run data sanity check ... to be completed
 
+  # check bounding box overlaps...
+  # bbox_intersects <- does_bbox_intersect(df, strokes_i[p1], strokes_i[p2])
+
 
   pd$points <- pd$points |>
-    group_by(id) |>
-    group_modify(\(tos, grp_vars) {
-      tos <- manage_stroke_overlaps(tos)
-    })
+    dplyr::group_by(id) |>
+    dplyr::group_modify(\(points_by_id, grp_vars) {
+      manage_stroke_overlaps(points_by_id, method)
+    }) |>
+    dplyr::ungroup()
+
+  pd$strokes <- dplyr::semi_join(pd$strokes, pd$points |> dplyr::select(id,i), by=c("id","i"))
   
   warning("We need to decide how to handle $strokes which are added/deleted from $points")
   
   return(pd)
 }
 
-manage_stroke_overlaps <- function(tos, method="merge") {
+manage_stroke_overlaps <- function(points, method="merge") {
   # This function takes a tibble of strokes ('points' from a single pain drawing)
   # and manages any overlapping strokes
 
   # Expect only a single unique id -- i.e. points data from one and just one pain drawing
-  # if(length(unique(tos$id))!=1) {tos <- tos |> dplyr::filter(id == tos[1,'id'])}
+  # if(length(unique(points$id))!=1) {points <- points |> dplyr::filter(id == points[1,'id'])}
 
-  strokes_i <- unique(tos$i) # Hold the actual identifier of the discrete strokes
+
+  strokes_i <- unique(points$i) # Hold the actual identifier of the discrete strokes
   n_strokes <- length(strokes_i) # How many of them there are (this may change in the while loop)
   p1 <- 1 # pointer 1
   p2 <- 2 # pointer 2
 
 
   # If there are not at least two strokes - there can be no overlaps so just return
-  if (n_strokes<2) {return(tos)}
+  if (n_strokes<2) {return(points)}
 
   # This function needs to investigate each combination of pairs of strokes for overlap
   # The order of the strokes is not important, thus the runtime will be O(½n²-½n) which
@@ -60,29 +69,70 @@ manage_stroke_overlaps <- function(tos, method="merge") {
     while (p2 <=n_strokes) {
       # We need to check length of strokes (number of coordinates) and decide what to
       # to do with lengths of 0, 1 and 2. 
+      
+      a <- points |> dplyr::filter(i==strokes_i[p1])
+      b <- points |> dplyr::filter(i==strokes_i[p2])
 
-      # We could check whether bounding boxes overlap -- if no, there is no overlap, if yes there MIGHT an overlap
-      a <- list(x=tos |> dplyr::filter(i==strokes_i[p1]) |> dplyr::pull(x), y=tos |> dplyr::filter(i==strokes_i[p1]) |> dplyr::pull(y))
-      b <- list(x=tos |> dplyr::filter(i==strokes_i[p2]) |> dplyr::pull(x), y=tos |> dplyr::filter(i==strokes_i[p2]) |> dplyr::pull(y))
-
-      they_intersect <- !purrr::is_empty(polyclip::polyclip(A = a, B = b, op = "intersect")) # TRUE or FALSE
-      #print(paste0("n:",n_strokes," p1:",p1, " p2:",p2, " overlap:",they_intersect))
+      # Check bounding box overlap (P.S. Is it really necessary to recalculate min and max? ... they are stored in $strokes already)
+      if(min(a$x)>max(b$x) || min(b$x)>max(a$x) || min(a$y)>max(b$y) || min(b$y)>max(a$y)) { 
+        p2 <- p2 +1
+        next # skip to next iteration in the inner loop, as there is no bounding box overlap
+      }
+      # ..if we made it here, it means bounding boxes overlap, but strokes might not so test it:
+      intersection <- pd_polyclip(a, b, op = "intersect")
+      they_intersect <- !purrr::is_empty(intersection) # TRUE or FALSE
+      
       if (they_intersect) {
         if (method=="merge") {
-          # Replace p1 by the union of p1 and p2, delete p2, reset length of tos and reset p2=p1+1
-          merge_result <- polyclip::polyclip(A = a, B = b, op = "union")[[1]] # Warning we assume there is a result and the first element is the relevant one
-          tos <- tos |>
+          # Replace p1 by the union of p1 and p2, delete p2, reset length of points and reset p2=p1+1
+          merge_result <- pd_polyclip(a, b, op = "union") |> dplyr::filter(i==1) # When merging, we should get only 1 resulting polygon -- any additional polygons are holes!
+          points <- points |>
             dplyr::filter(i != strokes_i[p1] & i!= strokes_i[p2]) |>
-            dplyr::bind_rows(dplyr::tibble(i=strokes_i[p1], x=merge_result$x, y=merge_result$y)) |>
-            dplyr::arrange(i)
+            dplyr::bind_rows(dplyr::tibble(i=strokes_i[p1], x=merge_result$x, y=merge_result$y)) 
           strokes_i <- strokes_i[-p2] # Remove p2 
           n_strokes <- n_strokes-1
+          p2 <- p1+1
+
         } else if (method=="split") {
+          # Replace p1 and p2 by subtracting their overlap, create a new stroke(s) from the overlap, reset length of points and reset p2=p1+1
           # split overlaps into separate (typically 3) distinct polygons
+
+          ###### This needs to be fixed!! When splitting, the non-overlap part of A and/or B may be also be
+          ###### split into multiple polygons -- consider two bars crossing each other...
+          minus_resultA <- polyclip::polyclip(A = a, B = b, op = "minus")[[1]]
+          minus_resultB <- polyclip::polyclip(A = b, B = a, op = "minus")[[1]]
+          points <- points |>
+            dplyr::group_by(i) |>
+            dplyr::group_modify(\(stroke, grp_vars) {
+              if(grp_vars == strokes_i[p1]) {
+                tibble(x = minus_resultA$x, y = minus_resultA$y)
+              } else if (grp_vars == strokes_i[p2]) {
+                tibble(x = minus_resultB$x, y = minus_resultB$y)
+              } 
+            }) |>
+            dplyr::ungroup()
+          for(j in intersection) { # There may be more than one distinct overlap area
+            new_i <- max(strokes_i)+1 # The new stroke should have a unique identifier
+            points <- bind_rows(points, map_dfr(j, \(z) {z}) |> mutate(i=new_i))
+            n_strokes <- n_strokes + 1
+            strokes_i[n_strokes] <- new_i
+          }
         } else if (method=="adoptA") {
-          # let the overlap become part of polygon A and remove from B
+          # Let the overlap become part of polygon A and subtract it from B
+          # Replace B by subtracting the overlap 
+          minus_result <- polyclip::polyclip(A = b, B = a, op = "minus")[[1]]
+          points <- points |>
+            dplyr::filter(i!= strokes_i[p2]) |>
+            dplyr::bind_rows(dplyr::tibble(i=strokes_i[p2], x=minus_result$x, y=minus_result$y)) |>
+            dplyr::arrange(i)
         } else if (method=="adoptB") {
-          # let the overlap become part of polygon B and remove from A
+          # Let the overlap become part of polygon B and subtract it from A
+          # Replace A by subtracting the overlap 
+          minus_result <- polyclip::polyclip(A = a, B = b, op = "minus")[[1]]
+          points <- points |>
+            dplyr::filter(i!= strokes_i[p1]) |>
+            dplyr::bind_rows(dplyr::tibble(i=strokes_i[p1], x=minus_result$x, y=minus_result$y)) |>
+            dplyr::arrange(i)
         }
       } else {
         p2 <- p2+1
@@ -91,5 +141,5 @@ manage_stroke_overlaps <- function(tos, method="merge") {
     p1 <- p1+1 # Advance p1
     p2 <- p1+1 # Reset p2
   }
-  return(tos)
+  return(points)
 }
