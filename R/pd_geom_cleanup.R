@@ -2,8 +2,7 @@
 #'
 #' Pain drawings are subject to whatever input users have seen fit to add. This may include
 #' markings or 'stroke' like isolated points and two-point lines, which have no area. 
-#' Furthermore, data may contain duplicate entries or markings with no actual points. This functions 
-#' can help eliminate such data.
+#' Users may also draw highly complicated markings/strokes which self-intersect.
 #' 
 #' @param pd A valid pain drawing data structure -- see [pd_check] for more detail.
 #' @param minarea A numeric value representing the minimum value of polygon areas to retain
@@ -14,11 +13,10 @@
 #'
 #' @export
 #' @examples
-#' pd_geom_cleanup(my_paindrawings, noarea_action="buffer", delta=20)
 #' 
 #' 
 pd_geom_cleanup <- function(pd, minarea=0, noarea_action="buffer", delta=1) {
-  # pd is assumed to be a valid pd data structure -- list of three tibbles, etc
+  # pd is assumed to be a valid pd data structure -- a tibble with cols id, i, x, y
   # Run data sanity check ? ... to be completed
   # delta is the value (px) we want to add as buffer around points and lines with no area
 
@@ -72,7 +70,5 @@ pd_geom_cleanup <- function(pd, minarea=0, noarea_action="buffer", delta=1) {
       polyclip::polysimplify(list(x=stroke_coordinates$x, y=stroke_coordinates$y), filltype="nonzero") |> 
         purrr::map_dfr(\(x) {x})
     })
-
-
   return(pd)
 }

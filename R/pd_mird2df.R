@@ -1,50 +1,73 @@
-pd_mird2df <- function(df, .id, .st) {
-  # The purpose of this function is simply to convert the custom format of
-  # the MiRD data base to a regular data frame structure
+pd_mird2pd <- function(files) {  
+  # if(!is.list(files) && is.character(files)) { files <- purrr::map(files, \(x) {x})} 
 
-  # We expect a data frame with an id column and a column of paindrawing data
-  # and we expect those two column names to be provided (.id, .st)
-  # pain drawing data is a string, e.g.:    (,301,187,),(,285,186,285,187,285,188,)
-  # this example represents one string with two strokes of 1 and 3 points, respectively
+  # for (j in 1:length(files)) {
+  #   if (file.exists(files[[j]])) {
+  #     files[[j]] <- c(file=files[[j]], read.csv2(files[[j]]))
+  #   } else {
+  #     warning(paste0("File ", files[[j]], " not found"))
+  #   }
+  # }
 
-  require(stringr)
-  require(purrr)
+  # files <- files |> purrr::map_dfr(\(x) {x |> purrr::map_dfr(\(z) {z})}) 
 
-  # sample data for code testing:
-  #   df <- data.frame(id=letters[3:6], paindrawing=c("", NA, "(,301,187,),(,285,186,275,197,265,168,)", "(,112,122,124,143,)"))
-  #   id <- "id"
-  #   st <- "paindrawing"
+  # # Get rid of NA values...
+  # files <- files |> dplyr::filter(!is.na(KEY) & !is.na(paindrawing_LBP)) |> str()
+
+  # })
+  # # regexp explanation:
+  # #   (?<=\\(,)                   = preceded by (,
+  # #   ([:digit:]+,[:digit:]+)+    = 1 or more of : 1+ digits , 1+ digits
+  # #   (?=,\\))                    = followed by ,)
+
+  # # Return a list with an element for each string in st which is a vector of strings
+  # # Each element in the result is a data frame with three columns: stroke, x, y
+
+  # result <- list()
+  # result$drawings <- files |> dplyr::select(Id = KEY)
 
 
-  # regexp explanation:
-  #   (?<=\\(,)                   = preceded by (,
-  #   ([:digit:]+,[:digit:]+)+    = 1 or more of : 1+ digits , 1+ digits
-  #   (?=,\\))                    = followed by ,)
+  # ids <- df |> dplyr::pull( {{.id}} )
+  # df |>
+  #   dplyr::pull({{ .st }}) |>
+  #   purrr::imap(\(pd,i) {
+  #     if (is.na(pd)) {
+  #       data.frame()
+  #     } else if (pd=="") {
+  #       data.frame()
+  #     } else {
+  #       pd |>
+  #         stringr::str_extract_all("(?<=\\(,)([:digit:]+,[:digit:]+)+(?=,\\))") |>
+  #         purrr::map(\(x) string_r::str_split(x,",")) |> # now a list of lists of char vectors
+  #         purrr::map_depth(2, \(df) {as.integer(df) |> matrix(ncol=2, byrow=TRUE) |> as.data.frame() |> purrr::set_names(c("x","y")) |> dplyr::mutate(i=i)} ) |>
+  #         purrr::map(\(x) {purrr::list_rbind(x, names_to = "stroke")}) |>
+  #         purrr::list_rbind()
+  #     }
+  #   }) |>
+  #   purrr::list_rbind() |>
+  #   dplyr::mutate(i = ids[i] ) |>
+  #   dplyr::rename(id = i) |>
+  #   dplyr::relocate(id, .before=1) 
+  #   #mutate() stroke and id to factors
 
-  # Return a list with an element for each string in st which is a vector of strings
-  # Each element in the result is a data frame with three columns: stroke, x, y
 
-  ids <- df |> pull( {{.id}} )
-  df |>
-    pull({{ .st }}) |>
-    imap(\(pd,i) {
-      if (is.na(pd)) {
-        data.frame()
-      } else if (pd=="") {
-        data.frame()
-      } else {
-        pd |>
-          str_extract_all("(?<=\\(,)([:digit:]+,[:digit:]+)+(?=,\\))") |>
-          map(\(x) str_split(x,",")) |> # now a list of lists of char vectors
-          map_depth(2, \(df) {as.integer(df) |> matrix(ncol=2, byrow=TRUE) |> as.data.frame() |> set_names(c("x","y")) |> mutate(i=i)} ) |>
-          map(\(x) {list_rbind(x, names_to = "stroke")}) |>
-          list_rbind()
-      }
-    }) |>
-    list_rbind() |>
-    mutate(i = ids[i] ) |>
-    rename(id = i) |>
-    relocate(id, .before=1) 
-    #mutate() stroke and id to factors
+  ## POSSIBLY REPLACE WITH
+#   pd<- list()
+# pd$points <- complete_data |> select(NEW_KEY, paindrawing_LBP) |> 
+#   mutate(paindrawing_LBP = str_replace_all(paindrawing_LBP, ",\\),\\(,", ";")) |> 
+#   mutate(paindrawing_LBP = str_replace_all(paindrawing_LBP, "\\(,", "")) |>
+#   mutate(paindrawing_LBP = str_replace_all(paindrawing_LBP, ",\\)", "")) |>
+#   mutate(paindrawing_LBP = str_split(paindrawing_LBP, ";")) |> 
+#   mutate(paindrawing_LBP = paindrawing_LBP |> map(\(x) {
+#     str_split(x,",") |> imap_dfr(\(xy,i) {
+#       as.integer(xy) |> matrix(ncol=2, byrow=TRUE) |> as.data.frame() |> set_names(c("x","y")) |> mutate(i=i)  
+#     })
+#   })) |> 
+#   rename(id = NEW_KEY) |> 
+#   unnest(paindrawing_LBP) 
 
+# pd$strokes <- pd$points |> distinct(id,i)
+# pd$drawings <- pd$points |> distinct(id)
+
+# saveRDS(pd, file=here("clean_data", "pd_data.RDS"))
 }

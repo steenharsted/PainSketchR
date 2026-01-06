@@ -1,5 +1,5 @@
 
-#' Subset pain drawings to the canvas outline
+#' Subset pain drawings to the template outline
 #'
 #' To be completed
 #' 
@@ -12,7 +12,7 @@
 #' @examples
 #' pd_geom_in_canvas_outline(my_paindrawings, anatomy_area_outline)
 
-pd_geom_in_canvas_outline <- function(pd, template) {
+pd_geom_in_template_outline <- function(pd, template) {
   # pd is assumed to be a valid pain drawing data structure: list of 3 tibbles, etc
   # run sanity check? ... to be completed
 

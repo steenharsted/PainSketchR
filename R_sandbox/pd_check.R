@@ -3,7 +3,7 @@
 #' This function checks whether a variable is a valid pain drawing data structure
 #' 
 #' A valid pain drawing data structure must adhere to these criteria:
-#' * It should be a named list, with three elements (in this order):
+#' * It should be a list, with three named elements (preferrably in this order):
 #'   - "drawings" which is a dataframe/tibble which must include:
 #'     * "id" which is a <chr> and represents a unique identifier of the pain drawing (only present in one row)
 #'   - "strokes" which is a dataframe/tibble which must include:
@@ -23,7 +23,6 @@
 #'
 #' @export
 #' @examples
-#' pd_check(my_paindrawings)
 pd_check <- function(pd) {  
   if(!is.list(pd)) {return(FALSE)}
   if(!identical(names(pd), c("drawings", "strokes", "points")))  {return(FALSE)}

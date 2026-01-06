@@ -32,5 +32,5 @@ A valid pain drawing data structure must adhere to these criteria:
 All three elements (dataframes) of the pain drawing data structure may contain any other number of columns. In fact, some functions will create new columns in the returned data structure, such as e.g. areas calculated for strokes/markings and summed area for pain drawings, by [pd_geom_area].
 }
 \examples{
-pd_check(my_paindrawings)
+pd_check()
 }

@@ -8,6 +8,7 @@
 #'
 #' @export
 #' @examples
+#' my_paindrawings <- pd_demo_data
 #' pd_geom_areas(my_paindrawings)
 pd_geom_areas <- function(pd) {
   # Calculate the combined (summed) area of stroke polygons

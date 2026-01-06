@@ -12,7 +12,7 @@
 #' 
 #' 
 pd_polyclip <- function(A, B, operation="intersection") {
-  # A and B should contain two columns x and y
+  # A and B should be dataframes which contain two columns x and y
   
   polyclip::polyclip(
     A = list(x=A$x , y=A$y),

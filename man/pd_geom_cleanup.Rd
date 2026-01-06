@@ -4,14 +4,14 @@
 \alias{pd_geom_cleanup}
 \title{Clean pain drawings for duplicates, no-area polygons, etc}
 \usage{
-pd_geom_cleanup(pd, minarea = 0, noarea = "buffer", delta = 1)
+pd_geom_cleanup(pd, minarea = 0, noarea_action = "buffer", delta = 1)
 }
 \arguments{
 \item{pd}{A valid pain drawing data structure -- see [pd_check] for more detail.}
 
 \item{minarea}{A numeric value representing the minimum value of polygon areas to retain}
 
-\item{noarea}{A string specifying how to manage polygons with no area (points and lines) -- accepted values: "drop" and "buffer"}
+\item{noarea_action}{A string specifying how to manage polygons with no area (points and lines) -- accepted values: "drop" and "buffer"}
 
 \item{delta}{A numeric value representing the buffering zone -- only relevant if noarea is set to "buffer"}
 }
@@ -25,5 +25,7 @@ Furthermore, data may contain duplicate entries or markings with no actual point
 can help eliminate such data.
 }
 \examples{
-pd_geom_cleanup(my_paindrawings, noarea="buffer", delta=20)
+pd_geom_cleanup(my_paindrawings, noarea_action="buffer", delta=20)
+
+
 }

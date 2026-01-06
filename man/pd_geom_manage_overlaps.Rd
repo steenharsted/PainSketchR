@@ -26,4 +26,6 @@ The `method` parameter determines the way overlaps are managed:
 }
 \examples{
 pd_geom_manage_overlaps(my_paindrawings, "merge")
+
+
 }
