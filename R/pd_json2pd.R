@@ -14,27 +14,31 @@
 #'
 #' @export
 #' @examples
-#' pd_json2pd(list("/dir/file1.json", "/dir/file2.json"))
-#' pd_json2pd(c("/dir/file1.json", "/dir/file2.json"))
 #' 
 #' 
 pd_json2pd <- function(files) {
-  
+  # In case files is a chr vector then convert it to a list of vectors
   if(!is.list(files) && is.character(files)) { files <- purrr::map(files, \(x) {x})} 
 
+  # Place holder for the content of each specified file
+  file_content <- list()
+
+  # Iterate each of the user specified files:
   for (j in 1:length(files)) {
-    if (file.exists(files[[j]])) {
-      files[[j]] <- c(file=files[[j]], jsonlite::fromJSON(files[[j]]))
+    if (file.exists(files[[j]])) { 
+      file_content[[j]] <- c(file=files[[j]], jsonlite::fromJSON(files[[j]]))
     } else {
       warning(paste0("File ", files[[j]], " not found"))
     }
   }
  
-  return(list(
-    drawings = files |> purrr::map_dfr(\(le) {le |> purrr::discard_at("s")}) |> tibble::column_to_rownames("id"),
-    strokes = files |> purrr::map_dfr(\(le) {le |> purrr::keep_at(c("id", "s"))}) |> dplyr::mutate(s = s |> purrr::discard_at("p")) |> tidyr:::unnest(cols=c(s)),
-    points  = files |> purrr::map_dfr(\(le) {dplyr::tibble(id=le$id, i=le$s$i, p=le$s$p)}) |> tidyr::unnest(cols=c(p)) |> dplyr::mutate(x = p[,1], y=p[,2]) |> dplyr::select(-p)
-  ) |> pd_geom_calc_bounding_box())
+  return(file_content)
+  
+  # return(list(
+  #   drawings = file_content |> purrr::map_dfr(\(le) {le |> purrr::discard_at("s")}) |> tibble::column_to_rownames("id"),
+  #   strokes = file_content |> purrr::map(\(x) {x$s |> dplyr::select(-p)})
+  #   points  = file_content |> purrr::map(\(x) {x$s |> dplyr::select(-p)}) 
+  # )) 
 }
 
 # pd_fromJSON <- function(files) {
