@@ -15,7 +15,6 @@
 #'
 #' @export
 #' @examples
-#' pd_geom_manage_overlaps(my_paindrawings, "merge")
 #' 
 #' 
 pd_geom_manage_overlaps <- function(pd, method="merge") {
@@ -27,18 +26,13 @@ pd_geom_manage_overlaps <- function(pd, method="merge") {
   # check bounding box overlaps...
   # bbox_intersects <- does_bbox_intersect(df, strokes_i[p1], strokes_i[p2])
 
-
-  pd$points <- pd$points |>
+  pd <- pd |>
     dplyr::group_by(id) |>
     dplyr::group_modify(\(points_by_id, grp_vars) {
       manage_stroke_overlaps(points_by_id, method)
     }) |>
     dplyr::ungroup()
 
-  pd$strokes <- dplyr::semi_join(pd$strokes, pd$points |> dplyr::select(id,i), by=c("id","i"))
-  
-  warning("We need to decide how to handle $strokes which are added/deleted from $points")
-  
   return(pd)
 }
 
@@ -49,12 +43,10 @@ manage_stroke_overlaps <- function(points, method="merge") {
   # Expect only a single unique id -- i.e. points data from one and just one pain drawing
   # if(length(unique(points$id))!=1) {points <- points |> dplyr::filter(id == points[1,'id'])}
 
-
   strokes_i <- unique(points$i) # Hold the actual identifier of the discrete strokes
   n_strokes <- length(strokes_i) # How many of them there are (this may change in the while loop)
   p1 <- 1 # pointer 1
   p2 <- 2 # pointer 2
-
 
   # If there are not at least two strokes - there can be no overlaps so just return
   if (n_strokes<2) {return(points)}
@@ -72,17 +64,15 @@ manage_stroke_overlaps <- function(points, method="merge") {
       
       a <- points |> dplyr::filter(i==strokes_i[p1])
       b <- points |> dplyr::filter(i==strokes_i[p2])
-
-      # Check bounding box overlap (P.S. Is it really necessary to recalculate min and max? ... they are stored in $strokes already)
-      if(min(a$x)>max(b$x) || min(b$x)>max(a$x) || min(a$y)>max(b$y) || min(b$y)>max(a$y)) { 
-        p2 <- p2 +1
-        next # skip to next iteration in the inner loop, as there is no bounding box overlap
-      }
-      # ..if we made it here, it means bounding boxes overlap, but strokes might not so test it:
-      intersection <- pd_polyclip(a, b, op = "intersect")
-      they_intersect <- !purrr::is_empty(intersection) # TRUE or FALSE
       
-      if (they_intersect) {
+      # Apparently, clipper (C+), which polyclip is based on, employes a cheap bounding box check -- so we dont need to
+      intersection <- pd_polyclip(a, b, op = "intersection") 
+      #intersection <- pd_polyclip(a, b, op = "union") # This is only to merge the body template
+      they_overlap <- !purrr::is_empty(intersection) # TRUE or FALSE
+      #they_overlap <- length(intersection)!=2 # TRUE or FALSE ..This is only to merge the body template
+      
+      
+      if (they_overlap) {
         if (method=="merge") {
           # Replace p1 by the union of p1 and p2, delete p2, reset length of points and reset p2=p1+1
           merge_result <- pd_polyclip(a, b, op = "union") |> dplyr::filter(i==1) # When merging, we should get only 1 resulting polygon -- any additional polygons are holes!

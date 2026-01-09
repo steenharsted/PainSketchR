@@ -14,48 +14,40 @@
 #'
 #' @export
 #' @examples
-#' pd_json2pd(list("/dir/file1.json", "/dir/file2.json"))
-#' pd_json2pd(c("/dir/file1.json", "/dir/file2.json"))
 #' 
 #' 
-pd_json2pd <- function(files) {
-  
-  if(!is.list(files) && is.character(files)) { files <- purrr::map(files, \(x) {x})} 
+pd_json2pd <- function(f_name) {
+  # Sanity check -- is f_name a string
+  if(!is.character(f_name)) {return(data.frame())}
+  # Sanity check -- more than one filename?
+  if(length(f_name)>1) {
+    return(pd_json2pd_multiple(f_name))
+  } 
+  # Sanity check -- does such a file exist?
+  if(!file.exists(f_name)) {return(data.frame())}
 
-  for (j in 1:length(files)) {
-    if (file.exists(files[[j]])) {
-      files[[j]] <- c(file=files[[j]], jsonlite::fromJSON(files[[j]]))
-    } else {
-      warning(paste0("File ", files[[j]], " not found"))
-    }
-  }
- 
-  return(list(
-    drawings = files |> purrr::map_dfr(\(le) {le |> purrr::discard_at("s")}) |> tibble::column_to_rownames("id"),
-    strokes = files |> purrr::map_dfr(\(le) {le |> purrr::keep_at(c("id", "s"))}) |> dplyr::mutate(s = s |> purrr::discard_at("p")) |> tidyr:::unnest(cols=c(s)),
-    points  = files |> purrr::map_dfr(\(le) {dplyr::tibble(id=le$id, i=le$s$i, p=le$s$p)}) |> tidyr::unnest(cols=c(p)) |> dplyr::mutate(x = p[,1], y=p[,2]) |> dplyr::select(-p)
-  ) |> pd_geom_calc_bounding_box())
+  # Get the file content as a simple string and check whether it is valid json
+  content <- readLines(f_name)
+  if(!jsonlite::validate(content)) {return(data.frame())}
+
+  # ...only then, convert string in json format to R data object
+  content <- jsonlite::fromJSON(content)
+
+  # Build the result in three stages:
+  # Make results a tibble with `f` as the file name and all the content of the json data structure, except `s`
+  result <- tibble::tibble(f=f_name, content |> purrr::discard_at("s")  |> purrr::map_dfr(\(x) {x}))
+  # First add a column onto the result tibble, which contains a list (length=1) of a data frame of `i,x,y`
+  result$p <- content$s$p |> purrr::imap_dfr(\(q,i) {tibble::tibble(i,x=q[,1],y=q[,2])}) |> list()
+  # Then add a column onto the result, which is a list (legnth=1) of a data frame with stroke info
+  result$s <- content$s |> dplyr::select(-p) |> list()
+  return(result)
 }
 
-# pd_fromJSON <- function(files) {
-#   if(!is.list(files) && is.character(files)) { files <- purrr::map(files, \(x) {x})} 
-
-#   for (j in 1:length(files)) {
-#     if (file.exists(files[[j]])) {
-#       files[[j]] <- c(file=files[[j]], jsonlite::fromJSON(files[[j]]))
-#     } else {
-#       warning(paste0("File ", files[[j]], " not found"))
-#     }
-#   }
- 
-#   files <- files |> 
-#     purrr::map(\(files_element) {
-#       files_element$s$p <- files_element$s$p |> 
-#         purrr::map(\(p_element) {
-#           list(x=p_element[,1], y=p_element[,2])
-#         })
-#       files_element
-#     })
-
-#   return(files)
-# }
+pd_json2pd_multiple <- function(f_names) {
+  # This function is a simple 'wrapper' to call pd_json2pd for multiple file names
+  result <- tibble::tibble()
+  for(f in f_names) {
+    result <- dplyr::bind_rows(result, pd_json2pd(f))
+  }
+  return(result)
+}

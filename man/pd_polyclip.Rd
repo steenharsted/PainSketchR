@@ -19,8 +19,3 @@ A dataframe of polygon definitions. Column `i` is an identifier <int> of the pol
 \description{
 Wrapper for polyclip::polyclip
 }
-\examples{
-pd_polyclip(my_paindrawing$points |> filter(i==1), my_paindrawing$points |> filter(i==2), op="union")
-
-
-}

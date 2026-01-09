@@ -15,38 +15,27 @@
 #' @examples
 #' 
 #' 
-pd_geom_cleanup <- function(pd, minarea=0, noarea_action="buffer", delta=1) {
+pd_geom_cleanup <- function(pd, noarea_action="buffer", delta=1, parallel=FALSE) {
   # pd is assumed to be a valid pd data structure -- a tibble with cols id, i, x, y
   # Run data sanity check ? ... to be completed
   # delta is the value (px) we want to add as buffer around points and lines with no area
 
-  if (minarea>0) {
-    # To be considered: Should we run an area calculation of each polygon and drop 
-    # if less than some minimum area -- for example a 3 point polygon which is almost a line
-    # or a multipoint polygon where all points a clustered very closely
+  # We will need this more than once ...
+  pd <- pd |> dplyr::group_by(id,i)
+
+  if (parallel) {
+    # To be considered: Should we run these operations as parallelize operations
     # ...?
   }
 
-  if (noarea_action=="drop" || noarea_action=="buffer") {
-    # Identify the strokes to be dropped or buffered
-    noarea_id_i <- pd$points |> 
-      dplyr::count(id, i) |>
-      dplyr::filter(n<3) # points or two-point lines
-  }
-
-  if(noarea_action=="drop" && nrow(noarea_id_i)>0) {
+  if(noarea_action=="drop") {
     # Drop the strokes without changing stroke numbering (i)
-    pd$points <- dplyr::anti_join(pd$points, noarea_id_i, by=c("id","i"))
-    pd$strokes <- dplyr::anti_join(pd$strokes, noarea_id_i, by=c("id","i"))
+    pd <- pd |> dplyr::filter(dplyr::n()>2)  # Already grouped by id and i
   }
 
-  if (noarea_action=="buffer" && nrow(noarea_id_i)>0) {
-    # Buffer the strokes 
-    # First, get the coordinates to buffer
-    coor2buff <- dplyr::semi_join(pd$points, noarea_id_i, by=c("id","i"))
-    # Second, buffer them...
-    pd$points <- pd$points |>
-      dplyr::group_by(id, i) |>
+  if (noarea_action=="buffer") {
+    # Buffer the strokes without chaning stroke numbering (i)
+    pd <- pd |> # Already grouped by id and i
       dplyr::group_modify(\(stroke_coordinates, grp_vars) {
         # For each stroke, check whether it is a point, a line or 3+ vertex polygon
         if (nrow(stroke_coordinates)==1) {
@@ -59,16 +48,15 @@ pd_geom_cleanup <- function(pd, minarea=0, noarea_action="buffer", delta=1) {
           # It's a 3+ vertex polygon - do nothing
           stroke_coordinates
         }
-      }) |>
-      dplyr::ungroup()
+      }) 
   }
 
   # Deal with self-intersections
-  pd$points <- pd$points |>
-    dplyr::group_by(id,i) |>
+  pd <- pd |>  # Already grouped by id and i
     dplyr::group_modify(\(stroke_coordinates, grp_vars) {
       polyclip::polysimplify(list(x=stroke_coordinates$x, y=stroke_coordinates$y), filltype="nonzero") |> 
         purrr::map_dfr(\(x) {x})
     })
-  return(pd)
+  
+  return(dplyr::ungroup(pd))
 }

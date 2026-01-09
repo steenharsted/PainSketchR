@@ -15,7 +15,3 @@ A valid pain drawing data structure with added area data ('drawings' and 'stroke
 \description{
 Calculate the area of each marking/stroke as a closed polygon and add the result to the 'strokes' element, before adding the cumulated area for each pain drawing to the 'drawings' element.
 }
-\examples{
-my_paindrawings <- pd_demo_data
-pd_geom_areas(my_paindrawings)
-}

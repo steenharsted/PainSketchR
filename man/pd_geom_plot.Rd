@@ -4,7 +4,12 @@
 \alias{pd_geom_plot}
 \title{Generate a simple pain drawing plot}
 \usage{
-pd_geom_plot(pd)
+pd_geom_plot(
+  pd,
+  background = here::here("data-raw", "mird_body_background.png"),
+  xdim = 450,
+  ydim = 500
+)
 }
 \arguments{
 \item{pd}{A valid pain drawing data structure -- see [pd_check] for more detail.}
@@ -15,7 +20,4 @@ A ggplot2 plot
 \description{
 This function is a simple wrapper of the ggplot function with pain drawing points represented as geom_polygon in separate colours (alpha=0.5) and
 each separate pain drawing presented as a wrapped facet.
-}
-\examples{
-pd_geom_plot(my_paindrawings)
 }

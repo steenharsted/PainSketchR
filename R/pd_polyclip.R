@@ -8,19 +8,20 @@
 #'
 #' @export
 #' @examples
-#' pd_polyclip(my_paindrawing$points |> filter(i==1), my_paindrawing$points |> filter(i==2), op="union")
 #' 
 #' 
 pd_polyclip <- function(A, B, operation="intersection") {
   # A and B should be dataframes which contain two columns x and y
   
-  polyclip::polyclip(
+  result <- polyclip::polyclip(
     A = list(x=A$x , y=A$y),
     B = list(x=B$x , y=B$y),
-    op=operation) |>
-      purrr::map_dfr(\(x) {x}, .id="i") |>
+    op=operation) 
+  if(!purrr::is_empty(result)) {
+      result <- result |> purrr::map_dfr(\(x) {x}, .id="i") |>
       dplyr::mutate(i = as.integer(i),
                     x = as.integer(x),
                     y = as.integer(y)) 
-  
-}
+  }
+  result
+  }

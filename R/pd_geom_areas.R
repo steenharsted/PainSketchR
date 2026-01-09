@@ -8,23 +8,15 @@
 #'
 #' @export
 #' @examples
-#' my_paindrawings <- pd_demo_data
-#' pd_geom_areas(my_paindrawings)
+#' 
+#' 
 pd_geom_areas <- function(pd) {
-  # Calculate the combined (summed) area of stroke polygons
+  # Calculate the area of strokes/polygons
 
-  # Calculate the area of each stroke/points polygon
-  stroke_areas <- pd$points |> 
+  pd |> 
     dplyr::group_by(id,i) |>
-    dplyr::group_modify(\(points_data, grp_vars) {
-      dplyr::tibble(stroke_area = geometry::polyarea(points_data$x, points_data$y))
+    dplyr::group_modify(\(points, grp_vars) {
+      dplyr::tibble(area = geometry::polyarea(points$x, points$y))
     }) |>
     dplyr::ungroup()
-  
-  # Add this area as a column to the strokes tibble
-  pd$strokes <- dplyr::left_join(pd$strokes, stroke_areas, by=c("id","i"))
-  # Add the accumulated area of strokes/points polygons to the drawings tibble
-  pd$drawings <- dplyr::left_join(pd$drawings, stroke_areas |> dplyr::group_by(id) |> dplyr::summarize(drawing_area = sum(stroke_area)), by="id")
-
-  return(pd)
 }
