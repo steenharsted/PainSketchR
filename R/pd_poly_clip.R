@@ -10,7 +10,7 @@
 #' @examples
 #' 
 #' 
-pd_polyclip <- function(A, B, operation="intersection") {
+pd_poly_clip <- function(A, B, operation="intersection") {
   # A and B should be dataframes which contain two columns x and y
   
   result <- polyclip::polyclip(
@@ -22,6 +22,8 @@ pd_polyclip <- function(A, B, operation="intersection") {
       dplyr::mutate(i = as.integer(i),
                     x = as.integer(x),
                     y = as.integer(y)) 
+  } else {
+    result <- tibble::tibble()
   }
   result
   }

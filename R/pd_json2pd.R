@@ -21,7 +21,11 @@ pd_json2pd <- function(f_name) {
   if(!is.character(f_name)) {return(data.frame())}
   # Sanity check -- more than one filename?
   if(length(f_name)>1) {
-    return(pd_json2pd_multiple(f_name))
+    result <- tibble::tibble()
+    for(f in f_name) {
+      result <- dplyr::bind_rows(result, pd_json2pd(f))
+    }
+    return(result)
   } 
   # Sanity check -- does such a file exist?
   if(!file.exists(f_name)) {return(data.frame())}
@@ -40,14 +44,5 @@ pd_json2pd <- function(f_name) {
   result$p <- content$s$p |> purrr::imap_dfr(\(q,i) {tibble::tibble(i,x=q[,1],y=q[,2])}) |> list()
   # Then add a column onto the result, which is a list (legnth=1) of a data frame with stroke info
   result$s <- content$s |> dplyr::select(-p) |> list()
-  return(result)
-}
-
-pd_json2pd_multiple <- function(f_names) {
-  # This function is a simple 'wrapper' to call pd_json2pd for multiple file names
-  result <- tibble::tibble()
-  for(f in f_names) {
-    result <- dplyr::bind_rows(result, pd_json2pd(f))
-  }
   return(result)
 }

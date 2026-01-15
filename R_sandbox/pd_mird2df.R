@@ -1,18 +1,19 @@
-pd_mird2pd <- function(files) {  
-  # if(!is.list(files) && is.character(files)) { files <- purrr::map(files, \(x) {x})} 
-
-  # for (j in 1:length(files)) {
-  #   if (file.exists(files[[j]])) {
-  #     files[[j]] <- c(file=files[[j]], read.csv2(files[[j]]))
-  #   } else {
-  #     warning(paste0("File ", files[[j]], " not found"))
-  #   }
-  # }
-
-  # files <- files |> purrr::map_dfr(\(x) {x |> purrr::map_dfr(\(z) {z})}) 
-
-  # # Get rid of NA values...
-  # files <- files |> dplyr::filter(!is.na(KEY) & !is.na(paindrawing_LBP)) |> str()
+pd_mird2pd <- function(f_name) {  
+  # Sanity check -- is f_name a string
+  if(!is.character(f_name)) {return(data.frame())}
+  # Sanity check -- more than one filename?
+  if(length(f_name)>1) {
+    result <- tibble::tibble()
+    for(f in f_name) {
+      result <- dplyr::bind_rows(result, pd_mird2pd(f))
+    }
+    return(result)
+  } 
+  # Sanity check -- does such a file exist?
+  if(!file.exists(f_name)) {return(data.frame())}
+  
+  # Get the file content as a simple string and check whether it is valid pd data
+  content <- read
 
   # })
   # # regexp explanation:

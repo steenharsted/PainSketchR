@@ -8,6 +8,16 @@ for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
   pd_demo_body_template <- rbind(pd_demo_body_template, tibble::tibble(id=fs::path_ext_remove(fs::path_file(c)), i=1, x=d[,1], y=d[,2]))
 }
 pd_demo_body_template <- pd_demo_body_template |> dplyr::mutate(i=as.integer(i), x=as.integer(x), y=as.integer(y))
+pd_demo_body_template <- pd_demo_body_template |> 
+  dplyr::group_by(id) |>
+  dplyr::group_modify(\(d,indx) {
+    d <- tibble::tibble(
+      s = list(tibble::tibble(i=unique(d$i))),
+      p = list(tibble::tibble(i=d$i, x=d$x, y=d$y))
+    )
+  }) |>
+  dplyr::ungroup() 
+
 save(pd_demo_body_template, file="data-raw/pd_demo_body_template.rda")
 
 # Generate a merger of all the body templates to create two full body outlines - front and back

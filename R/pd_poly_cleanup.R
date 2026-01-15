@@ -15,27 +15,49 @@
 #' @examples
 #' 
 #' 
-pd_geom_cleanup <- function(pd, noarea_action="buffer", delta=1, parallel=FALSE) {
+#' 
+#' 
+pd_multipoly_cleanup <- function(pd, noarea_action="buffer", delta=1, parallel=FALSE) {
+  # This function will take a pd data structure and for each
+  # individual pain drawing clean up no-area polygons, self-intersection, etc.
+
+  # Check that pd is a valid pain drawing
+  # ...to be done
+
+  # Recursive self-calling in case pd is more than a single row (pain drawing):
+  if(nrow(pd)>1) {
+    pd <- pd |> 
+      dplyr::rowwise() |>
+      dplyr::group_modify(\(r,i) {pd_poly_cleanup(r)}) 
+    return(dplyr::ungroup(pd))
+  }
+
+  # This only reached, if pd is a single row
+  pd <- pd_poly_cleanup(pd)
+
+  return(pd)
+}
+
+pd_poly_cleanup <- function(pd1, noarea_action="buffer", delta=1, parallel=FALSE) {
   # pd is assumed to be a valid pd data structure -- a tibble with cols id, i, x, y
   # Run data sanity check ? ... to be completed
   # delta is the value (px) we want to add as buffer around points and lines with no area
 
-  # We will need this more than once ...
-  pd <- pd |> dplyr::group_by(id,i)
+  if (nrow(pd1)>1) { warning("Function `pd_poly_cleanup` expects a pain drawing data frame with only 1 row -- did you want `pd_multipoly_cleanup()`?");return(NA)}
 
-  if (parallel) {
-    # To be considered: Should we run these operations as parallelize operations
-    # ...?
-  }
+  points <- pd1$p[[1]] |> dplyr::group_by(i)
+  strokes <- pd1$s[[1]] |> dplyr::group_by(i)
 
   if(noarea_action=="drop") {
     # Drop the strokes without changing stroke numbering (i)
-    pd <- pd |> dplyr::filter(dplyr::n()>2)  # Already grouped by id and i
+    rows_to_drop <- points |> dplyr::filter(dplyr::n()<3) |> dplyr::pull(i)
+    strokes <- strokes |> dplyr::filter(!i %in% dplyr::all_of(rows_to_drop))
+    points <- points |> dplyr::filter(!i %in% dplyr::all_of(rows_to_drop))
   }
 
   if (noarea_action=="buffer") {
-    # Buffer the strokes without chaning stroke numbering (i)
-    pd <- pd |> # Already grouped by id and i
+    # Buffer the strokes without changing stroke numbering (i)
+    points <- points |> # Already grouped by i
       dplyr::group_modify(\(stroke_coordinates, grp_vars) {
         # For each stroke, check whether it is a point, a line or 3+ vertex polygon
         if (nrow(stroke_coordinates)==1) {
@@ -52,11 +74,12 @@ pd_geom_cleanup <- function(pd, noarea_action="buffer", delta=1, parallel=FALSE)
   }
 
   # Deal with self-intersections
-  pd <- pd |>  # Already grouped by id and i
+  points <- points |>  # Already grouped by i
     dplyr::group_modify(\(stroke_coordinates, grp_vars) {
       polyclip::polysimplify(list(x=stroke_coordinates$x, y=stroke_coordinates$y), filltype="nonzero") |> 
         purrr::map_dfr(\(x) {x})
     })
-  
-  return(dplyr::ungroup(pd))
+  pd1$s <- list(dplyr::ungroup(strokes))
+  pd1$p <- list(dplyr::ungroup(points))
+  return(pd1)
 }

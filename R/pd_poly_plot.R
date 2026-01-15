@@ -9,11 +9,11 @@
 #'
 #' @export
 #' @examples
-pd_geom_plot <- function(pd, background=system.file("extdata", "mird_body_background.png", package = "paindrawings"),xdim=450,ydim=500) {
+pd_poly_plot <- function(pd, background=system.file("extdata", "mird_body_background.png", package = "paindrawings"),xdim=450,ydim=500) {
   # We could add some more paramters to this function (e.g alpha, how to facet, etc)
   # ...or just leave it up to the user to create their own ggplots from pain drawing data structure
 
-  pd |> 
+  pd |> dplyr::select(id,p) |> tidyr::unnest(cols=c(p)) |>
     ggplot2::ggplot(ggplot2::aes(x=x,y=y,group=as.factor(i), color=as.factor(i))) + 
     ggplot2::xlim(0,xdim) + ggplot2::ylim(0,ydim) + # NOTE THIS IS FLIPPED ON THE Y AXIS ... AS IS MIRD!
     ggplot2::annotation_raster(png::readPNG(background), 0,xdim,0,ydim) +
