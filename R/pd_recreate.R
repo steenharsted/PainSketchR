@@ -17,8 +17,7 @@
 #' @param save_plot Logical. If TRUE, saves the plot as a PNG file. If FALSE,
 #'   returns a ggplot2 object. Default is TRUE.
 #' @param filename Character string specifying the output filename pattern.
-#'   Must end with ".png" if save_plot is TRUE. Use sprintf-style formatting
-#'   (e.g., "drawing%03d.png") for multiple drawings. Default is "drawing%03d.png".
+#'   Must end with ".png" if save_plot is TRUE. Use sprintf-style formatting.
 #'
 #' @return If save_plot is TRUE, saves PNG file(s) and returns a message.
 #'   If save_plot is FALSE, returns a ggplot2 object.
@@ -54,11 +53,11 @@
 #' pd_recreate_drawing(
 #'   drawing_data,
 #'   background_image = bg_img,
-#'   filename = "output%03d.png"
+#'   filename = "output.png"
 #' )
 #' }
 #'
-#' @importFrom dplyr select mutate filter full_join join_by
+#' @importFrom dplyr select mutate filter full_join join_by n
 #' @importFrom tidyr unnest uncount
 #' @importFrom png readPNG
 #' @importFrom ggplot2 ggplot aes coord_fixed theme_void scale_color_identity
@@ -86,7 +85,7 @@ pd_recreate_drawing <- function(
     stop("The column 's' containing stroke information is needed")
   }
 
-  # Test that height and width are the same
+  # Test that we only 1 height and width value, respectively
   if (pd$w |> unique() |> length() != 1 | pd$h |> unique() |> length() != 1) {
     stop(
       "More than one width or height value of image found.\n 
@@ -194,17 +193,17 @@ pd_recreate_drawing <- function(
     pd_spray <- pd_spray |>
 
       # Create extra rows according to spray density (pd)
-      uncount(weights = pd) |>
+      tidyr::uncount(weights = pd) |>
 
       # Generate random angles and radii for uniform distribution within a circle
       # pr holds information about the spray radius
-      mutate(
-        angle = runif(n(), 0, 2 * pi),
-        radius = sqrt(runif(n(), 0, 1)) * pr
+      dplyr::mutate(
+        angle = runif(dplyr::n(), 0, 2 * pi),
+        radius = sqrt(runif(dplyr::n(), 0, 1)) * pr
       ) |>
 
       # Calculate offsets and new x, y positions
-      mutate(
+      dplyr::mutate(
         offsetX = radius * cos(angle),
         offsetY = radius * sin(angle),
         x = x + offsetX,
