@@ -20,38 +20,11 @@ pd_demo_body_template <- pd_demo_body_template |>
 
 save(pd_demo_body_template, file="data-raw/pd_demo_body_template.rda")
 
-# Generate a merger of all the body templates to create two full body outlines - front and back
-# pd_demo_body_template <- pd_demo_body_template |> 
-#   dplyr::mutate(name=id) |>
-#   dplyr::group_by(id) |> 
-#   dplyr::mutate(i=dplyr::cur_group_id(), id="body") |> 
-#   dplyr::ungroup() 
-# strokes_i <- unique(pd_demo_body_template$i)
-# n_strokes <- length(strokes_i) # How many of them there are (this may change in the while loop)
-# p1 <- 1 # pointer 1
-# p2 <- 2 # pointer 2
-# while (p1 < n_strokes) {
-#     while (p2 <=n_strokes) {
-#       a <- pd_demo_body_template |> dplyr::filter(i==strokes_i[p1])
-#       b <- pd_demo_body_template |> dplyr::filter(i==strokes_i[p2])
-#       union <- pd_polyclip(a, b, op = "union")
-#       if(length(unique(union$i))==1) {
-#         print(paste0("Area ", unique(a$name), " and ", unique(b$name), " has ",length(unique(union$i)), " strokes."))
-#         # There is contact!
-#         pd_demo_body_template <- pd_demo_body_template |>
-#           dplyr::filter(i != strokes_i[p1] & i!= strokes_i[p2]) |>
-#           dplyr::bind_rows(dplyr::tibble(i=strokes_i[p1], x=union$x, y=union$y)) 
-#         strokes_i <- strokes_i[-p2] # Remove p2 
-#         n_strokes <- n_strokes-1
-#         p2 <- p1+1
-#       }
-#       p2 <- p2+1
-#     }
-#   p1<-p1+1
-#   p2<-p1+1
-# }
-# pd_demo_body_outline_template <- pd_demo_body_template |> dplyr::mutate(i=as.integer(i), x=as.integer(x), y=as.integer(y))
-# save(pd_demo_body_outline_template, file="data-raw/pd_demo_body_outline_template.rda")
+pd_demo_anatomy_lower_back <- pd_poly_manage_overlaps(
+  pd_demo_body_template |> dplyr::filter(id=="Mid_back_bottom"),
+  pd_demo_body_template |> dplyr::filter(id=="Back_right_buttock")
+)
+
 
 # Generate a demo data set of pain drawings
 # This is based on real-world data collection (mird)
@@ -65,7 +38,15 @@ pd_demo_data <- read.csv("data-raw/demo_data.csv") |>
       as.integer(xy) |> matrix(ncol=2, byrow=TRUE) |> as.data.frame() |> purrr::set_names(c("x","y")) |> dplyr::mutate(i=i)  
     })
   })) |> 
-  tidyr::unnest(paindrawing_LBP) |> dplyr::select(-X) |> dplyr::relocate(i, .after=id)
+  tidyr::unnest(paindrawing_LBP) |> dplyr::select(-X) |> dplyr::relocate(i, .after=id) |>
+  dplyr::group_by(id) |>
+  dplyr::group_modify(\(d, indx) {
+    d <- tibble::tibble(
+      s = list(tibble::tibble(i=unique(d$i))),
+      p = list(tibble::tibble(i=d$i, x=d$x, y=d$y))
+    )
+  }) |>
+  dplyr::ungroup() 
 
 save(pd_demo_data, file="data-raw/pd_demo_data.rda")
   

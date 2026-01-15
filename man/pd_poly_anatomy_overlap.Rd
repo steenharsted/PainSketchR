@@ -4,7 +4,7 @@
 \alias{pd_poly_anatomy_overlap}
 \title{Subset pain drawings to the template outline}
 \usage{
-pd_poly_anatomy_overlap(pd1, ar1)
+pd_poly_anatomy_overlap(pd, ar)
 }
 \arguments{
 \item{pd}{A valid pain drawing data structure -- see [pd_check] for more detail.}
