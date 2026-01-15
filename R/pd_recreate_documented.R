@@ -75,32 +75,6 @@ pd_recreate_drawing <- function(
 ) {
   pd <- .data
 
-  # TEST that pd has the columns we need
-  if (!("id" %in% names(pd))) {
-    stop("The column 'id' is needed")
-  }
-  if (!("p" %in% names(pd))) {
-    stop("The column 'p' containing coordinates is needed")
-  }
-  if (!("s" %in% names(pd))) {
-    stop("The column 's' containing stroke information is needed")
-  }
-
-  # Test that height and width are the same
-  if (pd$w |> unique() |> length() != 1 | pd$h |> unique() |> length() != 1) {
-    stop(
-      "More than one width or height value of image found.\n 
-    You can only recreate drawings from one type of canvas at a time"
-    )
-  }
-
-  # Test that filename ends with .png if save_plot = TRUE
-  if (save_plot & stringr::str_extract(filename, "...$") != "png") {
-    stop(
-      "Filename must end with png"
-    )
-  }
-
   # Validate and process background_image
   if (!is.null(background_image)) {
     if (is.character(background_image)) {
@@ -122,9 +96,35 @@ pd_recreate_drawing <- function(
     }
   }
 
+  # TEST that pd has the columns we need
+  if (!(\"id\" %in% names(pd))) {
+    stop(\"The column 'id' is needed\")
+  }
+  if (!(\"p\" %in% names(pd))) {
+    stop(\"The column 'p' containing coordinates is needed\")
+  }
+  if (!(\"s\" %in% names(pd))) {
+    stop(\"The column 's' containing stroke information is needed\")
+  }
+
+  # Test that height and width are the same
+  if (pd$w |> unique() |> length() != 1 | pd$h |> unique() |> length() != 1) {
+    stop(
+      \"More than one width or height value of image found.\\n 
+    You can only recreate drawings from one type of canvas at a time\"
+    )
+  }
+
+  # Test that filename ends with .png if save_plot = TRUE
+  if (save_plot & stringr::str_extract(filename, \"...$\") != \"png\") {
+    stop(
+      \"Filename must end with png\"
+    )
+  }
+
   # Test that ids are unique
   if (pd$id |> length() != pd$id |> unique() |> length()) {
-    stop("all values in the 'id' column must be unique")
+    stop(\"all values in the 'id' column must be unique\")
   }
 
   # Extract number of ids
@@ -133,12 +133,12 @@ pd_recreate_drawing <- function(
   # Warn user if numbers of ids > 9
   if (id_n > 9) {
     warning(
-      "You are trying to draw more than 9 drawings. This may cause performance issues. Do you want to continue? (yes/no)"
+      \"You are trying to draw more than 9 drawings. This may cause performance issues. Do you want to continue? (yes/no)\"
     )
-    user_input <- readline("Enter your choice (yes/no): ")
+    user_input <- readline(\"Enter your choice (yes/no): \")
 
-    if (tolower(user_input) != "yes") {
-      stop("Operation aborted by the user.")
+    if (tolower(user_input) != \"yes\") {
+      stop(\"Operation aborted by the user.\")
     }
   }
 
@@ -182,10 +182,10 @@ pd_recreate_drawing <- function(
   ## We achieve this by making a coordinate set for Spray and Pen, respectively
 
   pd_pen <- pd |>
-    dplyr::filter(t == "pen")
+    dplyr::filter(t == \"pen\")
 
   pd_spray <- pd |>
-    dplyr::filter(t == "spray")
+    dplyr::filter(t == \"spray\")
 
   ### Recreate jitter in spray Data
   ### But only if spray data exists
@@ -250,7 +250,7 @@ pd_recreate_drawing <- function(
     ggplot2::scale_linewidth_identity() +
     ggplot2::geom_path(
       ggplot2::aes(
-        group = paste0(id, "_", i),
+        group = paste0(id, \"_\", i),
         linewidth = size_mm + 1
       ),
       linetype = 1
@@ -279,13 +279,13 @@ pd_recreate_drawing <- function(
       file = filename,
       width = width_mm,
       height = height_mm,
-      units = "mm",
+      units = \"mm\",
       dpi = 96,
       scale = id_n
     )
 
     message(
-      paste0("Drawing saved in ", filename)
+      paste0(\"Drawing saved in \", filename)
     )
   } else {
     return(plot_out)

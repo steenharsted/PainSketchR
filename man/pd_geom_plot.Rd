@@ -6,7 +6,8 @@
 \usage{
 pd_geom_plot(
   pd,
-  background = here::here("data-raw", "mird_body_background.png"),
+  background = system.file("extdata", "mird_body_background.png", package =
+    "paindrawings"),
   xdim = 450,
   ydim = 500
 )

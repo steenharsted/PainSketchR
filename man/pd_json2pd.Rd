@@ -4,7 +4,7 @@
 \alias{pd_json2pd}
 \title{Load pain drawings from RedCap Pain Sketcher json data}
 \usage{
-pd_json2pd(files)
+pd_json2pd(f_name)
 }
 \arguments{
 \item{files}{A list or vector of strings which represent file paths}
