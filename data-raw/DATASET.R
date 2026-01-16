@@ -1,30 +1,16 @@
 ## code to prepare `DATASET` dataset goes here
 
-# Generate the MiRD full body template
-# This is based on csv files in folder regions_of_full_body_tempalte
-pd_demo_body_template <- tibble::tibble(id=as.character(), i=as.integer(), x=as.integer(), y=as.integer())
+# Generate some demo data of anatomical regions from full body outline/template
 for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
   d <- read.csv(c, sep=";", header = FALSE)
-  pd_demo_body_template <- rbind(pd_demo_body_template, tibble::tibble(id=fs::path_ext_remove(fs::path_file(c)), i=1, x=d[,1], y=d[,2]))
+  pd_d <- tibble::tibble(id=fs::path_ext_remove(fs::path_file(c)), 
+                         s=list(tibble::tibble(i=1)), 
+                         p=list(tibble::tibble(x=d[,1], y=d[,2])))
+  # This is a bit quirky ... but necessary to ensure the variable is name correctly in rda:
+  var_name <- paste0("pd_",fs::path_ext_remove(fs::path_file(c)))
+  assign(var_name, pd_d)
+  do.call(save, list(var_name, file=paste0("data/pd_",fs::path_ext_remove(fs::path_file(c)),".rda")))
 }
-pd_demo_body_template <- pd_demo_body_template |> dplyr::mutate(i=as.integer(i), x=as.integer(x), y=as.integer(y))
-pd_demo_body_template <- pd_demo_body_template |> 
-  dplyr::group_by(id) |>
-  dplyr::group_modify(\(d,indx) {
-    d <- tibble::tibble(
-      s = list(tibble::tibble(i=unique(d$i))),
-      p = list(tibble::tibble(i=d$i, x=d$x, y=d$y))
-    )
-  }) |>
-  dplyr::ungroup() 
-
-save(pd_demo_body_template, file="data-raw/pd_demo_body_template.rda")
-
-pd_demo_anatomy_lower_back <- pd_poly_manage_overlaps(
-  pd_demo_body_template |> dplyr::filter(id=="Mid_back_bottom"),
-  pd_demo_body_template |> dplyr::filter(id=="Back_right_buttock")
-)
-
 
 # Generate a demo data set of pain drawings
 # This is based on real-world data collection (mird)
