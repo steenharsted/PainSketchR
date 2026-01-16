@@ -9,6 +9,14 @@
 #'
 #' @export
 #' @examples
+#' pd_demo_data[1,] |> pd_poly_plot()
+#' 
+#' pd_demo_data[1,] |> pd_poly_clean_up(delta=20) |> pd_geom_plot()
+#' 
+#' pd_demo_data[1,] |> pd_poly_clean_up(delta=20) |> pd_geom_manageoverlaps() |> pd_geom_plot()
+#' 
+#' pd_demo_data[1,] |> pd_poly_clean_up(delta=20) |> pd_geom_manageoverlaps() |> pd_geom_areas()
+#' 
 pd_poly_plot <- function(pd, background=system.file("extdata", "mird_body_background.png", package = "paindrawings"),xdim=450,ydim=500) {
   # We could add some more paramters to this function (e.g alpha, how to facet, etc)
   # ...or just leave it up to the user to create their own ggplots from pain drawing data structure

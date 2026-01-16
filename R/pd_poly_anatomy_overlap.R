@@ -10,7 +10,7 @@
 #'
 #' @export
 #' @examples
-
+#' pd_poly_anatomy_overlap(pd_demo_data[1,], pd_Back_right_leg)
 pd_poly_anatomy_overlap <- function(pd, ar) {
   # pd is a pain drawing -- tibble with cols id,i,x,y
   # ar is anatomical region, e.g. 'Back_of_head'

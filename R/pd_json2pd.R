@@ -14,7 +14,7 @@
 #'
 #' @export
 #' @examples
-#' 
+#' pd_json2pd("data-raw/four_geoms.json")
 #' 
 pd_json2pd <- function(f_name) {
   # Sanity check -- is f_name a string

@@ -8,8 +8,8 @@
 #'
 #' @export
 #' @examples
-#' 
-#' 
+#' overlap <- pd_poly_anatomy_overlap(pd_demo_data[1,], pd_Back_right_leg)
+#' pd_poly_areas(overlap)#' 
 pd_multipoly_area <- function(pd) {
   # This function will take a pd data structure and for each
   # individual pain drawing calculates the area for each strokes

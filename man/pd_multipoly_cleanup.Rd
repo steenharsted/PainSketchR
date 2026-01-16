@@ -23,3 +23,7 @@ Pain drawings are subject to whatever input users have seen fit to add. This may
 markings or 'stroke' like isolated points and two-point lines, which have no area. 
 Users may also draw highly complicated markings/strokes which self-intersect.
 }
+\examples{
+pd_poly_cleanup(pd_demo_data[1,])
+
+}

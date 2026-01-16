@@ -13,9 +13,7 @@
 #'
 #' @export
 #' @examples
-#' 
-#' 
-#' 
+#' pd_poly_cleanup(pd_demo_data[1,])
 #' 
 pd_multipoly_cleanup <- function(pd, noarea_action="buffer", delta=1, parallel=FALSE) {
   # This function will take a pd data structure and for each

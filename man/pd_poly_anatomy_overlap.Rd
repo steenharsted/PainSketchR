@@ -17,3 +17,6 @@ A valid pain drawing data structure
 \description{
 To be completed
 }
+\examples{
+pd_poly_anatomy_overlap(pd_demo_data[1,], pd_Back_right_leg)
+}

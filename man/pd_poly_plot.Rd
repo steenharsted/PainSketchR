@@ -22,3 +22,13 @@ A ggplot2 plot
 This function is a simple wrapper of the ggplot function with pain drawing points represented as geom_polygon in separate colours (alpha=0.5) and
 each separate pain drawing presented as a wrapped facet.
 }
+\examples{
+pd_demo_data[1,] |> pd_poly_plot()
+
+pd_demo_data[1,] |> pd_poly_clean_up(delta=20) |> pd_geom_plot()
+
+pd_demo_data[1,] |> pd_poly_clean_up(delta=20) |> pd_geom_manageoverlaps() |> pd_geom_plot()
+
+pd_demo_data[1,] |> pd_poly_clean_up(delta=20) |> pd_geom_manageoverlaps() |> pd_geom_areas()
+
+}

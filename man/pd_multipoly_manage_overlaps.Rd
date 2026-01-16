@@ -24,3 +24,7 @@ The `method` parameter determines the way overlaps are managed:
 * "adoptA" will retain the first of the markings unchanged, and subtract the overlap from the second marking -- not currently implemented!
 * "adoptB" will retain the second of the markings unchanged, and subtract the overlap from the first marking -- not currently implemented!
 }
+\examples{
+pd_poly_cleanup(pd_demo_data[1,], delta=20) |> pd_poly_manage_overlaps()
+
+}

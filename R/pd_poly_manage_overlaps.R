@@ -15,7 +15,7 @@
 #'
 #' @export
 #' @examples
-#' 
+#' pd_poly_cleanup(pd_demo_data[1,], delta=20) |> pd_poly_manage_overlaps()
 #' 
 pd_multipoly_manage_overlaps <- function(pd, method="merge") {
   # This function will take a pd data structure and for each

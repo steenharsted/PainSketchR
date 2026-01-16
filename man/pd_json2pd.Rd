@@ -22,3 +22,7 @@ The RedCap Pain Sketcher json data structure must adhere to these criteria:
 * The element 's' must be a data frame with marking/stroke data, where each line represents a separate marking/stroke and this must include a column 'i' which is a unique identifier within that pain drawing and 'p' which is a list, furthermore:
 * The element 'p' must be list of <int> matrixes of dimensions \[1:n, 1:2\] representing x and y corrdinates (col-wise)
 }
+\examples{
+pd_json2pd("data-raw/four_geoms.json")
+
+}
