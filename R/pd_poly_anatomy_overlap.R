@@ -3,8 +3,8 @@
 #'
 #' To be completed
 #' 
-#' @param pd A valid pain drawing data structure -- see [pd_check] for more detail.
-#' @param template A valid pain drawing data structure -- see [pd_check] for more detail.
+#' @param pd A valid pain drawing data structure -- see [pd_check_data] for more detail.
+#' @param template A valid pain drawing data structure -- see [pd_check_data] for more detail.
 #'
 #' @returns A valid pain drawing data structure
 #'

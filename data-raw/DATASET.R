@@ -34,5 +34,5 @@ pd_demo_data <- read.csv("data-raw/demo_data.csv") |>
   }) |>
   dplyr::ungroup() 
 
-save(pd_demo_data, file="data-raw/pd_demo_data.rda")
+save(pd_demo_data, file="data/pd_demo_data.rda")
   

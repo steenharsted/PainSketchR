@@ -13,11 +13,11 @@ pd_recreate_drawing(
 }
 \arguments{
 \item{.data}{A data frame containing drawing data with required columns:
-`id` (unique identifier for each drawing),
-`p` (list column containing coordinate information),
-`s` (list column containing stroke information),
-`w` (canvas width), and
-`h` (canvas height).}
+\code{id} (unique identifier for each drawing),
+\code{p} (list column containing coordinate information),
+\code{s} (list column containing stroke information),
+\code{w} (canvas width), and
+\code{h} (canvas height).}
 
 \item{background_image}{Optional. Background image for the plot. Can be either:
 (1) a character string giving the file path to a PNG image (will be read
@@ -32,7 +32,7 @@ Must end with ".png" if save_plot is TRUE. Use sprintf-style formatting.}
 }
 \value{
 If save_plot is TRUE, saves PNG file(s) and returns a message.
-  If save_plot is FALSE, returns a ggplot2 object.
+If save_plot is FALSE, returns a ggplot2 object.
 }
 \description{
 This function recreates drawings from a data frame containing coordinate and
@@ -42,12 +42,12 @@ the output as PNG files or return a ggplot2 object.
 \details{
 The function processes drawing data by:
 \itemize{
-  \item Validating required columns and data structure
-  \item Unnesting nested coordinate and stroke data
-  \item Reverting y-coordinates to match plotting conventions
-  \item Scaling brush widths to appropriate sizes
-  \item Handling pen and spray tools differently (spray adds jitter)
-  \item Creating faceted plots for multiple drawings
+\item Validating required columns and data structure
+\item Unnesting nested coordinate and stroke data
+\item Reverting y-coordinates to match plotting conventions
+\item Scaling brush widths to appropriate sizes
+\item Handling pen and spray tools differently (spray adds jitter)
+\item Creating faceted plots for multiple drawings
 }
 
 For spray tool data, the function recreates the spray effect by adding

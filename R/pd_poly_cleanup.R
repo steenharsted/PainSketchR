@@ -1,11 +1,10 @@
-#' Clean pain drawings for duplicates, no-area polygons, etc
-#'
-#' Pain drawings are subject to whatever input users have seen fit to add. This may include
-#' markings or 'stroke' like isolated points and two-point lines, which have no area. 
-#' Users may also draw highly complicated markings/strokes which self-intersect.
+#' Clean pain drawings for self-intersections and no-area polygons.
 #' 
-#' @param pd A valid pain drawing data structure -- see [pd_check] for more detail.
-#' @param minarea A numeric value representing the minimum value of polygon areas to retain
+#' The function `pd_poly_cleanup()` removes self-intersections from pain drawing polygons. 
+#' It also identifies _no-area_ polygons, i.e. single points and two-point lines,
+#' which have no area -- these can be either deleted or buffered into squares with areas.
+#' 
+#' @param pd A valid pain drawing data structure -- see [pd_check_data] for more detail.
 #' @param noarea_action A string specifying how to manage polygons with no area (points and lines) -- accepted values: "drop" and "buffer"
 #' @param delta A numeric value representing the buffering zone -- only relevant if noarea is set to "buffer"
 #'
@@ -13,30 +12,9 @@
 #'
 #' @export
 #' @examples
-#' pd_poly_cleanup(pd_demo_data[1,])
+#' pd_demo_data |> rowwise() |> pd_poly_cleanup()
 #' 
-pd_multipoly_cleanup <- function(pd, noarea_action="buffer", delta=1, parallel=FALSE) {
-  # This function will take a pd data structure and for each
-  # individual pain drawing clean up no-area polygons, self-intersection, etc.
-
-  # Check that pd is a valid pain drawing
-  # ...to be done
-
-  # Recursive self-calling in case pd is more than a single row (pain drawing):
-  if(nrow(pd)>1) {
-    pd <- pd |> 
-      dplyr::rowwise() |>
-      dplyr::group_modify(\(r,i) {pd_poly_cleanup(r)}) 
-    return(dplyr::ungroup(pd))
-  }
-
-  # This only reached, if pd is a single row
-  pd <- pd_poly_cleanup(pd)
-
-  return(pd)
-}
-
-pd_poly_cleanup <- function(pd1, noarea_action="buffer", delta=1, parallel=FALSE) {
+pd_poly_cleanup <- function(pd1, noarea_action="buffer", delta=1) {
   # pd is assumed to be a valid pd data structure -- a tibble with cols id, i, x, y
   # Run data sanity check ? ... to be completed
   # delta is the value (px) we want to add as buffer around points and lines with no area

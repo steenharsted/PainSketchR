@@ -8,7 +8,7 @@
 #' * "adoptA" will retain the first of the markings unchanged, and subtract the overlap from the second marking -- not currently implemented!
 #' * "adoptB" will retain the second of the markings unchanged, and subtract the overlap from the first marking -- not currently implemented!
 #'
-#' @param pd A valid pain drawing data structure -- see [pd_check] for details.
+#' @param pd A valid pain drawing data structure -- see [pd_check_data] for details.
 #' @param method A string -- eigher "merge", "split", "adoptA" or "adoptB" -- currently only "merge" is implemented
 #'
 #' @returns A valid pain drawing data structure
@@ -17,27 +17,6 @@
 #' @examples
 #' pd_poly_cleanup(pd_demo_data[1,], delta=20) |> pd_poly_manage_overlaps()
 #' 
-pd_multipoly_manage_overlaps <- function(pd, method="merge") {
-  # This function will take a pd data structure and for each
-  # individual pain drawing merge strokes.
-
-  # Check that pd is a valid pain drawing
-  # ...to be done
-
-  # Recursive self-calling in case pd is more than a single row (pain drawing):
-  if(nrow(pd)>1) {
-    pd <- pd |> 
-      dplyr::rowwise() |>
-      dplyr::group_modify(\(r,i) {pd_poly_manage_overlaps(r)}) 
-    return(dplyr::ungroup(pd))
-  }
-
-  # This is only reached if pd is a single row
-  pd <- pd_poly_manage_overlaps(pd)
-
-  return(pd)
-}
-
 pd_poly_manage_overlaps <- function(pd1, method="merge") {
   # This function takes a single row pain drawing (pd1) and manages any overlapping strokes
 

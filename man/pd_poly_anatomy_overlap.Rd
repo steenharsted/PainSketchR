@@ -7,9 +7,9 @@
 pd_poly_anatomy_overlap(pd, ar)
 }
 \arguments{
-\item{pd}{A valid pain drawing data structure -- see [pd_check] for more detail.}
+\item{pd}{A valid pain drawing data structure -- see \link{pd_check_data} for more detail.}
 
-\item{template}{A valid pain drawing data structure -- see [pd_check] for more detail.}
+\item{template}{A valid pain drawing data structure -- see \link{pd_check_data} for more detail.}
 }
 \value{
 A valid pain drawing data structure

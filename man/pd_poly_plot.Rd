@@ -13,7 +13,7 @@ pd_poly_plot(
 )
 }
 \arguments{
-\item{pd}{A valid pain drawing data structure -- see [pd_check] for more detail.}
+\item{pd}{A valid pain drawing data structure -- see \link{pd_check_data} for more detail.}
 }
 \value{
 A ggplot2 plot

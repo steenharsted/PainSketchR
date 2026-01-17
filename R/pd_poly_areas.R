@@ -2,7 +2,7 @@
 #'
 #' Calculate the area of each marking/stroke as a closed polygon and add the result to the 'strokes' element, before adding the cumulated area for each pain drawing to the 'drawings' element.
 #' 
-#' @param pd A valid pain drawing data structure -- see [pd_check] for more detail.
+#' @param pd A valid pain drawing data structure -- see [pd_check_data] for more detail.
 #'
 #' @returns A valid pain drawing data structure with added area data ('drawings' and 'strokes')
 #'
@@ -10,30 +10,6 @@
 #' @examples
 #' overlap <- pd_poly_anatomy_overlap(pd_demo_data[1,], pd_Back_right_leg)
 #' pd_poly_areas(overlap)#' 
-pd_multipoly_area <- function(pd) {
-  # This function will take a pd data structure and for each
-  # individual pain drawing calculates the area for each strokes
-  # and for each drawing in total
-  # This is returned as a new column in the pd data frame
-
-  # Check that pd is a valid pain drawing
-  # ...to be done
-
-  # Recursive self-calling in case pd is more than a single row (pain drawing):
-  if(nrow(pd)>1) {
-    pd |> 
-      dplyr::rowwise() |>
-      group_modify(\(r,i) {pd_poly_areas(r)}) |>
-      dplyr::ungroup()
-    return(pd)
-  }
-
-  # This only reached, if pd is a single row
-  pd <- pd_poly_areas(pd)
-
-  return(pd)
-}
-
 pd_poly_areas <- function(pd1) {
   # Calculate the area of strokes/polygons
 
