@@ -12,50 +12,54 @@
 #'
 #' @export
 #' @examples
-#' pd_demo_data |> rowwise() |> pd_poly_cleanup()
+#' pd_demo_data <- pd_demo_data |> mutate(p=pd_poly_cleanup(p))
 #' 
-pd_poly_cleanup <- function(pd1, noarea_action="buffer", delta=1) {
-  # pd is assumed to be a valid pd data structure -- a tibble with cols id, i, x, y
-  # Run data sanity check ? ... to be completed
-  # delta is the value (px) we want to add as buffer around points and lines with no area
+pd_poly_cleanup <- function(p, noarea_action="buffer", delta=5) {
+  # This function takes a single p column from a valid pain drawing data set
+  # which must be a list of dataframes of x,y and i (all int)
 
-  if (nrow(pd1)>1) { warning("Function `pd_poly_cleanup` expects a pain drawing data frame with only 1 row -- did you want `pd_multipoly_cleanup()`?");return(NA)}
-
-  points <- pd1$p[[1]] |> dplyr::group_by(i)
-  strokes <- pd1$s[[1]] |> dplyr::group_by(i)
-
-  if(noarea_action=="drop") {
-    # Drop the strokes without changing stroke numbering (i)
-    rows_to_drop <- points |> dplyr::filter(dplyr::n()<3) |> dplyr::pull(i)
-    strokes <- strokes |> dplyr::filter(!i %in% dplyr::all_of(rows_to_drop))
-    points <- points |> dplyr::filter(!i %in% dplyr::all_of(rows_to_drop))
-  }
-
-  if (noarea_action=="buffer") {
-    # Buffer the strokes without changing stroke numbering (i)
-    points <- points |> # Already grouped by i
-      dplyr::group_modify(\(stroke_coordinates, grp_vars) {
-        # For each stroke, check whether it is a point, a line or 3+ vertex polygon
-        if (nrow(stroke_coordinates)==1) {
-          # It's a point - replace the point with four points
-          dplyr::tibble(x=stroke_coordinates[[1,'x']] + c(-delta,delta,delta,-delta), y=stroke_coordinates[[1,'y']] + c(-delta,-delta,delta,delta))
-        } else if (nrow(stroke_coordinates)==2) {
-          # It's a line - replace the two points with 
-          polyclip::polylineoffset(list(x=stroke_coordinates$x, y=stroke_coordinates$y), delta=delta, jointype="square", endtype="square") |> purrr::map_dfr(\(x) {x})
-        } else {
-          # It's a 3+ vertex polygon - do nothing
-          stroke_coordinates
+  p <- p |> 
+    purrr::map(\(df, i_df) {
+      if(any(is.na(df) | nrow(df)==0)) {
+        warning("Data contains paindrawings with no strokes/coordinates")
+        tibble::tibble(x=as.integer(), y=as.integer(), i=as.integer()) # exit map iteration
+      } else {
+        if(noarea_action=="drop") {
+          # Drop the strokes from coordinate data, if point or two-points 
+          df |> 
+            dplyr::group_by(i) |> 
+            dplyr::filter(dplyr::n()>2) |>
+            dplyr::ungroup() # exit map iteration
+        } else if(noarea_action=="buffer") {
+          # Buffer the strokes from coordinate data, if a point or two points
+          df |> 
+            dplyr::group_by(i) |>
+            dplyr::group_modify(\(dfgr, i_dfgr) {
+              if(nrow(dfgr)==1) {
+                tibble::tibble(
+                  x=dfgr[[1,'x']] + c(-delta,delta,delta,-delta), 
+                  y=dfgr[[1,'y']] + c(-delta,-delta,delta,delta)) # exit map-in-map iteration
+              } else if (nrow(dfgr)==2) {
+                polyclip::polylineoffset(list(x=dfgr$x, y=dfgr$y), delta=delta, jointype="square", endtype="square") |> 
+                  purrr::map_dfr(\(q) {q}) # exit map-in-map iteration
+              } else {
+                dfgr  # exit map-in-map iteration
+              }
+            })
         }
-      }) 
-  }
+      }
+  }) # purrr:map
 
-  # Deal with self-intersections
-  points <- points |>  # Already grouped by i
-    dplyr::group_modify(\(stroke_coordinates, grp_vars) {
-      polyclip::polysimplify(list(x=stroke_coordinates$x, y=stroke_coordinates$y), filltype="nonzero") |> 
-        purrr::map_dfr(\(x) {x})
-    })
-  pd1$s <- list(dplyr::ungroup(strokes))
-  pd1$p <- list(dplyr::ungroup(points))
-  return(pd1)
+  p <- p |> purrr::map(\(df, i_df) {
+    df |> 
+      dplyr::group_by(i) |>
+      dplyr::group_modify(\(dfgr, i_dfgr) {
+        polyclip::polysimplify(list(x=dfgr$x, y=dfgr$y), filltype="nonzero") |> 
+        purrr::map_dfr(\(q) {q}) 
+      }) |> 
+      dplyr::ungroup()
+  }) 
+  
+  p
 }
+

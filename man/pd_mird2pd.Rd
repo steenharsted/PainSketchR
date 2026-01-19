@@ -4,7 +4,14 @@
 \alias{pd_mird2pd}
 \title{Generate a valid paindrawing data structure from a MiRD paindrawing string}
 \usage{
-pd_mird2pd(mird_string, id = "*", flip_y = TRUE)
+pd_mird2pd(mird_string, flip_y = TRUE)
+}
+\arguments{
+\item{flip_y}{-- TRUE (default) or FALSE -- should data be y-axis flipped to correspond to the MiRD pain drawing canvas}
+
+\item{mird}{-- A data frame which must contain columns \code{id} (character) and \code{pd} (character), which represent a unique id and coordinates for each pain drawing.}
+
+\item{simplify}{-- If TRUE function will return a simple data frame. If FALSE (default) will return a valid pain drawing data structure -- see \link{pd_check_data}.}
 }
 \value{
 A valid paindrawing data structure
@@ -13,6 +20,6 @@ A valid paindrawing data structure
 Generate a valid paindrawing data structure from a MiRD paindrawing string
 }
 \examples{
-mird_string <- "(,293,201,300,202,303,202,305,202,308,202,),(,198,104,206,103,203,100,209,108,202,109,)"
-pd_mird2pd(mird_string, id="New id", flip_y=TRUE)
+pd_df <- tibble::tibble(id=c("A", "B", "C"), mird_string = c(NA, "(,293,201,300,202,303,202,305,202,308,202,),(,198,104,206,103,203,100,209,108,202,109,)", "(,335,215,336,215,),(,331,211,331,212,331,213,331,214,),(,341,263,),(,341,272,),(,341,287,)"))
+pd_df <- pd_df |> dplyr::mutate(p = pd_mird2pd(mird_string, flip_y=TRUE))
 }

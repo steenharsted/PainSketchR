@@ -6,9 +6,8 @@
 #'
 #' @returns A dataframe of polygon definitions. Column `i` is an identifier <int> of the polygons. Columns `x` and `y` are coordinates.
 #'
-#' @export
 #' @examples
-#' 
+#' pd_poly_clip(a,b,op="intersection")
 #' 
 pd_poly_clip <- function(A, B, operation="intersection") {
   # A and B should be dataframes which contain two columns x and y

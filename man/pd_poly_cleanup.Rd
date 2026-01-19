@@ -4,7 +4,7 @@
 \alias{pd_poly_cleanup}
 \title{Clean pain drawings for self-intersections and no-area polygons.}
 \usage{
-pd_poly_cleanup(pd1, noarea_action = "buffer", delta = 1)
+pd_poly_cleanup(p, noarea_action = "buffer", delta = 5)
 }
 \arguments{
 \item{noarea_action}{A string specifying how to manage polygons with no area (points and lines) -- accepted values: "drop" and "buffer"}
@@ -22,6 +22,6 @@ It also identifies \emph{no-area} polygons, i.e. single points and two-point lin
 which have no area -- these can be either deleted or buffered into squares with areas.
 }
 \examples{
-pd_demo_data |> rowwise() |> pd_poly_cleanup()
+pd_demo_data <- pd_demo_data |> mutate(p=pd_poly_cleanup(p))
 
 }
