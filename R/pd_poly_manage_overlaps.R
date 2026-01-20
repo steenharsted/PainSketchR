@@ -65,7 +65,8 @@ loop_pairwise <- function(df, method="merge") {
       ###########################################################################
 
 
-      # The poly clip function employes a cheap bounding box check -- so we dont need to with that
+      # The poly clip function employes a cheap bounding box check -- so we dont need to
+      # The following will return a list of x and y polygon coordinates (one for each intersection)
       intersection <- pd_poly_clip(a, b, op = "intersection") 
       they_overlap <- !purrr::is_empty(intersection) # TRUE or FALSE
       
@@ -93,7 +94,7 @@ loop_pairwise <- function(df, method="merge") {
   }
 }
 
-   
+
   
   # # Sanity check
   # # Check it is a pain drawing data structure 
