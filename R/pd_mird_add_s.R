@@ -12,11 +12,12 @@
 pd_mird_add_s <- function(p) {
   # p should be a list of tibbles (of x,y,i)
   # This function should be vectorized and return a list of the same length, of data frames
-  result <- p |> purrr::map(\(df, i) {    
-    # Check sanity of each points data frame
-    #dplyr::distinct(df$i)
-    tibble::tibble(i=unique(df$i))
-
+  p |> purrr::map(\(df, i) {    
+    # Check sanity of each points data frame?
+    if(!tibble::is_tibble(df)) {
+      NA
+    } else {
+      tibble::tibble(i=unique(df$i))
+    }
   })
-  return(result)
 }

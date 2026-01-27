@@ -22,15 +22,13 @@ pd_poly_manage_overlaps <- function(p, method="merge") {
 
   p <- p |> # p is a list of data frames (of x,y,i)
     purrr::map(\(df, i_df) {
-      if(any(is.na(df) | nrow(df)==0)) {
-        # Empty data frame
-        warning("Data contains paindrawings with no strokes/coordinates")
-        tibble::tibble(x=as.integer(), y=as.integer(), i=as.integer()) # exit map iteration
+      if(!tibble::is_tibble(df)) {
+        NA
       } else {
         # We have coordinates in the data frame, but how many strokes        
         if (length(unique(df$i))<2) {
           # There is only a single stroke in data frame - thus no overlaps
-          df # just stick with current data frame
+          df # ..so just stick with current data frame
         } else {
           # There are multiple strokes in data frame - check for overlaps in external function          
           loop_pairwise(df, method) # Handle the overlaps pairwise
@@ -45,7 +43,7 @@ loop_pairwise <- function(df, method="merge") {
   p1 <- 1 # pointer 1
   p2 <- 2 # pointer 2
 
-  # These loops will iterate each combination of pairs of strokes for overlap - mergeing as we go
+  # These loops will iterate each combination of pairs of strokes for overlap - merging as we go
   # The order of the strokes is not important, thus the runtime will be O(½n²-½n) which
   # is half of the nxn matrix. We can represent these stroke combinations with a single
   # vector of n elements if we use two pointers to iterate the vector - we will simply id
@@ -58,12 +56,6 @@ loop_pairwise <- function(df, method="merge") {
       
       a <- df |> dplyr::filter(i==i_strokes[p1])
       b <- df |> dplyr::filter(i==i_strokes[p2])
-      
-      ###########################################################################
-      ## THIS IS WHERE I AM ... WILL ONE POLYGON WHICH IS ENTIRELY WITHIN      ##
-      ## ANOTHER POLYGON REGISTER AS AN INTERSECTION AND/OR UNION ?            ##
-      ###########################################################################
-
 
       # The poly clip function employes a cheap bounding box check -- so we dont need to
       # The following will return a list of x and y polygon coordinates (one for each intersection)
@@ -75,12 +67,15 @@ loop_pairwise <- function(df, method="merge") {
           # Replace p1 by the union of p1 and p2, delete p2, reset length of df points and reset p2=p1+1
           merge_result <- pd_poly_clip(a, b, op = "union") |> dplyr::filter(i==1) # If the merge returns more than 1 polygon, they represent holes
           df <- df |>
-            dplyr::filter(i != i_strokes[p1] & i!= i_strokes[p2]) |> # Remove p1 and p2 from pd1 points data frame
+            dplyr::filter(i != i_strokes[p1] & i != i_strokes[p2]) |> # Remove p1 and p2 from pd1 points data frame
             dplyr::bind_rows(dplyr::tibble(i=i_strokes[p1], x=merge_result$x, y=merge_result$y)) # Add the merge result as p1 in the pd1 points data frame
           # NOTE! We retain the details from $s for the first polygon stroke_i[p1] and delete stroke_i[p2] -- they may well differ in e.g.width, color, etc
           i_strokes <- i_strokes[-p2] # Remove p2 from vector of stroke indices we are iterating          
           n_strokes <- n_strokes-1
           p2 <- p1+1
+        } else {
+          df # Method is not merge -- not yet implemented ...
+        }
       } else { 
         # if the do not overlap
         p2 <- p2+1
@@ -91,8 +86,8 @@ loop_pairwise <- function(df, method="merge") {
   } # end of out loop (p1)
     
     return(df)
-  }
 }
+
 
 
   

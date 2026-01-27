@@ -2,20 +2,25 @@
 % Please edit documentation in R/pd_poly_areas.R
 \name{pd_poly_areas}
 \alias{pd_poly_areas}
-\title{Calculate marking/stroke areas for pain drawings}
+\title{Calculate area of marking/stroke for pain drawings}
 \usage{
-pd_poly_areas(pd1)
+pd_poly_areas(p, by = "drawings")
 }
 \arguments{
-\item{pd}{A valid pain drawing data structure -- see \link{pd_check_data} for more detail.}
+\item{p}{A list of tibbles of i,x and y columns (as integers) -- see \link{pd_check_data} for more detail.}
+
+\item{by}{A string of either 'strokes', 'drawings' or 'both'.}
 }
 \value{
-A valid pain drawing data structure with added area data ('drawings' and 'strokes')
+If \code{by} is "strokes", the function will return a list of tibbles of stroke areas (as integers) -- one list element (tibble) for each row in \code{p}.
+If \code{by} is "drawings", the function returns a vector of collated drawing areas (as integers) of the same length as \code{p}.
+If \code{by} is "both", it resutns a named list of both.
 }
 \description{
-Calculate the area of each marking/stroke as a closed polygon and add the result to the 'strokes' element, before adding the cumulated area for each pain drawing to the 'drawings' element.
+Calculate the area of each marking/stroke as a closed polygon. Either on a per-stroke basis, per-drawing basis or both.
 }
 \examples{
-overlap <- pd_poly_anatomy_overlap(pd_demo_data[1,], pd_Back_right_leg)
-pd_poly_areas(overlap)#' 
+overlap <- pd_poly_anatomy_overlap(pd_demo_data[1:3,], pd_Back_right_leg)
+pd_poly_areas(overlap, by="both")
+ 
 }

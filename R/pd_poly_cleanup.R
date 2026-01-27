@@ -16,13 +16,13 @@
 #' 
 pd_poly_cleanup <- function(p, noarea_action="buffer", delta=5) {
   # This function takes a single p column from a valid pain drawing data set
-  # which must be a list of dataframes of x,y and i (all int)
+  # p: a list of tibbles of i,x,y
 
+  delta <- as.integer(round(delta))
   p <- p |> 
     purrr::map(\(df, i_df) {
-      if(any(is.na(df) | nrow(df)==0)) {
-        warning("Data contains paindrawings with no strokes/coordinates")
-        tibble::tibble(x=as.integer(), y=as.integer(), i=as.integer()) # exit map iteration
+      if(!tibble::is_tibble(df) || nrow(df)==0) {
+        NA 
       } else {
         if(noarea_action=="drop") {
           # Drop the strokes from coordinate data, if point or two-points 
@@ -37,27 +37,37 @@ pd_poly_cleanup <- function(p, noarea_action="buffer", delta=5) {
             dplyr::group_modify(\(dfgr, i_dfgr) {
               if(nrow(dfgr)==1) {
                 tibble::tibble(
-                  x=dfgr[[1,'x']] + c(-delta,delta,delta,-delta), 
-                  y=dfgr[[1,'y']] + c(-delta,-delta,delta,delta)) # exit map-in-map iteration
+                  x=as.integer(round(dfgr$x + c(-delta,delta,delta,-delta))), 
+                  y=as.integer(round(dfgr$y + c(-delta,-delta,delta,delta)))) # exit map-in-map iteration
               } else if (nrow(dfgr)==2) {
                 polyclip::polylineoffset(list(x=dfgr$x, y=dfgr$y), delta=delta, jointype="square", endtype="square") |> 
-                  purrr::map_dfr(\(q) {q}) # exit map-in-map iteration
+                  purrr::map_dfr(\(q) {
+                    tibble::tibble(x=as.integer(round(q$x)),
+                                   y=as.integer(round(q$y)))  # exit map-in-map iteration
+                  })
               } else {
                 dfgr  # exit map-in-map iteration
               }
-            })
+            }) |>
+            dplyr::ungroup()
         }
       }
   }) # purrr:map
 
   p <- p |> purrr::map(\(df, i_df) {
-    df |> 
-      dplyr::group_by(i) |>
-      dplyr::group_modify(\(dfgr, i_dfgr) {
-        polyclip::polysimplify(list(x=dfgr$x, y=dfgr$y), filltype="nonzero") |> 
-        purrr::map_dfr(\(q) {q}) 
-      }) |> 
-      dplyr::ungroup()
+    if(!tibble::is_tibble(df)) {
+      NA
+    } else {
+      df |> 
+        dplyr::group_by(i) |>
+        dplyr::group_modify(\(dfgr, i_dfgr) {
+          polyclip::polysimplify(list(x=dfgr$x, y=dfgr$y), filltype="nonzero") |> 
+          purrr::map_dfr(\(q) {
+            tibble::tibble(x=as.integer(round(q$x)), 
+                           y=as.integer(round(q$y)))})
+        }) |> 
+        dplyr::ungroup()
+    }
   }) 
   
   p

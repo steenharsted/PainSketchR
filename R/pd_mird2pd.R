@@ -31,7 +31,8 @@ pd_mird2pd <- function(mird_string, flip_y=TRUE) {
       points # End map iteration here
     } else {
       #warning("Empty mird string detected.")
-      tibble::tibble(x=as.integer(), y=as.integer(), i=as.integer()) # End map iteration here
+      NA
+      #tibble::tibble(x=as.integer(), y=as.integer(), i=as.integer()) # End map iteration here
     }
   })
   return(result)

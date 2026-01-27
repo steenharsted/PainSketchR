@@ -16,11 +16,11 @@ TRUE or FALSE. The function will also provide output to stderr pertaining to any
 A pain drawing data structure must comply with certain criteria -- see Details below.
 }
 \details{
-This function will check whether an R object fulfills those criteria and provide some feedback.
+This function will check whether an R object fulfills the following criteria and provide some feedback.
 
 For an R object to be a valid pain drawing data object:
 \itemize{
-\item must be a tibble
+\item must be a tibble where each row represents a pain drawing
 \item it must have three named columns: \code{id}, \code{s}, and \code{p} -- users are free to add additional columns.
 \item the column \code{id} must be of type character
 \item the columns \code{s} and \code{p} must be list columns where each element (corresponding to each row):
@@ -31,7 +31,7 @@ For an R object to be a valid pain drawing data object:
 }
 }
 
-The \code{id} column of the data object must represent a unique identifier for the pain drawing.
+The \code{id} column of the data object must represent a unique identifier for each pain drawing.
 
 The \code{i} column in each of the \code{s} tibbles must represent an index number for each stroke or marking, in that pain drawing. Thus, the \code{s} tibbles should contain exactly one row for each stroke/marking with a unique \code{i}.
 
@@ -43,7 +43,8 @@ Users may store any other data in the data structure as relevant. Any informatio
 Any information pertaining to the individual stroke/marking (e.g. colour or thickness) should be stored as columns in the tibbles in the \code{s} list column. Similarly, in the unlikely event, that any information needs to be stored pertaining to each coordinate pair, it should be store as columns in the \code{p} list column tibbles.
 }
 \examples{
-pd_check_data(pd_demo_data)
+pd_check_data(pd_demo_data) # Will return TRUE
 
-pd_check_data(letter[1:10])
+pd_check_data(letter[1:10]) # Will return FALSE and provide details in stderr
+
 }

@@ -2,13 +2,13 @@
 #'
 #' A pain drawing data structure must comply with certain criteria -- see Details below.
 #' 
-#' This function will check whether an R object fulfills those criteria and provide some feedback.
-#' 
 #' @details
+#' 
+#' This function will check whether an R object fulfills the following criteria and provide some feedback.
 #' 
 #' For an R object to be a valid pain drawing data object:
 #' 
-#' * must be a tibble
+#' * must be a tibble where each row represents a pain drawing
 #' * it must have three named columns: `id`, `s`, and `p` -- users are free to add additional columns.
 #' * the column `id` must be of type character
 #' * the columns `s` and `p` must be list columns where each element (corresponding to each row):
@@ -16,7 +16,7 @@
 #'     - the `s` tibbles must contain a col `i` of type integer
 #'     - the `p` tibble must contain cols `i`, `x` and `y` of types integer
 #' 
-#' The `id` column of the data object must represent a unique identifier for the pain drawing.
+#' The `id` column of the data object must represent a unique identifier for each pain drawing.
 #' 
 #' The `i` column in each of the `s` tibbles must represent an index number for each stroke or marking, in that pain drawing. Thus, the `s` tibbles should contain exactly one row for each stroke/marking with a unique `i`.
 #' 
@@ -33,9 +33,10 @@
 #'
 #' @export
 #' @examples
-#' pd_check_data(pd_demo_data)
+#' pd_check_data(pd_demo_data) # Will return TRUE
 #' 
-#' pd_check_data(letter[1:10])
+#' pd_check_data(letter[1:10]) # Will return FALSE and provide details in stderr
+#' 
 pd_check_data <- function(d) {
   ok <- TRUE
   if(tibble::is_tibble(d)) {

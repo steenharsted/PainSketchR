@@ -4,7 +4,7 @@
 \alias{pd_poly_manage_overlaps}
 \title{Manage overlapping markings in pain drawings}
 \usage{
-pd_poly_manage_overlaps(pd1, method = "merge")
+pd_poly_manage_overlaps(p, method = "merge")
 }
 \arguments{
 \item{method}{A string -- eigher "merge", "split", "adoptA" or "adoptB" -- currently only "merge" is implemented}

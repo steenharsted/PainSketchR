@@ -2,21 +2,28 @@
 % Please edit documentation in R/pd_poly_anatomy_overlap.R
 \name{pd_poly_anatomy_overlap}
 \alias{pd_poly_anatomy_overlap}
-\title{Subset pain drawings to the template outline}
+\title{Subset pain drawings to intersection with an anatomical region}
 \usage{
-pd_poly_anatomy_overlap(pd, ar)
+pd_poly_anatomy_overlap(p, anatomy_pd, anatomy_id = "Not specified")
 }
 \arguments{
+\item{anatomy_pd}{A valid pain drawing data structure -- see \link{pd_check_data} for more detail.}
+
+\item{anatomy_id}{A unique id from the anatomy_pd}
+
 \item{pd}{A valid pain drawing data structure -- see \link{pd_check_data} for more detail.}
 
-\item{template}{A valid pain drawing data structure -- see \link{pd_check_data} for more detail.}
+\item{c}{The column of pd which holds stroke/polygon coordinates}
 }
 \value{
 A valid pain drawing data structure
 }
 \description{
-To be completed
+This function ...
 }
 \examples{
-pd_poly_anatomy_overlap(pd_demo_data[1,], pd_Back_right_leg)
+pd_poly_anatomy_overlap(pd_demo_data, p, pd_demo_anatomy,  "Back_right_calf")
+
+
+
 }
