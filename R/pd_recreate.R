@@ -156,8 +156,6 @@ pd_recreate_drawing <- function(
 
   pd <- dplyr::full_join(pd_s, pd_p, by = dplyr::join_by(id, i))
 
-  # Revert y coords
-  pd <- pd |> dplyr::mutate(y = image_height - y)
 
   # map bw to size in mm using scale_bw funtion
 

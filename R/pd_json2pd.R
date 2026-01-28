@@ -42,9 +42,13 @@ pd_json2pd <- function(f_name) {
   # Build the result in three stages:
   # Make results a tibble with `f` as the file name and all the content of the json data structure, except `s`
   result <- tibble::tibble(f=f_name, content |> purrr::discard_at("s")  |> purrr::map_dfr(\(x) {x}))
+  maxy <- result$h # This is to flip the y-axis values in result$p
   # First add a column onto the result tibble, which contains a list (length=1) of a data frame of `i,x,y`
-  result$p <- content$s$p |> purrr::imap_dfr(\(q,i) {tibble::tibble(i,x=q[,1],y=q[,2])}) |> list()
+  result$p <- content$s$p |> purrr::imap_dfr(\(q,i) {tibble::tibble(i,x=q[,1],y=max-q[,2])}) |> list()
   # Then add a column onto the result, which is a list (legnth=1) of a data frame with stroke info
   result$s <- content$s |> dplyr::select(-p) |> list()
+
+  
+
   return(result)
 }

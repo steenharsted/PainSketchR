@@ -50,34 +50,42 @@ loop_pairwise <- function(df, method="merge") {
   # the strokes by their index in the list-of-strokes (los) list
   
   while (p1 < n_strokes) { # Loop all polygons as the first polygon in pairwise comparison
-    while (p2 <=n_strokes) { # Loop remaining polygons as the second polygon in pairwise comparison
-      # Do we need to check length of strokes (number of coordinates) and decide what
-      # to do with lengths of 0, 1 and 2. ?
-      
-      a <- df |> dplyr::filter(i==i_strokes[p1])
-      b <- df |> dplyr::filter(i==i_strokes[p2])
+    while (p2 <= n_strokes) { # ..for each, loop remaining polygons as the second polygon in pairwise comparison
+      print(
+        paste0(
+          "There are ",n_strokes," strokes. P1 is ",p1," and points to ", i_strokes[p1],". P2 is ",p2," and points to ", i_strokes[p2],". All remaining strokes are: ", paste0(i_strokes, collapse=",")
+        )
+      )
+      a <- df |> dplyr::filter(i==i_strokes[p1]) # coordinates of first polygon
+      b <- df |> dplyr::filter(i==i_strokes[p2]) # coordinates of second polygon
 
-      # The poly clip function employes a cheap bounding box check -- so we dont need to
-      # The following will return a list of x and y polygon coordinates (one for each intersection)
+      # The following will return a df of x and y polygon coordinates (one for each intersection)
       intersection <- pd_poly_clip(a, b, op = "intersection") 
-      they_overlap <- !purrr::is_empty(intersection) # TRUE or FALSE
-      
+      they_overlap <- nrow(intersection)>1 # TRUE or FALSE
+      print(
+        paste0(
+          "P1 and P2 overlap: ", they_overlap
+        )
+      )
+
+
       if (they_overlap) {
         if (method=="merge") {
-          # Replace p1 by the union of p1 and p2, delete p2, reset length of df points and reset p2=p1+1
-          merge_result <- pd_poly_clip(a, b, op = "union") |> dplyr::filter(i==1) # If the merge returns more than 1 polygon, they represent holes
+          # Replace p1 by the union of p1 and p2, delete p2, reset length of strokes and reset p2=p1+1
+          merge_result <- pd_poly_clip(a, b, op = "union") |> 
+            dplyr::filter(i==1) # Use only first polygon, the rest are holes
           df <- df |>
             dplyr::filter(i != i_strokes[p1] & i != i_strokes[p2]) |> # Remove p1 and p2 from pd1 points data frame
             dplyr::bind_rows(dplyr::tibble(i=i_strokes[p1], x=merge_result$x, y=merge_result$y)) # Add the merge result as p1 in the pd1 points data frame
-          # NOTE! We retain the details from $s for the first polygon stroke_i[p1] and delete stroke_i[p2] -- they may well differ in e.g.width, color, etc
+          print(paste0("Merged stroke ", i_strokes[p1] ," and ", i_strokes[p2] ," with ",nrow(a), " and ",nrow(b), " points respectively into a new strokes with ",df|>dplyr::filter(i==i_strokes[p1])|>nrow()," points"))
           i_strokes <- i_strokes[-p2] # Remove p2 from vector of stroke indices we are iterating          
           n_strokes <- n_strokes-1
           p2 <- p1+1
         } else {
-          df # Method is not merge -- not yet implemented ...
+          # The method is not 'merge', but something else (e.g. split) -- not yet implemented
         }
       } else { 
-        # if the do not overlap
+        # if the do not overlap just move to the next stroke polygon
         p2 <- p2+1
       }
     } # end of inner loop (p2)
