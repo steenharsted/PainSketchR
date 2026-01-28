@@ -51,22 +51,22 @@ loop_pairwise <- function(df, method="merge") {
   
   while (p1 < n_strokes) { # Loop all polygons as the first polygon in pairwise comparison
     while (p2 <= n_strokes) { # ..for each, loop remaining polygons as the second polygon in pairwise comparison
-      print(
-        paste0(
-          "There are ",n_strokes," strokes. P1 is ",p1," and points to ", i_strokes[p1],". P2 is ",p2," and points to ", i_strokes[p2],". All remaining strokes are: ", paste0(i_strokes, collapse=",")
-        )
-      )
+      # print(
+      #   paste0(
+      #     "There are ",n_strokes," strokes. P1 is ",p1," and points to ", i_strokes[p1],". P2 is ",p2," and points to ", i_strokes[p2],". All remaining strokes are: ", paste0(i_strokes, collapse=",")
+      #   )
+      # )
       a <- df |> dplyr::filter(i==i_strokes[p1]) # coordinates of first polygon
       b <- df |> dplyr::filter(i==i_strokes[p2]) # coordinates of second polygon
 
       # The following will return a df of x and y polygon coordinates (one for each intersection)
       intersection <- pd_poly_clip(a, b, op = "intersection") 
       they_overlap <- nrow(intersection)>1 # TRUE or FALSE
-      print(
-        paste0(
-          "P1 and P2 overlap: ", they_overlap
-        )
-      )
+      # print(
+      #   paste0(
+      #     "P1 and P2 overlap: ", they_overlap
+      #   )
+      # )
 
 
       if (they_overlap) {
@@ -77,7 +77,7 @@ loop_pairwise <- function(df, method="merge") {
           df <- df |>
             dplyr::filter(i != i_strokes[p1] & i != i_strokes[p2]) |> # Remove p1 and p2 from pd1 points data frame
             dplyr::bind_rows(dplyr::tibble(i=i_strokes[p1], x=merge_result$x, y=merge_result$y)) # Add the merge result as p1 in the pd1 points data frame
-          print(paste0("Merged stroke ", i_strokes[p1] ," and ", i_strokes[p2] ," with ",nrow(a), " and ",nrow(b), " points respectively into a new strokes with ",df|>dplyr::filter(i==i_strokes[p1])|>nrow()," points"))
+          # print(paste0("Merged stroke ", i_strokes[p1] ," and ", i_strokes[p2] ," with ",nrow(a), " and ",nrow(b), " points respectively into a new strokes with ",df|>dplyr::filter(i==i_strokes[p1])|>nrow()," points"))
           i_strokes <- i_strokes[-p2] # Remove p2 from vector of stroke indices we are iterating          
           n_strokes <- n_strokes-1
           p2 <- p1+1
