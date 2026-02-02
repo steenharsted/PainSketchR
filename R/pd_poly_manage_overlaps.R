@@ -96,104 +96,37 @@ loop_pairwise <- function(df, method="merge") {
     return(df)
 }
 
-
-
+#' Get estimates of computation complexity (a proxy of execution time) for managing overlaps
+#'
+#' Managing overlaps depends on pair wise comparison of each stroke/marking within a pain drawing. This is computationally intensive at O(n²) -- specifically ½n²-½n 
+#' 
+#' Furthermore, managing overlaps requires looking for polygon overlaps and unions for each pain of strokes/markings. This is computationally intensive at (typically) O(n log n) 
+#' 
+#' Thus, 
+#' 
+#' * a pain drawing with 5 strokes of 20 vertices each, will potentially require 1476 cpu cycles
+#' * a pain drawing with 5 strokes of 50 vertices each, will potentially require 4605 cpu cycles
+#' * a pain drawing with 20 strokes of 20 vertices each, will potentially require 28035 cpu cycles
+#' 
+#' The purpose of this function is to allow users to estimate computatinal complexity for each pain drawing, and take appropriate action.
+#' 
+#' @param p
+#'
+#' @returns
+#'
+#' @export
+#' @examples
+pd_estimate_manage_overlap_time <- function(p) {
   
-  # # Sanity check
-  # # Check it is a pain drawing data structure 
-  # if (nrow(pd1)>1) { warning("Function `pd_poly_manage_overlaps` expects a pain drawing data frame with only 1 row -- did you want `pd_multipoly_manage_overlaps()`?");return(NA)}
-
-  # points <- pd1$p[[1]] # col p is a list of data frames -- pull the first element
-  # strokes <- pd1$s[[1]]# col s is a list of data frames -- pull the first element
-  # i_strokes <- unique(points$i) # Hold the actual identifier of the discrete strokes
-  # n_strokes <- length(i_strokes) # How many of them there are (this may change in the while loop)
-  # p1 <- 1 # pointer 1
-  # p2 <- 2 # pointer 2
-
-  # # If there are not at least two strokes - there can be no overlaps so just return
-  # if (n_strokes<2) {return(pd1)}
-
-  # # This function needs to investigate each combination of pairs of strokes for overlap
-  # # The order of the strokes is not important, thus the runtime will be O(½n²-½n) which
-  # # is half of the nxn matrix. We can represent these stroke combinations with a single
-  # # vector of n elements if we use two pointers to iterate the vector - we will simply id
-  # # the strokes by their index in the list-of-strokes (los) list
-
-  # while (p1 < n_strokes) {
-  #   while (p2 <=n_strokes) {
-  #     # We need to check length of strokes (number of coordinates) and decide what to
-  #     # to do with lengths of 0, 1 and 2. 
-      
-  #     a <- points |> dplyr::filter(i==i_strokes[p1])
-  #     b <- points |> dplyr::filter(i==i_strokes[p2])
-      
-  #     # The poly clip function employes a cheap bounding box check -- so we dont need to with that
-  #     intersection <- pd_poly_clip(a, b, op = "intersection") 
-  #     they_overlap <- !purrr::is_empty(intersection) # TRUE or FALSE
-      
-  #     if (they_overlap) {
-  #       if (method=="merge") {
-  #         # Replace p1 by the union of p1 and p2, delete p2, reset length of points and reset p2=p1+1
-  #         merge_result <- pd_poly_clip(a, b, op = "union") |> dplyr::filter(i==1) # If the merge returns more than 1 polygon, they represent holes
-  #         points <- points |>
-  #           dplyr::filter(i != i_strokes[p1] & i!= i_strokes[p2]) |> # Remove p1 and p2 from pd1 points data frame
-  #           dplyr::bind_rows(dplyr::tibble(i=i_strokes[p1], x=merge_result$x, y=merge_result$y)) # Add the merge result as p1 in the pd1 points data frame
-  #         strokes <- strokes |> dplyr::filter(i != i_strokes[p2]) # Remove p2 from the pd1 strokes data frame
-  #         # NOTE! We retain the details from $s for the first polygon stroke_i[p1] and delete stroke_i[p2] -- they may well differ in e.g.width, color, etc
-  #         i_strokes <- i_strokes[-p2] # Remove p2 from vector of stroke indices we are iterating          
-  #         n_strokes <- n_strokes-1
-  #         p2 <- p1+1
-
-  #       # } else if (method=="split") {
-  #       #   # Replace p1 and p2 by subtracting their overlap, create a new stroke(s) from the overlap, reset length of points and reset p2=p1+1
-  #       #   # split overlaps into separate (typically 3) distinct polygons
-
-  #       #   ###### This needs to be fixed!! When splitting, the non-overlap part of A and/or B may be also be
-  #       #   ###### split into multiple polygons -- consider two bars crossing each other...
-  #       #   minus_resultA <- polyclip::polyclip(A = a, B = b, op = "minus")[[1]]
-  #       #   minus_resultB <- polyclip::polyclip(A = b, B = a, op = "minus")[[1]]
-  #       #   points <- points |>
-  #       #     dplyr::group_by(i) |>
-  #       #     dplyr::group_modify(\(stroke, grp_vars) {
-  #       #       if(grp_vars == strokes_i[p1]) {
-  #       #         tibble(x = minus_resultA$x, y = minus_resultA$y)
-  #       #       } else if (grp_vars == strokes_i[p2]) {
-  #       #         tibble(x = minus_resultB$x, y = minus_resultB$y)
-  #       #       } 
-  #       #     }) |>
-  #       #     dplyr::ungroup()
-  #       #   for(j in intersection) { # There may be more than one distinct overlap area
-  #       #     new_i <- max(strokes_i)+1 # The new stroke should have a unique identifier
-  #       #     points <- bind_rows(points, map_dfr(j, \(z) {z}) |> mutate(i=new_i))
-  #       #     n_strokes <- n_strokes + 1
-  #       #     strokes_i[n_strokes] <- new_i
-  #       #   }
-  #       # } else if (method=="adoptA") {
-  #       #   # Let the overlap become part of polygon A and subtract it from B
-  #       #   # Replace B by subtracting the overlap 
-  #       #   minus_result <- polyclip::polyclip(A = b, B = a, op = "minus")[[1]]
-  #       #   points <- points |>
-  #       #     dplyr::filter(i!= strokes_i[p2]) |>
-  #       #     dplyr::bind_rows(dplyr::tibble(i=strokes_i[p2], x=minus_result$x, y=minus_result$y)) |>
-  #       #     dplyr::arrange(i)
-  #       # } else if (method=="adoptB") {
-  #       #   # Let the overlap become part of polygon B and subtract it from A
-  #       #   # Replace A by subtracting the overlap 
-  #       #   minus_result <- polyclip::polyclip(A = a, B = b, op = "minus")[[1]]
-  #       #   points <- points |>
-  #       #     dplyr::filter(i!= strokes_i[p1]) |>
-  #       #     dplyr::bind_rows(dplyr::tibble(i=strokes_i[p1], x=minus_result$x, y=minus_result$y)) |>
-  #       #     dplyr::arrange(i)
-  #       }
-  #     } else { 
-  #       # if the do not overlap
-  #       p2 <- p2+1
-  #     }
-  #   } # end of inner loop (p2)
-  #   p1 <- p1+1 # Advance p1
-  #   p2 <- p1+1 # Reset p2
-  # } # end of out loop (p1)
+  n_points_in_pd <- p |> purrr::map_int(\(pd_df) {if(tibble::is_tibble(pd_df)) {nrow(pd_df)} else {0}}) # How many points in each pain drawing
+  i <- p |> purrr::map_int(\(pd_df) {if(tibble::is_tibble(pd_df)) {max(pd_df$i)} else {0}}) # How many strokes in each pain drawing
+  n <- ifelse(i>0 , as.integer(round(n_points_in_pd/i)), 0) # What is mean number of points per stroke in each pain drawing
   
-  # pd1$s <- list(strokes)
-  # pd1$p <- list(points)
-  # return(pd1)
+  # The computational complexity of iterating all i strokes in a pain drawing, where the mean number of points in each stroke is n, is:
+  # ½i²-½i * 2n*log(2n) -- the first part being from all combinations of strokes and the second part from identifying intersections
+  
+  o <- ((0.5*(i^2))-(0.5*i)) * 2*n*log(2*n)
+  o[which(is.na(o))] <- 0
+  
+  return(o)
+}
