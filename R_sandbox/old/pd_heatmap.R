@@ -121,6 +121,7 @@ pd_create_heatmap <- function(
   color_scale = "max",
   label_format = "pct",
   show_n = TRUE,
+  strips_in_markdown = TRUE,
   save_plot = FALSE,
   filename = "heatmap_%03d.png",
   scale = 1.5,
@@ -300,6 +301,7 @@ pd_create_heatmap <- function(
 
   plot_out <- create_heatmap_plot(
     density_data = density_data,
+    variables = variables,
     background_image = background_image,
     image_width = image_width,
     image_height = image_height,
@@ -308,6 +310,7 @@ pd_create_heatmap <- function(
     min_alpha = min_alpha,
     color_scale = color_scale,
     show_n = show_n,
+    strips_in_markdown = strips_in_markdown,
     label_format = label_format
   )
 
@@ -599,7 +602,7 @@ calculate_pain_density <- function(.data, group_vars, grid_size, id_col) {
 
   # Calculate density per location per group
   density <- data_binned |>
-    dplyr::summarize(
+    dplyr::mutate(
       n_id_at_location = dplyr::n_distinct(!!rlang::sym(id_col)),
       .by = c(dplyr::all_of(group_vars), x_bin, y_bin)
     ) |>
@@ -616,6 +619,7 @@ calculate_pain_density <- function(.data, group_vars, grid_size, id_col) {
 #' @noRd
 create_heatmap_plot <- function(
   density_data,
+  variables,
   background_image,
   image_width,
   image_height,
@@ -624,7 +628,8 @@ create_heatmap_plot <- function(
   min_alpha,
   color_scale,
   show_n,
-  label_format
+  label_format,
+  strips_in_markdown
 ) {
   # Determine color scale limits
   if (is.character(color_scale)) {
@@ -640,7 +645,7 @@ create_heatmap_plot <- function(
   }
 
   # Build base plot
-  p <- ggplot2::ggplot(density_data, ggplot2::aes(x = x_bin, y = y_bin))
+  p <- ggplot2::ggplot(density_data, ggplot2::aes(x = x, y = y))
 
   # Add background image if provided
   if (!is.null(background_image)) {
@@ -666,7 +671,11 @@ create_heatmap_plot <- function(
       height = point_size,
       size = point_size
     ) +
-    ggplot2::scale_alpha_continuous(range = c(min_alpha, 1), guide = "none")
+
+    # Scale Alpha
+
+    #ggplot2::scale_alpha_continuous(range = c(min_alpha, 1), guide = "none")
+    ggplot2::scale_alpha_identity()
 
   # Add color scale
   if (is.null(scale_limits)) {
@@ -674,7 +683,10 @@ create_heatmap_plot <- function(
     p <- p +
       ggplot2::scale_colour_viridis_c(
         option = "plasma",
-        name = "Density"
+        direction = -1,
+        begin = 0,
+        end = 1,
+        labels = scales::percent
       )
   } else {
     # Fixed scale across facets
@@ -682,9 +694,23 @@ create_heatmap_plot <- function(
       ggplot2::scale_colour_viridis_c(
         option = "plasma",
         limits = scale_limits,
-        name = "Density"
+        direction = -1,
+        begin = 0,
+        end = 1,
+        labels = scales::percent
       )
   }
+
+  # Style color bar
+  p <- p +
+    ggplot2::guides(
+      color = ggplot2::guide_colorbar(
+        title = NULL,
+        barheight = 0.5,
+        barwidth = 20,
+        nbin = 50
+      )
+    )
 
   # Add faceting (1 or 2 variables)
   if (n_vars == 1) {
@@ -693,7 +719,9 @@ create_heatmap_plot <- function(
     p <- p +
       ggplot2::facet_grid(
         rows = ggplot2::vars(.VAR1_grp),
-        cols = ggplot2::vars(.VAR2_grp)
+        cols = ggplot2::vars(.VAR2_grp),
+        switch = "y",
+        labeller = ggplot2::label_wrap_gen(width = 15, multi_line = TRUE)
       )
   }
 
@@ -751,8 +779,24 @@ create_heatmap_plot <- function(
 
   # Apply theme
   p <- p +
+    ggplot2::labs(
+      subtitle = paste0(variables[2]),
+      y = paste0(variables[1])
+    ) +
     ggplot2::coord_fixed(xlim = c(0, image_width), ylim = c(0, image_height)) +
-    ggplot2::theme_void()
+    ggplot2::theme_minimal(base_size = 16) +
+    ggplot2::theme(
+      plot.background = ggplot2::element_rect(fill = "white", color = "white"),
+      panel.border = ggplot2::element_blank(),
+      panel.background = ggplot2::element_rect(fill = "white", color = "white"),
+      panel.grid = ggplot2::element_blank(),
+      legend.position = "bottom",
+      axis.text = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_blank(),
+      axis.title.x.top = ggplot2::element_text(hjust = 0.5), # x axis title on top
+      axis.title.x.bottom = ggplot2::element_blank(), # remove x axis title on bottom
+      plot.subtitle = ggtext::element_markdown(hjust = 0.5, vjust = 0.5)
+    )
 
   # Add markdown formatting for strip text if using "both" label format
   if (label_format == "both") {
@@ -766,6 +810,20 @@ create_heatmap_plot <- function(
         "  Install 'ggtext' package for better label formatting with label_format = 'both'"
       )
     }
+  }
+
+  if (strips_in_markdown) {
+    p <- p +
+      ggplot2::theme(
+        strip.text.y.left = ggtext::element_markdown(angle = 45, vjust = 0.5),
+        strip.text.x.top = ggtext::element_markdown(hjust = 0.5)
+      )
+  } else {
+    p <- p +
+      ggplot2::theme(
+        strip.text.y.left = element_text(angle = 0, vjust = 0.5),
+        strip.text.x.top = element_text(hjust = 0.5)
+      )
   }
 
   return(p)
@@ -812,9 +870,9 @@ my_quantile <- function(x, n_groups, txt = "pct") {
     labels <- character(n_groups)
     for (i in seq_len(n_groups)) {
       if (i == 1) {
-        labels[i] <- paste0("< ", pct_upper[i], "%")
+        labels[i] <- paste0("\u003c ", pct_upper[i], "%") # ≤ (less-than-or-equal)
       } else if (i == n_groups) {
-        labels[i] <- paste0(">= ", pct_lower[i], "%")
+        labels[i] <- paste0("\u2265 ", pct_lower[i], "%")
       } else {
         labels[i] <- paste0(pct_lower[i], "-", pct_upper[i], "%")
       }
@@ -841,9 +899,9 @@ my_quantile <- function(x, n_groups, txt = "pct") {
     labels <- character(n_groups)
     for (i in seq_len(n_groups)) {
       pct_part <- if (i == 1) {
-        paste0("< ", pct_upper[i], "%")
+        paste0("\u2264 ", pct_upper[i], "%")
       } else if (i == n_groups) {
-        paste0(">= ", pct_lower[i], "%")
+        paste0("\u2265 ", pct_lower[i], "%")
       } else {
         paste0(pct_lower[i], "-", pct_upper[i], "%")
       }
