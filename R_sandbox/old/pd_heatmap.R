@@ -268,9 +268,17 @@ pd_create_heatmap <- function(
   # ============================================================================
   # STEP 6: Recreate spray if needed
   # ============================================================================
-  if (tools_present %in% "spray") {
+  if ("spray" %in% tools_present) {
     message("Recreating spray effect...")
-    coords_with_groups <- recreate_spray(coords_with_groups)
+    coords_with_groups_spray <- coords_with_groups |> filter(t == "spray")
+    coords_with_groups_spray <- recreate_spray(coords_with_groups_spray)
+
+    # Recombine expanded spray data
+    coords_with_groups <- coords_with_groups |>
+      filter(t != "spray") |>
+      full_join(coords_with_groups_spray)
+
+    rm(coords_with_groups_spray)
   }
 
   # ============================================================================
@@ -554,21 +562,17 @@ balance_groups <- function(.data, group_vars, max_n) {
 #' Recreate Spray Effect by Expanding Spray Points
 #' @noRd
 recreate_spray <- function(.data) {
-  # Spray parameters (same as pd_recreate_drawing)
-  spray_radius <- 20
-  spray_count <- 10
-
   .data |>
     # Create spray points
     dplyr::mutate(
       spray_id = dplyr::row_number(),
-      count = spray_count
+      count = pd
     ) |>
     tidyr::uncount(count) |>
     dplyr::mutate(
       # Add random offset within spray radius
       angle = stats::runif(dplyr::n(), 0, 2 * pi),
-      distance = stats::runif(dplyr::n(), 0, spray_radius),
+      distance = stats::runif(dplyr::n(), 0, pr),
       x = x + distance * cos(angle),
       y = y + distance * sin(angle)
     ) |>
