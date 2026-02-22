@@ -35,25 +35,6 @@ pd <- pd |>
     age = sample(20:100, nrow(pd))
   )
 
-.data <- pd
-id_col <- "id"
-variables <- c("sex", "age")
-n_groups = c(2, 2)
-equal_n = TRUE
-max_n = 1000
-tool = "pen"
-background_image = NULL
-grid_size = 10
-point_size = 0.25
-min_alpha = 0.1
-color_scale = "max"
-label_format = "pct"
-show_n = TRUE
-save_plot = FALSE
-filename = "heatmap_%03d.png"
-scale = 1.5
-width = NA
-height = NA
 
 pd |>
   pd_create_heatmap(

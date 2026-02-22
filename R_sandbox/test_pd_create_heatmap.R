@@ -1,0 +1,75 @@
+library(tidyverse)
+library(devtools)
+
+load_all()
+
+load("data/pd_demo_data.rda")
+background_image <- png::readPNG("inst/extdata/mird_body_background.png")
+
+demo <- pd_demo_data |>
+
+  # Give width and Height
+  mutate(
+    w = 450,
+    h = 500
+  ) |>
+
+  filter(row_number() != 1) |>
+  mutate(
+    cat_1 = sample(c("Mouse", "Cat", "Dog"), n(), replace = TRUE),
+    cat_2 = sample(c("Cocaine", "Heroin"), n(), replace = TRUE),
+    quant_1 = map_dbl(
+      .x = p,
+      .f = function(tbl) {
+        nrow(tbl)
+      }
+    ),
+    quant_2 = sample(1:10, n(), replace = TRUE)
+  )
+
+
+# Test pd_create_heatmap
+
+demo |>
+  pd_create_heatmap(
+    variables = c("cat_1", "cat_2"),
+    n_groups = c(4, 2),
+    background_image = background_image
+  )
+
+
+demo |>
+  pd_create_heatmap(
+    variables = c("quant_1", "cat_2"),
+    n_groups = c(4, 2),
+    background_image = background_image,
+    label_format = "both"
+  )
+
+
+demo |>
+  pd_create_heatmap(
+    variables = c("quant_2", "quant_1"),
+    n_groups = c(2, 4),
+    background_image = background_image,
+    label_format = "both",
+    equal_n = FALSE,
+    grid_size = 10
+  )
+
+
+# Test one var
+# Not super happy with this :/
+demo |>
+  pd_create_heatmap(
+    variables = c("cat_1"),
+    n_groups = c(3),
+    background_image = background_image
+  )
+
+demo |>
+  pd_create_heatmap(
+    variables = c("quant_1"),
+    n_groups = c(4),
+    background_image = background_image
+  )
