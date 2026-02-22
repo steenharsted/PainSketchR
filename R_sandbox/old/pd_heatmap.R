@@ -40,15 +40,11 @@
 #'   labels. Default is "pct".
 #' @param show_n Logical. If TRUE, displays sample sizes as text in facet
 #'   strips. Default is TRUE.
-#' @param save_plot Logical. If TRUE, saves plot as PNG. If FALSE, returns
-#'   ggplot2 object. Default is FALSE.
-#' @param filename Character. Output filename pattern for saved plots.
-#'   Default is "heatmap_%03d.png".
-#' @param scale Numeric. Scaling factor for saved plot size. Default is 1.5.
-#' @param width Numeric. Plot width in mm. Default is NA (auto-calculated).
-#' @param height Numeric. Plot height in mm. Default is NA (auto-calculated).
+#' @param strips_in_markdown Logical. If TRUE, renders strip text using
+#'   \code{ggtext::element_markdown()}, enabling markdown and HTML formatting
+#'   in facet labels. Required when \code{label_format = "both"}. Default is TRUE.
 #'
-#' @return If save_plot is FALSE, returns a list with:
+#' @return Returns a list with:
 #'   \item{plot}{ggplot2 object}
 #'   \item{data}{data frame with density calculations}
 #'   If save_plot is TRUE, saves PNG file(s) and returns a message.
@@ -96,13 +92,16 @@
 #' )
 #' }
 #'
-#' @importFrom dplyr select mutate filter full_join join_by n_distinct slice_sample
-#'   summarize across all_of count left_join
+#' @importFrom dplyr select mutate filter full_join join_by n_distinct
+#'   slice_sample summarize all_of count left_join distinct pull n
 #' @importFrom tidyr unnest uncount
+#' @importFrom rlang sym
 #' @importFrom png readPNG
-#' @importFrom ggplot2 ggplot aes coord_fixed theme_void scale_colour_viridis_c
-#'   geom_jitter facet_wrap facet_grid annotation_raster ggsave labs theme
-#'   element_text geom_text
+#' @importFrom scales percent
+#' @importFrom ggplot2 ggplot aes coord_fixed theme_minimal scale_colour_viridis_c
+#'   geom_jitter facet_wrap facet_grid annotation_raster labs theme element_rect
+#'   element_blank element_text geom_text guide_colorbar guides vars
+#' @importFrom ggtext element_markdown
 #' @importFrom vctrs vec_ptype_abbr
 #'
 #' @export
@@ -121,12 +120,7 @@ pd_create_heatmap <- function(
   color_scale = "max",
   label_format = "pct",
   show_n = TRUE,
-  strips_in_markdown = TRUE,
-  save_plot = FALSE,
-  filename = "heatmap_%03d.png",
-  scale = 1.5,
-  width = NA,
-  height = NA
+  strips_in_markdown = TRUE
 ) {
   # ============================================================================
   # STEP 1: Validate inputs
@@ -141,9 +135,7 @@ pd_create_heatmap <- function(
     tool = tool,
     grid_size = grid_size,
     label_format = label_format,
-    color_scale = color_scale,
-    save_plot = save_plot,
-    filename = filename
+    color_scale = color_scale
   )
 
   # Adjust n_groups if only one variable provided
@@ -271,13 +263,14 @@ pd_create_heatmap <- function(
   # ============================================================================
   if ("spray" %in% tools_present) {
     message("Recreating spray effect...")
-    coords_with_groups_spray <- coords_with_groups |> filter(t == "spray")
+    coords_with_groups_spray <- coords_with_groups |>
+      dplyr::filter(t == "spray")
     coords_with_groups_spray <- recreate_spray(coords_with_groups_spray)
 
     # Recombine expanded spray data
     coords_with_groups <- coords_with_groups |>
-      filter(t != "spray") |>
-      full_join(coords_with_groups_spray)
+      dplyr::filter(t != "spray") |>
+      dplyr::full_join(coords_with_groups_spray)
 
     rm(coords_with_groups_spray)
   }
@@ -315,41 +308,14 @@ pd_create_heatmap <- function(
   )
 
   # ============================================================================
-  # STEP 9: Save or return
+  # STEP 9: Return
   # ============================================================================
-  if (save_plot) {
-    message("Saving plot...")
 
-    # Calculate dimensions
-    pixels_per_inch <- 96
-    mm_per_inch <- 25.4
-    pixel_to_mm <- mm_per_inch / pixels_per_inch
-
-    if (is.na(width)) {
-      width <- image_width * pixel_to_mm * sqrt(prod(n_groups))
-    }
-    if (is.na(height)) {
-      height <- image_height * pixel_to_mm * sqrt(prod(n_groups))
-    }
-
-    ggplot2::ggsave(
-      plot = plot_out,
-      filename = filename,
-      width = width,
-      height = height,
-      units = "mm",
-      dpi = 96,
-      scale = scale
-    )
-
-    message("Heatmap saved to ", filename)
-  } else {
-    message("Done!")
-    return(list(
-      plot = plot_out,
-      data = density_data
-    ))
-  }
+  message("Done!")
+  return(list(
+    plot = plot_out,
+    data = density_data
+  ))
 }
 
 
@@ -367,9 +333,7 @@ validate_heatmap_inputs <- function(
   tool,
   grid_size,
   label_format,
-  color_scale,
-  save_plot,
-  filename
+  color_scale
 ) {
   # Required columns
   required_cols <- c(id_col, "s", "p", "w", "h")
@@ -445,11 +409,6 @@ validate_heatmap_inputs <- function(
       "'color_scale' must be 'max', 'facet', or a single numeric value",
       call. = FALSE
     )
-  }
-
-  # Filename validation
-  if (save_plot && !grepl("\\.png$", filename, ignore.case = TRUE)) {
-    warning("'filename' should end with .png for PNG output", call. = FALSE)
   }
 
   invisible(TRUE)
@@ -727,54 +686,35 @@ create_heatmap_plot <- function(
 
   # Add sample sizes if requested
   if (show_n) {
-    # Calculate n per group
     if (n_vars == 1) {
       n_data <- density_data |>
-        dplyr::summarize(
-          n = dplyr::first(n_group),
-          .by = .VAR1_grp
-        ) |>
+        dplyr::distinct(.VAR1_grp, n_group) |>
         dplyr::mutate(
-          label = paste0("n = ", n),
-          x = image_width * 0.05,
-          y = image_height * 0.95
-        )
-
-      p <- p +
-        ggplot2::geom_text(
-          data = n_data,
-          ggplot2::aes(x = x, y = y, label = label),
-          inherit.aes = FALSE,
-          hjust = 0,
-          vjust = 1,
-          size = 3,
-          colour = "white",
-          fontface = "bold"
+          label = paste0("n = ", n_group),
+          x = image_width * 0.45,
+          y = image_height * 0.1 # bottom-left, away from body
         )
     } else {
       n_data <- density_data |>
-        dplyr::summarize(
-          n = dplyr::first(n_group),
-          .by = c(.VAR1_grp, .VAR2_grp)
-        ) |>
+        dplyr::distinct(.VAR1_grp, .VAR2_grp, n_group) |>
         dplyr::mutate(
-          label = paste0("n = ", n),
-          x = image_width * 0.05,
-          y = image_height * 0.95
-        )
-
-      p <- p +
-        ggplot2::geom_text(
-          data = n_data,
-          ggplot2::aes(x = x, y = y, label = label),
-          inherit.aes = FALSE,
-          hjust = 0,
-          vjust = 1,
-          size = 3,
-          colour = "white",
-          fontface = "bold"
+          label = paste0("n = ", n_group),
+          x = image_width * 0.45,
+          y = image_height * 0.1 # bottom-left, away from body
         )
     }
+
+    p <- p +
+      ggplot2::geom_text(
+        data = n_data,
+        ggplot2::aes(x = x, y = y, label = label),
+        inherit.aes = FALSE,
+        hjust = 0,
+        vjust = 0,
+        size = 3,
+        colour = "grey30",
+        fontface = "bold"
+      )
   }
 
   # Apply theme
@@ -870,11 +810,16 @@ my_quantile <- function(x, n_groups, txt = "pct") {
     labels <- character(n_groups)
     for (i in seq_len(n_groups)) {
       if (i == 1) {
-        labels[i] <- paste0("\u003c ", pct_upper[i], "%") # ≤ (less-than-or-equal)
+        labels[i] <- paste0("\u003c ", pct_upper[i] |> round(1), "%") # < (less-than)
       } else if (i == n_groups) {
-        labels[i] <- paste0("\u2265 ", pct_lower[i], "%")
+        labels[i] <- paste0("\u2265 ", pct_lower[i] |> round(1), "%")
       } else {
-        labels[i] <- paste0(pct_lower[i], "-", pct_upper[i], "%")
+        labels[i] <- paste0(
+          pct_lower[i] |> round(1),
+          "-",
+          pct_upper[i] |> round(1),
+          "%"
+        )
       }
     }
   } else if (txt == "num") {
@@ -882,15 +827,15 @@ my_quantile <- function(x, n_groups, txt = "pct") {
     labels <- character(n_groups)
     for (i in seq_len(n_groups)) {
       labels[i] <- paste0(
-        "[",
+        "(",
         round(breaks[i], 1),
-        ", ",
+        "-",
         round(breaks[i + 1], 1),
         ")"
       )
     }
     # Fix last bracket to be inclusive
-    labels[n_groups] <- sub("\\)$", "]", labels[n_groups])
+    labels[n_groups] <- sub("\\)$", ")", labels[n_groups])
   } else if (txt == "both") {
     # Combined markdown labels
     pct_lower <- probs[-length(probs)] * 100
@@ -914,7 +859,7 @@ my_quantile <- function(x, n_groups, txt = "pct") {
         ")"
       )
 
-      labels[i] <- paste0("**", pct_part, "**<br>", num_part)
+      labels[i] <- paste0("", pct_part, "<br>", num_part) # Markdown code here? e.g "**", pct_part, "**<br>"
     }
   } else {
     stop("txt must be one of: 'pct', 'num', 'both'", call. = FALSE)
