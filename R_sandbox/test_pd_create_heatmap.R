@@ -73,3 +73,16 @@ demo |>
     n_groups = c(4),
     background_image = background_image
   )
+
+
+# Better looking, but clumsy code?
+demo |>
+  # create dummy
+  mutate(
+    " " = " "
+  ) |>
+  pd_create_heatmap(
+    variables = c(" ", "quant_1"),
+    n_groups = c(1, 4),
+    background_image = background_image
+  )
