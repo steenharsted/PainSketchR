@@ -74,16 +74,8 @@ pd_recreate_drawing <- function(
 ) {
   pd <- .data
 
-  # TEST that pd has the columns we need
-  if (!("id" %in% names(pd))) {
-    stop("The column 'id' is needed")
-  }
-  if (!("p" %in% names(pd))) {
-    stop("The column 'p' containing coordinates is needed")
-  }
-  if (!("s" %in% names(pd))) {
-    stop("The column 's' containing stroke information is needed")
-  }
+  # Making sure data has required columns
+  pd_check_data(pd)
 
   # Test that we only 1 height and width value, respectively
   if (pd$w |> unique() |> length() != 1 | pd$h |> unique() |> length() != 1) {
@@ -155,7 +147,6 @@ pd_recreate_drawing <- function(
     tidyr::unnest(cols = p)
 
   pd <- dplyr::full_join(pd_s, pd_p, by = dplyr::join_by(id, i))
-
 
   # map bw to size in mm using scale_bw funtion
 
