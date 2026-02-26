@@ -46,7 +46,7 @@ pd_check_data <- function(d) {
     ok <- FALSE
   }
 
-  if(all(names(d) %in% c("id","s","p"))) {
+  if(all(c("id","s","p") %in% names(d))) {
     message("Data has columns 'id', 's' and 'p': OK")
   } else {
     warning("Data has columns 'id', 's' and 'p': FAIL")
