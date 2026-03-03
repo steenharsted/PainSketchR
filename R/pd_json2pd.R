@@ -46,9 +46,7 @@ pd_json2pd <- function(f_name) {
   # First add a column onto the result tibble, which contains a list (length=1) of a data frame of `i,x,y`
   result$p <- content$s$p |> purrr::imap_dfr(\(q,i) {tibble::tibble(i,x=q[,1],y=maxy-q[,2])}) |> list()
   # Then add a column onto the result, which is a list (legnth=1) of a data frame with stroke info
-  result$s <- content$s |> dplyr::select(-p) |> list()
-
-  
+  result$s <- content$s |> dplyr::select(-p) |> tibble::tibble() |> list()  
 
   return(result)
 }

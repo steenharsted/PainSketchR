@@ -60,6 +60,13 @@ pd_check_data <- function(d) {
     ok <- FALSE
   }
 
+  if(any(duplicated(d$id))) {
+    warning("All elements of 's' are unique: FAIL")
+    ok <- FALSE
+  } else {
+    message("All elements of 's' are unique: OK")
+  }
+
   if(all(sapply(d$s, tibble::is_tibble))) {
     message("All elements of 's' are tibbles: OK")
   } else {
@@ -74,14 +81,14 @@ pd_check_data <- function(d) {
     ok <- FALSE
   }
 
-  if(d$s |> purrr::every(\(x) {all(names(x) %in% c("i"))})) {
+  if(d$s |> purrr::every(\(x) {all("i" %in% names(x))})) {
     message("All elements of 's' have column 'i': OK")
   } else {
     warning("All elements of 's' have column 'i': FAIL")
     ok <- FALSE
   }
   
-  if(d$p |> purrr::every(\(x) {all(names(x) %in% c("i","x", "y"))})) {
+  if(d$p |> purrr::every(\(x) {all(c("i","x", "y") %in% names(x))})) {
     message("All elements of 's' have columns 's' and 'p': OK")
   } else {
     warning("All elements of 's' have columns 's' and 'p': FAIL")

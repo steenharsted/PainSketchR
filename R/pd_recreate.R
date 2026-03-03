@@ -70,15 +70,16 @@ pd_recreate_drawing <- function(
   .data,
   background_image = NULL,
   save_plot = TRUE,
-  filename = "drawing%03d.png"
+  filename = "drawing%03d.png" # SON: I would suggest the user supplies a filename column (which could be `id` for instance) and then use {{filename}} in ggsave
 ) {
   pd <- .data
+  # SON: rm(.data) to avoid copying in memory?
 
   # Making sure data has required columns
   pd_check_data(pd)
 
   # Test that we only 1 height and width value, respectively
-  if (pd$w |> unique() |> length() != 1 | pd$h |> unique() |> length() != 1) {
+  if ((pd$w |> unique() |> length() > 1) || (pd$h |> unique() |> length() > 1)) {
     stop(
       "More than one width or height value of image found.\n 
     You can only recreate drawings from one type of canvas at a time"
@@ -86,6 +87,7 @@ pd_recreate_drawing <- function(
   }
 
   # Test that filename ends with .png if save_plot = TRUE
+  # SON: If we go with a filename column in data, this should be changed to just add '.png' if missing (e.g. if `id` is used as filename)
   if (save_plot & stringr::str_extract(filename, "...$") != "png") {
     stop(
       "Filename must end with png"
@@ -113,8 +115,8 @@ pd_recreate_drawing <- function(
     }
   }
 
-  # Test that ids are unique
-  if (pd$id |> length() != pd$id |> unique() |> length()) {
+  # Test that ids are unique 
+  if(any(duplicated(pd$id))) { # Good point! I have added this to the pd_check_data function, so we could drop it from here (SON)
     stop("all values in the 'id' column must be unique")
   }
 
@@ -203,6 +205,7 @@ pd_recreate_drawing <- function(
   ## Lets plot!
 
   ### Base plot
+  ### Add a check for nrow(pd_pen) != 0 ..? (SON)
   pd_base <- pd_pen |>
     ggplot2::ggplot(ggplot2::aes(
       x = x,
@@ -275,7 +278,9 @@ pd_recreate_drawing <- function(
     message(
       paste0("Drawing saved in ", filename)
     )
-  } else {
-    return(plot_out)
   }
+
+  return(pd)
+  # Alternatively:
+  # return(list(data=pd, plot=plot_out))
 }
