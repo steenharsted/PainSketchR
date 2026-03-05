@@ -5,6 +5,8 @@ pd_d <- tibble::tibble(id=as.integer(), s=list(), p=list())
 for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
   d <- read.csv(c, sep=";", header = FALSE)
   pd_d <- rbind(pd_d, tibble::tibble(id=fs::path_ext_remove(fs::path_file(c)), 
+                         w=450,
+                         h=500,
                          s=list(tibble::tibble(i=1)), 
                          p=list(tibble::tibble(i=1, x=d[,1], y=d[,2]))))
 }  # This is a bit quirky ... but necessary to ensure the variable is name correctly in rda:
@@ -12,6 +14,8 @@ for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
   assign(var_name, pd_d)
   do.call(save, list(var_name, file="data/pd_demo_anatomy.rda"))
 
+# Generate png stencils for each anatomical region (to allow for finding intersections in spray pain drawings)
+pd_d$p |> purrr::map(\(x) {})
 
 # Generate a demo data set of pain drawings
 # This is based on real-world data collection (mird)
