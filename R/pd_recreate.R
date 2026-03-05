@@ -73,13 +73,15 @@ pd_recreate_drawing <- function(
   filename = "drawing%03d.png" # SON: I would suggest the user supplies a filename column (which could be `id` for instance) and then use {{filename}} in ggsave
 ) {
   pd <- .data
-  # SON: rm(.data) to avoid copying in memory?
+  rm(.data) # to avoid copying in memory
 
   # Making sure data has required columns
   pd_check_data(pd)
 
   # Test that we only 1 height and width value, respectively
-  if ((pd$w |> unique() |> length() > 1) || (pd$h |> unique() |> length() > 1)) {
+  if (
+    (pd$w |> unique() |> length() > 1) || (pd$h |> unique() |> length() > 1)
+  ) {
     stop(
       "More than one width or height value of image found.\n 
     You can only recreate drawings from one type of canvas at a time"
@@ -113,11 +115,6 @@ pd_recreate_drawing <- function(
         "  - A raster array from png::readPNG() (numeric array)"
       )
     }
-  }
-
-  # Test that ids are unique 
-  if(any(duplicated(pd$id))) { # Good point! I have added this to the pd_check_data function, so we could drop it from here (SON)
-    stop("all values in the 'id' column must be unique")
   }
 
   # Extract number of ids
@@ -280,7 +277,6 @@ pd_recreate_drawing <- function(
     )
   }
 
-  return(pd)
-  # Alternatively:
-  # return(list(data=pd, plot=plot_out))
+  # Alternatively: return(pd)
+  return(list(data = pd, plot = plot_out))
 }
