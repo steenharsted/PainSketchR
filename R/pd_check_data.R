@@ -34,98 +34,150 @@
 #' @export
 #' @examples
 #' pd_check_data(pd_demo_data, verbose = FALSE) # Will return TRUE
-#' 
+#'
 #' pd_check_data(letter[1:10]) # Will return FALSE and provide details in stderr
 #'
-pd_check_data <- function(d) {
+pd_check_data <- function(d, verbose = TRUE) {
   ok <- TRUE
-  if(tibble::is_tibble(d)) {
-    if (verbose) {message("Data is a tibble: OK")}
+  if (tibble::is_tibble(d)) {
+    if (verbose) {
+      message("Data is a tibble: OK")
+    }
   } else {
     warning("Data is a tibble: FAIL")
     ok <- FALSE
   }
 
   ## Should we insist that each pain drawing has `w` and `h` columns? ..if width and height?
-  if(all(c("id","s","p") %in% names(d))) {
-    if (verbose) {message("Data has columns 'id', 's' and 'p': OK")}
+  if (all(c("id", "s", "p") %in% names(d))) {
+    if (verbose) {
+      message("Data has columns 'id', 's' and 'p': OK")
+    }
   } else {
     warning("Data has columns 'id', 's' and 'p': FAIL")
     ok <- FALSE
   }
 
-  if(is.character(d$id) && is.list(d$s) && is.list(d$p)) {
-    if (verbose) {message("Data columns 'id', 's' and 'p' are <chr>, <list> and <list>: OK")}
+  if (is.character(d$id) && is.list(d$s) && is.list(d$p)) {
+    if (verbose) {
+      message("Data columns 'id', 's' and 'p' are <chr>, <list> and <list>: OK")
+    }
   } else {
     warning("Data columns 'id', 's' and 'p' are <chr>, <list> and <list>: FAIL")
     ok <- FALSE
   }
 
-  if(any(duplicated(d$id))) {
-    if (verbose) {warning("All elements of 's' are unique: FAIL")}
+  if (any(duplicated(d$id))) {
+    if (verbose) {
+      warning("All elements of 'id' are unique: FAIL")
+    }
     ok <- FALSE
   } else {
     message("All elements of 'id' are unique: OK")
   }
 
-  if(all(sapply(d$s, tibble::is_tibble))) {
-    if (verbose) {message("All elements of 's' are tibbles: OK")}
+  if (all(sapply(d$s, tibble::is_tibble))) {
+    if (verbose) {
+      message("All elements of 's' are tibbles: OK")
+    }
   } else {
     warning("All elements of 's' are tibbles: FAIL")
     ok <- FALSE
   }
 
-  if(all(sapply(d$p, tibble::is_tibble))) {
-    if (verbose) {message("All elements of 'p' are tibbles: OK")}
+  if (all(sapply(d$p, tibble::is_tibble))) {
+    if (verbose) {
+      message("All elements of 'p' are tibbles: OK")
+    }
   } else {
     warning("All elements of 'p' are tibbles: FAIL")
     ok <- FALSE
   }
 
-  if(d$s |> purrr::every(\(x) {all("i" %in% names(x))})) {
-    if (verbose) {message("All elements of 's' have column 'i': OK")}
+  if (
+    d$s |>
+      purrr::every(\(x) {
+        all("i" %in% names(x))
+      })
+  ) {
+    if (verbose) {
+      message("All elements of 's' have column 'i': OK")
+    }
   } else {
     warning("All elements of 's' have column 'i': FAIL")
     ok <- FALSE
   }
-  
-  if(d$p |> purrr::every(\(x) {all(c("i","x", "y") %in% names(x))})) {
-    if (verbose) {message("All elements of 's' have columns 's' and 'p': OK")}
+
+  if (
+    d$p |>
+      purrr::every(\(x) {
+        all(c("i", "x", "y") %in% names(x))
+      })
+  ) {
+    if (verbose) {
+      message("All elements of 's' have columns 's' and 'p': OK")
+    }
   } else {
     warning("All elements of 's' have columns 's' and 'p': FAIL")
     ok <- FALSE
   }
 
-  if(purrr::every(d$s$i, {is.integer})) {
-    if (verbose) {message("All elements of 's' have column 'i' which is integer: OK")}
+  if (
+    purrr::every(d$s$i, {
+      is.integer
+    })
+  ) {
+    if (verbose) {
+      message("All elements of 's' have column 'i' which is integer: OK")
+    }
   } else {
     warning("All elements of 's' have column 'i' which is integer: FAIL")
     ok <- FALSE
   }
 
-  if(purrr::every(d$p$i, {is.integer})) {
-    if (verbose) {message("All elements of 'p' have column 'i' which is integer: OK")}
+  if (
+    purrr::every(d$p$i, {
+      is.integer
+    })
+  ) {
+    if (verbose) {
+      message("All elements of 'p' have column 'i' which is integer: OK")
+    }
   } else {
     warning("All elements of 'p' have column 'i' which is integer: FAIL")
     ok <- FALSE
   }
 
-  if(purrr::every(d$p$x, {is.integer})) {
-    if (verbose) {message("All elements of 'p' have column 'x' which is integer: OK")}
+  if (
+    purrr::every(d$p$x, {
+      is.integer
+    })
+  ) {
+    if (verbose) {
+      message("All elements of 'p' have column 'x' which is integer: OK")
+    }
   } else {
     warning("All elements of 'p' have column 'x' which is integer: FAIL")
     ok <- FALSE
   }
 
-  if(purrr::every(d$p$y, {is.integer})) {
-    if (verbose) {message("All elements of 'p' have column 'y' which is integer: OK")}
+  if (
+    purrr::every(d$p$y, {
+      is.integer
+    })
+  ) {
+    if (verbose) {
+      message("All elements of 'p' have column 'y' which is integer: OK")
+    }
   } else {
     warning("All elements of 'p' have column 'y' which is integer: FAIL")
     ok <- FALSE
   }
 
-  if(ok) {
-    if (verbose) {message("Data structure is valid pain drawing data structure: OK")}
+  if (ok) {
+    if (verbose) {
+      message("Data structure is valid pain drawing data structure: OK")
+    }
   } else {
     warning("Data structure is valid pain drawing data structure: FAIL")
   }
