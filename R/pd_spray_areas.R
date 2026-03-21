@@ -13,8 +13,9 @@
 #' pd_spray_areas()
 #'
 pd_spray_areas <- function(png_files, alpha_multiply = TRUE) {
+  # Should we allow for png in memory (as opposed to specifying a png file)?
   if (!is.character(png_files)) {
-    stop("One of more png file paths (character) must be specified")
+    stop("At least one png file path must be specified")
   }
 
   result <- tibble::tibble(file = png_files, R = NA, G = NA, B = NA)

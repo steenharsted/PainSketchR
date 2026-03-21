@@ -4,11 +4,12 @@
 pd_d <- tibble::tibble(id=as.integer(), s=list(), p=list())
 for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
   d <- read.csv(c, sep=";", header = FALSE)
-  pd_d <- rbind(pd_d, tibble::tibble(id=fs::path_ext_remove(fs::path_file(c)), 
-                         w=450,
-                         h=500,
-                         s=list(tibble::tibble(i=1)), 
-                         p=list(tibble::tibble(i=1, x=d[,1], y=d[,2]))))
+  pd_d <- rbind(pd_d, tibble::tibble(
+    id=fs::path_ext_remove(fs::path_file(c)), 
+    w=450,
+    h=500,
+    s=list(tibble::tibble(i=1)), 
+    p=list(tibble::tibble(i=1, x=d[,1], y=d[,2]))))
 }  # This is a bit quirky ... but necessary to ensure the variable is name correctly in rda:
   var_name <- "pd_demo_anatomy"
   assign(var_name, pd_d)
