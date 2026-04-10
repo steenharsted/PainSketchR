@@ -11,7 +11,7 @@ pd_poly_clip <- function(A, B, operation="intersection") {
       result <- result |> purrr::map_dfr(\(q) {q}, .id="i") |>
       dplyr::mutate(i = as.integer(i),
                     x = as.integer(round(x)),
-                    y = as.integer(round(y))) 
+                    y = as.integer(round(y)))
   }
   result
 }

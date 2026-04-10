@@ -8,12 +8,17 @@ for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
     id=fs::path_ext_remove(fs::path_file(c)), 
     w=450,
     h=500,
-    s=list(tibble::tibble(i=1)), 
+    coord="px",
+    ts=as.character(Sys.timer()),
+    app="PainDraweR package",
+    s=list(tibble::tibble(i=1, q=1, t="pen", bw=1, c="#FF0000", a=256)), 
     p=list(tibble::tibble(i=1, x=d[,1], y=d[,2]))))
-}  # This is a bit quirky ... but necessary to ensure the variable is name correctly in rda:
-  var_name <- "pd_demo_anatomy"
-  assign(var_name, pd_d)
-  do.call(save, list(var_name, file="data/pd_demo_anatomy.rda"))
+} 
+
+# This is a bit quirky ... but necessary to ensure the variable is named correctly in rda:
+var_name <- "pd_demo_anatomy"
+assign(var_name, pd_d)
+do.call(save, list(var_name, file="data/pd_demo_anatomy.rda"))
 
 # Generate png stencils for each anatomical region (to allow for finding intersections in spray pain drawings)
 pd_d$p |> purrr::map(\(x) {})
