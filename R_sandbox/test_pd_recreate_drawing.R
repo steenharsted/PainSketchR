@@ -41,5 +41,10 @@ pd |>
 pd |>
   pd_recreate_drawing(
     background_image = background_image,
+    save_plot = FALSE,
     filename = "R_sandbox/drawing.png"
   )
+
+# LAV I MORGEN
+# pd_to_png
+# Estimer Areal
