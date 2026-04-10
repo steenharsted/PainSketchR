@@ -33,7 +33,12 @@
 #' }
 #'
 #' @export
-pd_to_png_single <- function(.data, clean_up = TRUE, dpi = 96) {
+pd_to_png_single <- function(
+  .data,
+  clean_up = TRUE,
+  dpi = 96,
+  grey_scale = FALSE
+) {
   if (nrow(.data) != 1L) {
     cli::cli_abort(
       "{.fn pd_to_png_single} expects a single-row tibble, but received {nrow(.data)} rows.
@@ -83,13 +88,26 @@ pd_to_png_single <- function(.data, clean_up = TRUE, dpi = 96) {
   }
 
   # Base plot (pen strokes)
-  pd_base <- pd_pen |>
-    ggplot2::ggplot(ggplot2::aes(
-      x = x,
-      y = y,
-      #color = c,
-      alpha = a / 255
-    )) +
+
+  if (grey_scale) {
+    pd_base <- pd_pen |>
+      ggplot2::ggplot(ggplot2::aes(
+        x = x,
+        y = y,
+        #color = c,
+        alpha = a / 255
+      ))
+  } else {
+    pd_base <- pd_pen |>
+      ggplot2::ggplot(ggplot2::aes(
+        x = x,
+        y = y,
+        color = c,
+        alpha = a / 255
+      ))
+  }
+
+  pd_base <- pd_base +
     ggplot2::coord_fixed(
       xlim = c(0, image_width),
       ylim = c(0, image_height),
