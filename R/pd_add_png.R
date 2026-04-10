@@ -87,7 +87,7 @@ pd_to_png_single <- function(.data, clean_up = TRUE, dpi = 96) {
     ggplot2::ggplot(ggplot2::aes(
       x = x,
       y = y,
-      color = c,
+      #color = c,
       alpha = a / 255
     )) +
     ggplot2::coord_fixed(

@@ -42,7 +42,7 @@ pd |>
   dplyr::filter(id == "Anon") |>
   pd_recreate_drawing(
     background_image = "inst/extdata/feet_background.png",
-    rasterize = FALSE
+    rasterize = TRUE
   )
 
 # Multiple drawings
