@@ -29,6 +29,13 @@
 #'   during rasterization is deleted on exit. Set to `FALSE` to retain the file
 #'   for debugging.
 #'
+#' @param dpi Resolution passed to [ggplot2::ggsave()] when `rasterize = TRUE`.
+#'   Defaults to `96`, matching the CSS pixel density of the web canvas where
+#'   drawings are collected — this ensures a 1:1 pixel correspondence between
+#'   the original drawing and the output. Increase for print-quality output
+#'   (e.g. `300`), noting this does not affect the canvas dimensions, only
+#'   output pixel density.
+#'
 #' @return A [ggplot2::ggplot()] object. When `rasterize = TRUE`, the plot
 #'   contains a single [ggplot2::annotation_raster()] layer with a locked
 #'   aspect ratio. When `rasterize = FALSE`, the plot contains vector stroke
@@ -67,7 +74,8 @@ pd_recreate_drawing <- function(
   background_image = NULL,
   include_id = FALSE,
   rasterize = TRUE,
-  clean_up = TRUE
+  clean_up = TRUE,
+  dpi = 96
 ) {
   # Making sure data has required columns
   pd_check_data(.data)
@@ -259,7 +267,7 @@ pd_recreate_drawing <- function(
     width = width_mm,
     height = height_mm,
     units = "mm",
-    dpi = 96
+    dpi = dpi
   )
 
   raster_plot <- ggplot2::ggplot() +

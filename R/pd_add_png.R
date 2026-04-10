@@ -10,9 +10,17 @@
 #' @param clean_up Logical. If `TRUE` (default), the temporary `.png` file
 #'   written by [ggplot2::ggsave()] is deleted after the raster is read into
 #'   memory. Set to `FALSE` to retain the file for debugging.
+#' @param dpi Resolution passed to [ggplot2::ggsave()]. Defaults to `96`,
+#'   matching the CSS pixel density of the web canvas where drawings are
+#'   collected — this ensures a 1:1 pixel correspondence between the original
+#'   drawing and the output. Increase for print-quality output (e.g. `300`),
+#'   noting this does not affect the canvas dimensions, only output pixel
+#'   density. Must match the `dpi` used in [pd_add_png()] to ensure consistent
+#'   array dimensions across the `.png` column.
 #'
 #' @return A numeric array of dimensions `height × width × 4` (RGBA channels,
-#'   values in \[0, 1\]) as returned by [png::readPNG()].
+#'   values in \[0, 1\]) as returned by [png::readPNG()]. Array dimensions
+#'   scale with `dpi`.
 #'
 #' @seealso [pd_add_png()] for the user-facing multi-row wrapper.
 #'
@@ -25,7 +33,7 @@
 #' }
 #'
 #' @export
-pd_to_png_single <- function(.data, clean_up = TRUE) {
+pd_to_png_single <- function(.data, clean_up = TRUE, dpi = 96) {
   if (nrow(.data) != 1L) {
     cli::cli_abort(
       "{.fn pd_to_png_single} expects a single-row tibble, but received {nrow(.data)} rows.
@@ -109,11 +117,10 @@ pd_to_png_single <- function(.data, clean_up = TRUE) {
     )
 
   ### Translate size
-  pixels_per_inch <- 96
   mm_per_inch <- 25.4
-  pixel_to_mm <- mm_per_inch / pixels_per_inch # ≈ 0.2646 mm per pixel
-  width_mm <- image_width * pixel_to_mm # ≈ 119.07 mm
-  height_mm <- image_height * pixel_to_mm # ≈ 132.29 mm
+  pixel_to_mm <- mm_per_inch / dpi
+  width_mm <- image_width * pixel_to_mm
+  height_mm <- image_height * pixel_to_mm
 
   tmp <- tempfile(fileext = ".png")
   if (clean_up) {
@@ -126,8 +133,7 @@ pd_to_png_single <- function(.data, clean_up = TRUE) {
     width = width_mm,
     height = height_mm,
     units = "mm",
-    dpi = 96,
-    scale = 1
+    dpi = dpi
   )
 
   png::readPNG(tmp)
@@ -146,10 +152,18 @@ pd_to_png_single <- function(.data, clean_up = TRUE) {
 #' @param clean_up Logical. If `TRUE` (default), temporary `.png` files are
 #'   deleted after each raster is read into memory. Passed through to
 #'   [pd_to_png_single()].
+#' @param dpi Resolution passed to [ggplot2::ggsave()] for each drawing.
+#'   Defaults to `96`, matching the CSS pixel density of the web canvas where
+#'   drawings are collected — this ensures a 1:1 pixel correspondence between
+#'   the original drawing and the output. Increase for print-quality output
+#'   (e.g. `300`), noting this does not affect canvas dimensions, only output
+#'   pixel density. All rows are rendered at the same `dpi`, ensuring consistent
+#'   array dimensions across the `.png` column.
 #'
 #' @return The input tibble with an additional `.png` list-column (placed after
 #'   `s`). Each element is a numeric array of dimensions
-#'   `height × width × 4` (RGBA channels, values in \[0, 1\]).
+#'   `height × width × 4` (RGBA channels, values in \[0, 1\]). Array dimensions
+#'   scale with `dpi`.
 #'
 #' @seealso [pd_to_png_single()] for the single-row primitive,
 #'   [pd_json2pd()] for reading pain drawing JSON files.
@@ -165,12 +179,12 @@ pd_to_png_single <- function(.data, clean_up = TRUE) {
 #' }
 #'
 #' @export
-pd_add_png <- function(.data, clean_up = TRUE) {
+pd_add_png <- function(.data, clean_up = TRUE, dpi = 96) {
   pd_check_data(.data)
 
   rasters <- purrr::map(
     seq_len(nrow(.data)),
-    \(i) pd_to_png_single(.data[i, ], clean_up = clean_up)
+    \(i) pd_to_png_single(.data[i, ], clean_up = clean_up, dpi = dpi)
   )
 
   dplyr::mutate(.data, .png = rasters, .after = s)

@@ -4,7 +4,7 @@
 \alias{pd_add_png}
 \title{Add a PNG raster column to a pain drawing tibble}
 \usage{
-pd_add_png(.data, clean_up = TRUE)
+pd_add_png(.data, clean_up = TRUE, dpi = 96)
 }
 \arguments{
 \item{.data}{A pain drawing tibble as produced by \code{\link[=pd_json2pd]{pd_json2pd()}}, with one
@@ -14,11 +14,20 @@ processing.}
 \item{clean_up}{Logical. If \code{TRUE} (default), temporary \code{.png} files are
 deleted after each raster is read into memory. Passed through to
 \code{\link[=pd_to_png_single]{pd_to_png_single()}}.}
+
+\item{dpi}{Resolution passed to \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}} for each drawing.
+Defaults to \code{96}, matching the CSS pixel density of the web canvas where
+drawings are collected — this ensures a 1:1 pixel correspondence between
+the original drawing and the output. Increase for print-quality output
+(e.g. \code{300}), noting this does not affect canvas dimensions, only output
+pixel density. All rows are rendered at the same \code{dpi}, ensuring consistent
+array dimensions across the \code{.png} column.}
 }
 \value{
 The input tibble with an additional \code{.png} list-column (placed after
 \code{s}). Each element is a numeric array of dimensions
-\verb{height × width × 4} (RGBA channels, values in [0, 1]).
+\verb{height × width × 4} (RGBA channels, values in [0, 1]). Array dimensions
+scale with \code{dpi}.
 }
 \description{
 Renders each row of a pain drawing tibble into a PNG raster array and stores

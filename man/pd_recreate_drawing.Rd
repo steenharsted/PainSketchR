@@ -2,78 +2,85 @@
 % Please edit documentation in R/pd_recreate.R
 \name{pd_recreate_drawing}
 \alias{pd_recreate_drawing}
-\title{Recreate Drawings from Coordinate Data}
+\title{Recreate a pain drawing as a ggplot}
 \usage{
 pd_recreate_drawing(
   .data,
   background_image = NULL,
-  save_plot = TRUE,
-  filename = "drawing\%03d.png"
+  include_id = FALSE,
+  rasterize = TRUE,
+  clean_up = TRUE,
+  dpi = 96
 )
 }
 \arguments{
-\item{.data}{A data frame containing drawing data with required columns:
-\code{id} (unique identifier for each drawing),
-\code{p} (list column containing coordinate information),
-\code{s} (list column containing stroke information),
-\code{w} (canvas width), and
-\code{h} (canvas height).}
+\item{.data}{A pain drawing tibble as produced by \code{\link[=pd_json2pd]{pd_json2pd()}}. Must
+contain columns \code{id}, \code{s}, \code{p}, \code{w}, and \code{h}. All drawings must share the
+same canvas dimensions (\code{w} and \code{h}).}
 
-\item{background_image}{Optional. Background image for the plot. Can be either:
-(1) a character string giving the file path to a PNG image (will be read
-with png::readPNG()), or (2) a numeric array (pre-processed raster array
-from png::readPNG()). Default is NULL (no background).}
+\item{background_image}{Optional background image displayed behind the
+strokes. Accepts either:
+\itemize{
+\item A file path to a PNG file (character string), or
+\item A numeric array as returned by \code{\link[png:readPNG]{png::readPNG()}}.
+}
 
-\item{save_plot}{Logical. If TRUE, saves the plot as a PNG file. If FALSE,
-returns a ggplot2 object. Default is TRUE.}
+Defaults to \code{NULL} (no background).}
 
-\item{filename}{Character string specifying the output filename pattern.
-Must end with ".png" if save_plot is TRUE. Use sprintf-style formatting.}
+\item{include_id}{Logical. If \code{TRUE}, the \code{id} value is shown as a facet
+strip label above each panel. Default is \code{FALSE}.}
+
+\item{rasterize}{Logical. If \code{TRUE} (default), the plot is rendered to a
+temp PNG via \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}}, read back with \code{\link[png:readPNG]{png::readPNG()}}, and
+returned as a new ggplot with \code{\link[ggplot2:annotation_raster]{ggplot2::annotation_raster()}}. The output
+is pixel-accurate with a locked aspect ratio. If \code{FALSE}, the raw ggplot
+with vector strokes is returned.}
+
+\item{clean_up}{Logical. If \code{TRUE} (default), the temporary PNG file created
+during rasterization is deleted on exit. Set to \code{FALSE} to retain the file
+for debugging.}
+
+\item{dpi}{Resolution passed to \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}} when \code{rasterize = TRUE}.
+Defaults to \code{96}, matching the CSS pixel density of the web canvas where
+drawings are collected — this ensures a 1:1 pixel correspondence between
+the original drawing and the output. Increase for print-quality output
+(e.g. \code{300}), noting this does not affect the canvas dimensions, only
+output pixel density.}
 }
 \value{
-If save_plot is TRUE, saves PNG file(s) and returns a message.
-If save_plot is FALSE, returns a ggplot2 object.
+A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object. When \code{rasterize = TRUE}, the plot
+contains a single \code{\link[ggplot2:annotation_raster]{ggplot2::annotation_raster()}} layer with a locked
+aspect ratio. When \code{rasterize = FALSE}, the plot contains vector stroke
+layers and supports further ggplot2 additions.
 }
 \description{
-This function recreates drawings from a data frame containing coordinate and
-stroke information. It supports both pen and spray tool types and can save
-the output as PNG files or return a ggplot2 object.
+Renders stroke and spray data from a pain drawing tibble into a ggplot,
+optionally composited with a background image. When \code{rasterize = TRUE}
+(default), the plot is first saved to a temp file and returned as a
+pixel-accurate raster layer — preserving exact canvas proportions. When
+\code{rasterize = FALSE}, the raw ggplot with vector strokes is returned instead.
 }
 \details{
-The function processes drawing data by:
-\itemize{
-\item Validating required columns and data structure
-\item Unnesting nested coordinate and stroke data
-\item Reverting y-coordinates to match plotting conventions
-\item Scaling brush widths to appropriate sizes
-\item Handling pen and spray tools differently (spray adds jitter)
-\item Creating faceted plots for multiple drawings
+Multiple drawings are arranged with \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}}. A warning is
+issued when more than 9 drawings are passed, as rendering may be slow.
 }
-
-For spray tool data, the function recreates the spray effect by adding
-random jitter within the spray radius. Brush widths are scaled from
-the range 1-20 to 0.1-5 mm for plotting.
-}
-\section{Warnings}{
-
-The function will warn and prompt for confirmation when attempting to
-recreate more than 9 drawings due to potential performance issues.
-}
-
 \examples{
 \dontrun{
-# Recreate and save drawings
-pd_recreate_drawing(drawing_data)
+pd <- pd_json2pd(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
 
-# Return plot object without saving
-plot <- pd_recreate_drawing(drawing_data, save_plot = FALSE)
+# Default: rasterized output with background
+pd |> pd_recreate_drawing(background_image = "inst/background.png")
 
-# Use custom filename and background
-pd_recreate_drawing(
-  drawing_data,
-  background_image = bg_img,
-  filename = "output.png"
-)
+# Vector output — can add further ggplot layers
+pd |> pd_recreate_drawing(rasterize = FALSE)
+
+# Show id labels in facet strips
+pd |> pd_recreate_drawing(include_id = TRUE)
 }
 
+}
+\seealso{
+\code{\link[=pd_json2pd]{pd_json2pd()}} to read pain drawing JSON files,
+\code{\link[=pd_add_png]{pd_add_png()}} to store raster arrays as a column in the tibble,
+\code{\link[=pd_to_png_single]{pd_to_png_single()}} for the single-row raster primitive.
 }

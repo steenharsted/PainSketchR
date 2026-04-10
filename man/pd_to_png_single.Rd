@@ -4,7 +4,7 @@
 \alias{pd_to_png_single}
 \title{Convert a single-row pain drawing to a PNG raster array}
 \usage{
-pd_to_png_single(.data, clean_up = TRUE)
+pd_to_png_single(.data, clean_up = TRUE, dpi = 96)
 }
 \arguments{
 \item{.data}{A single-row pain drawing tibble as produced by
@@ -14,10 +14,19 @@ Passing more than one row is an error.}
 \item{clean_up}{Logical. If \code{TRUE} (default), the temporary \code{.png} file
 written by \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}} is deleted after the raster is read into
 memory. Set to \code{FALSE} to retain the file for debugging.}
+
+\item{dpi}{Resolution passed to \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}}. Defaults to \code{96},
+matching the CSS pixel density of the web canvas where drawings are
+collected — this ensures a 1:1 pixel correspondence between the original
+drawing and the output. Increase for print-quality output (e.g. \code{300}),
+noting this does not affect the canvas dimensions, only output pixel
+density. Must match the \code{dpi} used in \code{\link[=pd_add_png]{pd_add_png()}} to ensure consistent
+array dimensions across the \code{.png} column.}
 }
 \value{
 A numeric array of dimensions \verb{height × width × 4} (RGBA channels,
-values in [0, 1]) as returned by \code{\link[png:readPNG]{png::readPNG()}}.
+values in [0, 1]) as returned by \code{\link[png:readPNG]{png::readPNG()}}. Array dimensions
+scale with \code{dpi}.
 }
 \description{
 Renders the strokes and spray points from a single-row pain drawing tibble

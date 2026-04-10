@@ -59,6 +59,20 @@ pd |>
   )
 
 
+pd |>
+  pd_recreate_drawing(
+    background_image = background_image,
+    clean_up = FALSE,
+    dpi = 300
+  )
+
+pd |>
+  pd_recreate_drawing(
+    background_image = background_image,
+    clean_up = FALSE,
+    dpi = 96
+  )
+
 # Drawings with rasterize = TRUE will create temporary files
 # These are automatically removed if clean_up = TRUE
 # To inspect the files set clean_up to FALSE and look in tempdir()
