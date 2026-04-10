@@ -4,7 +4,7 @@
 \alias{pd_check_data}
 \title{Check whether an R object is a valid pain drawing data structure}
 \usage{
-pd_check_data(d)
+pd_check_data(d, verbose = TRUE)
 }
 \arguments{
 \item{d}{The R object to examine}
@@ -43,7 +43,7 @@ Users may store any other data in the data structure as relevant. Any informatio
 Any information pertaining to the individual stroke/marking (e.g. colour or thickness) should be stored as columns in the tibbles in the \code{s} list column. Similarly, in the unlikely event, that any information needs to be stored pertaining to each coordinate pair, it should be store as columns in the \code{p} list column tibbles.
 }
 \examples{
-pd_check_data(pd_demo_data) # Will return TRUE
+pd_check_data(pd_demo_data, verbose = FALSE) # Will return TRUE
 
 pd_check_data(letter[1:10]) # Will return FALSE and provide details in stderr
 

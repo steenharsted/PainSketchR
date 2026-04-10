@@ -15,7 +15,7 @@ pd_poly_manage_overlaps(p, method = "merge")
 A valid pain drawing data structure
 }
 \description{
-This function will  overlapping markings/strokes in pain drawings by the chosen method. The method \if{html}{\out{<chr>}} can be 'merge', 'split', 'adoptA' or 'adoptB'.
+This function will manage overlapping markings/strokes in pain drawings by the chosen method. The method \if{html}{\out{<chr>}} can be 'merge', 'split', 'adoptA' or 'adoptB'.
 }
 \details{
 The \code{method} parameter determines the way overlaps are managed:
@@ -27,6 +27,6 @@ The \code{method} parameter determines the way overlaps are managed:
 }
 }
 \examples{
-pd_poly_cleanup(pd_demo_data[1,], delta=20) |> pd_poly_manage_overlaps()
+pd_demo_data[1:5,] |> mutate(p = pd_poly_cleanup(p, delta=20)) |> mutate(p = pd_poly_manage_overlaps(p))
 
 }

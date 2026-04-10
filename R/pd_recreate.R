@@ -149,20 +149,9 @@ pd_recreate_drawing <- function(
 
   # map bw to size in mm using scale_bw funtion
 
-  #### SHOULD THIS BE SOMEWHERE ELSE ???? #####
-  #### Scaling function
-  scale_bw <- function(bw) {
-    min_bw <- 1
-    max_bw <- 20
-    min_target <- 0.1
-    max_target <- 5
-    ((bw - min_bw) / (max_bw - min_bw)) * (max_target - min_target) + min_target
-  }
-  #######################
-
   pd <- pd |>
     dplyr::mutate(
-      size_mm = scale_bw(bw)
+      size_mm = pd_scale_bw(bw)
     )
 
   ## Spray and Pen needs to be plotted differently
@@ -177,7 +166,7 @@ pd_recreate_drawing <- function(
   ### Recreate jitter in spray Data
   ### But only if spray data exists
 
-  if (nrow(pd_spray > 0)) {
+  if (nrow(pd_spray) > 0) {
     pd_spray <- pd_spray |>
 
       # Create extra rows according to spray density (pd)
