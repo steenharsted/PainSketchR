@@ -16,35 +16,58 @@ pd <- pd_json2pd(c(
 background_image <- png::readPNG("inst/extdata/feet_background.png")
 
 
-# No background image no save
+# No background image
 pd |>
   dplyr::filter(id == "Anon") |>
-  pd_recreate_drawing(save_plot = FALSE)
+  pd_recreate_drawing()
 
-# Background image no save
+# Background image
+pd |>
+  dplyr::filter(id == "Anon") |>
+  pd_recreate_drawing(
+    background_image = background_image
+  )
+
+# Background image with id
 pd |>
   dplyr::filter(id == "Anon") |>
   pd_recreate_drawing(
     background_image = background_image,
-    save_plot = FALSE
+    include_id = TRUE
   )
 
-# Background image as filepath no save
+
+# Background image no rasterize
 pd |>
   dplyr::filter(id == "Anon") |>
   pd_recreate_drawing(
     background_image = "inst/extdata/feet_background.png",
-    save_plot = FALSE
+    rasterize = FALSE
   )
 
-# Multiple drawings save
+# Multiple drawings
+pd |>
+  pd_recreate_drawing(
+    background_image = background_image
+  )
+
+
 pd |>
   pd_recreate_drawing(
     background_image = background_image,
-    save_plot = FALSE,
-    filename = "R_sandbox/drawing.png"
+    rasterize = FALSE
   )
 
-# LAV I MORGEN
-# pd_to_png
-# Estimer Areal
+
+# Drawings with rasterize = TRUE will create temporary files
+# These are automatically removed if clean_up = TRUE
+# To inspect the files set clean_up to FALSE and look in tempdir()
+
+pd |>
+  pd_recreate_drawing(
+    background_image = background_image,
+    clean_up = FALSE,
+    include_id = TRUE
+  )
+
+tempdir()
