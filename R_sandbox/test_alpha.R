@@ -33,3 +33,48 @@ identical(my_array_col[,, 1], my_array_grey[,, 1])
 
 # ALPHA LAYER AGAIN
 identical(my_array_col[,, 4], my_array_grey[,, 4])
+
+
+## Explore gglot
+
+plot_data <- tibble(
+    x = c(rep(1, 10), rep(2, 10)),
+    y = c(1:10, 1:10),
+    alpha = c(rep(0.1, 10), seq(0.1, 1, by = 0.1)),
+    n = c(1:10, rep(1, 10))
+) |>
+    mutate(label = paste0(alpha, " * ", n)) |>
+    uncount(n)
+
+plot_data |>
+    ggplot(aes(x = x, y = y, alpha = alpha)) +
+    geom_point(color = "red", size = 40) +
+    theme_void() +
+    scale_size_identity() +
+    scale_alpha_identity() +
+    scale_x_continuous(limits = c(0.5, 2.5)) +
+    geom_text(aes(label = label), alpha = 1)
+
+
+# Resulting alpha should follow this formula
+# α = F_alpha + B_alpha * (1 - F_alpha)
+
+plot_data_extra <- tibble(
+    x = rep(1.5, 10),
+    y = c(1:10),
+    alpha = rep(0.1, 10),
+    n = rep(1, 10)
+) |>
+    mutate(
+        alpha = purrr::accumulate(alpha, \(bg, fg) fg + bg * (1 - fg)),
+        label = paste0(alpha, " * ", n)
+    )
+
+bind_rows(plot_data, plot_data_extra) |>
+    ggplot(aes(x = x, y = y, alpha = alpha)) +
+    geom_point(color = "red", size = 40) +
+    theme_void() +
+    scale_size_identity() +
+    scale_alpha_identity() +
+    scale_x_continuous(limits = c(0.5, 2.5)) +
+    geom_text(aes(label = label), alpha = 1)
