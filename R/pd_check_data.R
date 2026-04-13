@@ -65,7 +65,7 @@ pd_check_data <- function(d, verbose = TRUE) {
   ##### CHECK COLUMNS IN DATA FRAME #####
 
   # pd data columns has expected type ( Should we also check for 'f', 'v' and 'app'? )
-  if (is.character(d$id) && is.integer(w) && is.integer(h) && is.character(coords) && is.character(ts) && is.list(d$s) && is.list(d$p)) {
+  if (is.character(d$id) && is.integer(d$w) && is.integer(d$h) && is.character(d$coord) && is.character(d$ts) && is.list(d$s) && is.list(d$p)) {
     if (verbose) {
       message("Data columns 'id', 'w', 'h', 'coord', 'ts', 's' and 'p' are <chr>, <int>, <int>, <chr>, <chr>, <list> and <list>: OK")
     }
@@ -172,7 +172,7 @@ pd_check_data <- function(d, verbose = TRUE) {
   if (
     d$s |>
       purrr::every(\(z) { # z is a list element of d$s, i.e a tibble
-         !any(duplicated(z$c)) 
+         length(unique(z$c))==1
       })
   ) {
     if (verbose) {
