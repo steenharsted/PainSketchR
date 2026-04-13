@@ -62,13 +62,21 @@ plot_data |>
 plot_data_extra <- tibble(
     x = rep(1.5, 10),
     y = c(1:10),
-    alpha = rep(0.1, 10),
+    alpha_base = rep(0.1, 10),
+    nn = 1:10,
     n = rep(1, 10)
 ) |>
     mutate(
-        alpha = purrr::accumulate(alpha, \(bg, fg) fg + bg * (1 - fg)),
-        label = paste0(alpha, " * ", n)
+        alpha = 1 - (1 - alpha_base)^nn,
+        label = paste0(round(alpha, 3), " * ", n),
+
+        # Other ways of calucating alpha (for my understanding)
+        alpha_purr = purrr::accumulate(alpha_base, \(bg, fg) {
+            fg + bg * (1 - fg)
+        })
     )
+
+plot_data_extra
 
 bind_rows(plot_data, plot_data_extra) |>
     ggplot(aes(x = x, y = y, alpha = alpha)) +
@@ -78,3 +86,71 @@ bind_rows(plot_data, plot_data_extra) |>
     scale_alpha_identity() +
     scale_x_continuous(limits = c(0.5, 2.5)) +
     geom_text(aes(label = label), alpha = 1)
+
+
+# Lets try compare alphas
+
+## Explore gglot
+
+plot_data_cum <- tibble(
+    x = rep(1, 10),
+    y = 1:10,
+    alpha = rep(0.1, 10),
+    n = 1:10
+) |>
+    uncount(n)
+
+plot_cum <- plot_data_cum |>
+    ggplot(aes(x = x, y = y, alpha = alpha)) +
+    geom_point(color = "red", size = 40, stroke = 0, shape = 19) +
+    theme_void() +
+    scale_size_identity() +
+    scale_alpha_identity() +
+    scale_x_continuous(limits = c(0.5, 2.5))
+
+
+plot_data_mul <- tibble(
+    x = rep(1, 10),
+    y = 1:10,
+    alpha_base = rep(0.1, 10),
+    nn = 1:10,
+    n = rep(1, 10)
+) |>
+    mutate(
+        alpha = 1 - (1 - alpha_base)^nn,
+    )
+
+plot_data_mul
+
+plot_mul <- plot_data_mul |>
+    ggplot(aes(x = x, y = y, alpha = alpha)) +
+    geom_point(color = "red", size = 40, stroke = 0, shape = 19) +
+    theme_void() +
+    scale_size_identity() +
+    scale_alpha_identity() +
+    scale_x_continuous(limits = c(0.5, 2.5))
+
+
+plot_cum
+plot_mul
+
+ggsave("cum.png", plot = plot_cum)
+ggsave("mul.png", plot = plot_mul)
+
+# Read Arrays
+cum_png <- png::readPNG("cum.png")
+mul_png <- png::readPNG("mul.png")
+
+identical(cum_png[,, 4], mul_png[,, 4])
+
+
+# Compare with tolerance
+tolerance <- 1e-5
+comparison <- abs(cum_png[,, 4] - mul_png[,, 4]) < tolerance
+all(comparison) # Should be TRUE if all values are close enough
+
+# Extract all alpha values for comparison
+diff <- cum_png[,, 4] - mul_png[,, 4]
+print(diff[abs(diff) > 1e-5])
+
+diff |> as.double() |> quantile(probs = seq(0, 1, 0.05))
