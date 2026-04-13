@@ -39,6 +39,10 @@
 #'
 pd_check_data <- function(d, verbose = TRUE) {
   ok <- TRUE
+
+  ##### CHECK DATA FRAME #####
+
+  # pd data is a tibble
   if (tibble::is_tibble(d)) {
     if (verbose) {
       message("Data is a tibble: OK")
@@ -48,25 +52,29 @@ pd_check_data <- function(d, verbose = TRUE) {
     ok <- FALSE
   }
 
-  ## Should we insist that each pain drawing has `w` and `h` columns? ..if width and height?
-  if (all(c("id", "s", "p") %in% names(d))) {
+  # pd data has expected column names
+  if (all(c("id", "coord", "w", "h", "coord", "ts", "s", "p") %in% names(d))) {
     if (verbose) {
-      message("Data has columns 'id', 's' and 'p': OK")
+      message("Data has columns 'id', 'w', 'h', 'coord', 'ts', 'p', and 's': OK")
     }
   } else {
-    warning("Data has columns 'id', 's' and 'p': FAIL")
+      warning("Data has columns 'id', 'w', 'h', 'coord', 'ts', 'p', and 's': FAIL")
+      ok <- FALSE
+  }
+
+  ##### CHECK COLUMNS IN DATA FRAME #####
+
+  # pd data columns has expected type ( Should we also check for 'f', 'v' and 'app'? )
+  if (is.character(d$id) && is.integer(w) && is.integer(h) && is.character(coords) && is.character(ts) && is.list(d$s) && is.list(d$p)) {
+    if (verbose) {
+      message("Data columns 'id', 'w', 'h', 'coord', 'ts', 's' and 'p' are <chr>, <int>, <int>, <chr>, <chr>, <list> and <list>: OK")
+    }
+  } else {
+    warning("Data columns 'id', 'w', 'h', 'coord', 'ts', 's' and 'p' are <chr>, <int>, <int>, <chr>, <chr>, <list> and <list>: FAIL")
     ok <- FALSE
   }
 
-  if (is.character(d$id) && is.list(d$s) && is.list(d$p)) {
-    if (verbose) {
-      message("Data columns 'id', 's' and 'p' are <chr>, <list> and <list>: OK")
-    }
-  } else {
-    warning("Data columns 'id', 's' and 'p' are <chr>, <list> and <list>: FAIL")
-    ok <- FALSE
-  }
-
+  # Check for duplicated pd id's
   if (any(duplicated(d$id))) {
     if (verbose) {
       warning("All elements of 'id' are unique: FAIL")
@@ -76,7 +84,8 @@ pd_check_data <- function(d, verbose = TRUE) {
     message("All elements of 'id' are unique: OK")
   }
 
-  if (all(sapply(d$s, tibble::is_tibble))) {
+  # Check all elements in the 's' column are tibbles
+  if (purrr::every(d$s, tibble::is_tibble)) { # WHAT SHOULD WE DO WITH NA's?
     if (verbose) {
       message("All elements of 's' are tibbles: OK")
     }
@@ -85,7 +94,8 @@ pd_check_data <- function(d, verbose = TRUE) {
     ok <- FALSE
   }
 
-  if (all(sapply(d$p, tibble::is_tibble))) {
+  # Check all elements in the 'p' column are tibbles
+  if (purrr::every(d$p, tibble::is_tibble)) { # WHAT SHOULD WE DO WITH NA's?
     if (verbose) {
       message("All elements of 'p' are tibbles: OK")
     }
@@ -94,83 +104,97 @@ pd_check_data <- function(d, verbose = TRUE) {
     ok <- FALSE
   }
 
+
+  ##### CHECK COLUMNS IN TIBBLES IN LIST-COL OF DATA FRAME #####
+
+  # Check that all tibbles in the list-column 's' have expected names
   if (
     d$s |>
-      purrr::every(\(x) {
-        all("i" %in% names(x))
+      purrr::every(\(x) { # x is a list element of d$s, i.e a tibble
+        all(c("i", "q", "t", "bw", "c", "a") %in% names(x))
       })
   ) {
     if (verbose) {
-      message("All elements of 's' have column 'i': OK")
+      message("All tibbles in list-col 's' have columns 'i', 'q', 't', 'bw', 'c', 'a': OK")
     }
   } else {
-    warning("All elements of 's' have column 'i': FAIL")
+    warning("All tibbles in list-col 's' have columns 'i', 'q', 't', 'bw', 'c', 'a': FAIL")
     ok <- FALSE
   }
 
+  # Check that all tibbles in the list-column 'p' have expected names
   if (
     d$p |>
-      purrr::every(\(x) {
+      purrr::every(\(x) { # x is a list element of d$s, i.e a tibble
         all(c("i", "x", "y") %in% names(x))
       })
   ) {
     if (verbose) {
-      message("All elements of 's' have columns 's' and 'p': OK")
+      message("All tibbles in list-col 'p' have columns 'i', 'x' and 'y': OK")
     }
   } else {
-    warning("All elements of 's' have columns 's' and 'p': FAIL")
+    warning("All tibbles in list-col 'p' have columns 'i', 'x' and 'y': FAIL")
     ok <- FALSE
   }
 
+  # Check that all tibble columns in the list-column 's' have expected types
   if (
-    purrr::every(d$s$i, {
-      is.integer
-    })
+    d$s |>
+      purrr::every(\(x) { # x is a list element of d$s, i.e a tibble
+        is.integer(c(x$i, x$q, x$bw, x$a)) &
+          is.character(c(x$t, x$c)) 
+      })
   ) {
     if (verbose) {
-      message("All elements of 's' have column 'i' which is integer: OK")
+      message("All tibbles in list-col 's' have columns 'i', 'q', 't', 'bw', 'c', 'a', which are <int> <int> <chr> <int> <chr> <int>: OK")
     }
   } else {
-    warning("All elements of 's' have column 'i' which is integer: FAIL")
+    warning("All tibbles in list-col 's' have columns 'i', 'q', 't', 'bw', 'c', 'a', which are <int> <int> <chr> <int> <chr> <int>: FAIL")
+    ok <- FALSE
+  }
+  
+  # Check that all tibble columns in the list-column 'p' have expected types
+  if (
+    d$p |>
+      purrr::every(\(z) { # z is a list element of d$s, i.e a tibble
+        is.integer(c(z$i, z$x, z$y)) 
+      })
+  ) {
+    if (verbose) {
+      message("All tibbles in list-col 'p' have columns 'i', 'x', and 'y', which are <int> <int> <int>: OK")
+    }
+  } else {
+    warning("All tibbles in list-col 'p' have columns 'i', 'x', and 'y', which are <int> <int> <int>: FAIL")
     ok <- FALSE
   }
 
+  # Check that all colors specified in 'c' column of each tibble in list-col 's' are the same 
   if (
-    purrr::every(d$p$i, {
-      is.integer
-    })
+    d$s |>
+      purrr::every(\(z) { # z is a list element of d$s, i.e a tibble
+         !any(duplicated(z$c)) 
+      })
   ) {
     if (verbose) {
-      message("All elements of 'p' have column 'i' which is integer: OK")
+      message("All tibbles in list-col 's' have a column 'c', which holds only a single color specification for each tibble: OK")
     }
   } else {
-    warning("All elements of 'p' have column 'i' which is integer: FAIL")
+    warning("All tibbles in list-col 's' have a column 'c', which holds only a single color specification for each tibble: FAIL")
     ok <- FALSE
   }
 
+  # Check that none of the id's specified in 'i' column of each tibble in list-col 's' are the same 
   if (
-    purrr::every(d$p$x, {
-      is.integer
-    })
+    d$s |>
+      purrr::every(\(z) { # z is a list element of d$s, i.e a tibble
+         all(!duplicated(z$i)) 
+      })
   ) {
     if (verbose) {
-      message("All elements of 'p' have column 'x' which is integer: OK")
+      message("All tibbles in list-col 's' have a column 'i', which are all unique for each tibble: OK")
     }
   } else {
-    warning("All elements of 'p' have column 'x' which is integer: FAIL")
-    ok <- FALSE
-  }
-
-  if (
-    purrr::every(d$p$y, {
-      is.integer
-    })
-  ) {
-    if (verbose) {
-      message("All elements of 'p' have column 'y' which is integer: OK")
-    }
-  } else {
-    warning("All elements of 'p' have column 'y' which is integer: FAIL")
+    warning("All tibbles in list-col 's' have a column 'i', which are all unique for each tibble: FAIL")
     ok <- FALSE
   }
 

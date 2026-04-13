@@ -4,7 +4,15 @@
 \alias{pd_poly2png}
 \title{Generate png templates from pain drawing polygon data}
 \usage{
-pd_poly2png(pd, to_file = TRUE, filenames = "id", path = "./")
+pd_poly2png(
+  pd,
+  to_file = TRUE,
+  filenames = "id",
+  path = "./",
+  width = -1,
+  height = -1,
+  by = "id"
+)
 }
 \description{
 These are useful for generating png templates of anatomical regions which

@@ -4,7 +4,7 @@
 \alias{pd_to_png_single}
 \title{Convert a single-row pain drawing to a PNG raster array}
 \usage{
-pd_to_png_single(.data, clean_up = TRUE, dpi = 96)
+pd_to_png_single(.data, clean_up = TRUE, dpi = 96, grey_scale = FALSE)
 }
 \arguments{
 \item{.data}{A single-row pain drawing tibble as produced by

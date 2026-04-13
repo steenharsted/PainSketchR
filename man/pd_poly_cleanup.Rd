@@ -4,7 +4,13 @@
 \alias{pd_poly_cleanup}
 \title{Clean pain drawings for self-intersections and no-area polygons.}
 \usage{
-pd_poly_cleanup(p, noarea_action = "buffer", delta = 5)
+pd_poly_cleanup(
+  p,
+  chull = TRUE,
+  noarea_action = "buffer",
+  delta = 5,
+  overlaps = "nothing"
+)
 }
 \arguments{
 \item{noarea_action}{A string specifying how to manage polygons with no area (points and lines) -- accepted values: "drop" and "buffer"}
@@ -17,7 +23,8 @@ pd_poly_cleanup(p, noarea_action = "buffer", delta = 5)
 A pain drawing data structure
 }
 \description{
-The function \code{pd_poly_cleanup()} removes self-intersections from pain drawing polygons.
+The function \code{pd_poly_cleanup()} removes self-intersections from pain drawing polygons by
+reducing them to their convex hull polygons.
 It also identifies \emph{no-area} polygons, i.e. single points and two-point lines,
 which have no area -- these can be either deleted or buffered into squares with areas.
 }

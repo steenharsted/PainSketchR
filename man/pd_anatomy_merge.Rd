@@ -4,14 +4,19 @@
 \alias{pd_anatomy_merge}
 \title{Merge anatomical areas into larger areas}
 \usage{
-pd_anatomy_merge(pd)
+pd_anatomy_merge(pd, merge_overlaps = TRUE)
 }
 \arguments{
-\item{pd}{}
+\item{pd}{must be a valid pain drawing data structure where each pain drawing consists of a single stroke/polygon}
+
+\item{merge_overlaps}{(TRUE/FALSE) if TRUE any strokes/polygons which overlap (even by just a shared point or line) will m be merged.
+Otherwise the function returns all drawings collapsed into a single pain drawing with multiple strokes/polygons.}
 }
 \description{
-This assumes a pain drawing data structure of anatomical regions, where each row/pd is a single anatomical area defined by one polygon
-In other words each pain drawing (row) should contain only a single stroke/polygon. The function collapses n pain drawings of each 1 polygon
+This assumes a pain drawing data structure of anatomical regions,
+where each row/pdpaindrawing is a single anatomical area defined by one stroke polygon
+In other words each pain drawing (row) should contain only a single stroke/polygon.
+The function collapses n pain drawings of each 1 polygon
 into 1 pain drawing of n polygons.
 }
 \details{
