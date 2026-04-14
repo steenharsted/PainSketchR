@@ -12,9 +12,11 @@ pd_spray_trim <- function(png, template) {
 
   ## THIS IS UNFINISHED ... ! 
 
-    # Should we allow for png in memory (as opposed to specifying a png file)?
-  if (!is.character(png)) {
-    stop("At least one png file path must be specified")
+  if (!fs::is_file(template) || fs::is_file_empty(template)) {
+    stop("Provide a single valid png file path as 'template'")
+  }
+  if (!all(fs::is_file(template)) || any(fs::is_file_empty(template))) {
+    stop("Provide a vector of valid and non-empty png file paths as 'png'")
   }
 
   result <- tibble::tibble(file = png, R = NA, G = NA, B = NA)
@@ -23,17 +25,18 @@ pd_spray_trim <- function(png, template) {
   png_data <- list()
 
   for (i in seq_along(png_files)) {
-    if (fs::is_file(png_files[i])) {
-      png_data <- append(png_data, 
-        tryCatch(
-        expr = {
-          png::readPNG(png_files[i])
-        },
-        error = \(e) {
-          NA
-        })
-      )
-    }
+    png_data <- append(png_data, 
+      tryCatch(
+      expr = {
+        png::readPNG(png_files[i])
+      },
+      error = \(e) {
+        NA
+      })
+    )
   }
+
+  
+
   return(result)
 }
