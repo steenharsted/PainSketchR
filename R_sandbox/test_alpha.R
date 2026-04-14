@@ -134,12 +134,12 @@ plot_mul <- plot_data_mul |>
 plot_cum
 plot_mul
 
-ggsave("cum.png", plot = plot_cum)
-ggsave("mul.png", plot = plot_mul)
+ggsave("R_sandbox/cum.png", plot = plot_cum)
+ggsave("R_sandbox/mul.png", plot = plot_mul)
 
 # Read Arrays
-cum_png <- png::readPNG("cum.png")
-mul_png <- png::readPNG("mul.png")
+cum_png <- png::readPNG("R_sandbox/cum.png")
+mul_png <- png::readPNG("R_sandbox/mul.png")
 
 identical(cum_png[,, 4], mul_png[,, 4])
 
@@ -154,3 +154,12 @@ diff <- cum_png[,, 4] - mul_png[,, 4]
 print(diff[abs(diff) > 1e-5])
 
 diff |> as.double() |> quantile(probs = seq(0, 1, 0.05))
+
+# How many dots will it take to reach 90% satutation?
+
+tibble(
+    alpha = seq(0.05, 0.9, 0.05)
+) |>
+    mutate(
+        n_of_overlaps_to_reach_0.9 = log(0.1) / log(1 - alpha)
+    )
