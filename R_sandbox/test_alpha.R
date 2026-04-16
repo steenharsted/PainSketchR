@@ -155,6 +155,7 @@ print(diff[abs(diff) > 1e-5])
 
 diff |> as.double() |> quantile(probs = seq(0, 1, 0.05))
 
+
 # How many dots will it take to reach 90% satutation?
 
 tibble(
@@ -162,4 +163,21 @@ tibble(
 ) |>
     mutate(
         n_of_overlaps_to_reach_0.9 = log(0.1) / log(1 - alpha)
+    )
+
+
+## Functions
+
+# Usage
+
+pd <- pd_json2pd(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
+pd <- pd |> pd_add_png()
+
+pd |>
+    mutate(
+        intensity = map_dbl(.png, pd_alpha_intensity),
+        area = map_dbl(.png, pd_alpha_area),
+        area_over_50 = map_dbl(.png, \(x) {
+            pd_alpha_area(x, alpha_range = c(0.5, 1))
+        })
     )
