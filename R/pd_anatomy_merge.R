@@ -1,7 +1,7 @@
 #' Merge anatomical areas into larger areas
 #'
 #' This assumes a pain drawing data structure of anatomical regions, 
-#' where each row/pdpaindrawing is a single anatomical area defined by one stroke polygon
+#' where each row/paindrawing is a single anatomical area defined by one stroke polygon
 #' In other words each pain drawing (row) should contain only a single stroke/polygon. 
 #' The function collapses n pain drawings of each 1 polygon
 #' into 1 pain drawing of n polygons. 
@@ -39,7 +39,7 @@ pd_anatomy_merge <- function(pd, merge_overlaps=TRUE)  {
   # Now merge overlapping strokes/polygons if merge_overlap is TRUE
   if (merge_overlaps) {
     pd <- pd |> mutate(p=pd_poly_manage_overlaps(p, method="union"))
-    pd <- pd |> mutate(s=unique(pd$p$i))
+    #pd <- pd |> mutate(s=unique(pd$p[[1]]$i)) # HER SKAL VI MANUELT FASTLÆGGE NOGLE GODE FAULT VÆRDIER.
   }
   return(pd)
 }

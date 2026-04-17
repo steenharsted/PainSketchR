@@ -10,7 +10,9 @@ pd_recreate_drawing(
   include_id = FALSE,
   rasterize = TRUE,
   clean_up = TRUE,
-  dpi = 96
+  dpi = 96,
+  type = "path",
+  check_data_validity = FALSE
 )
 }
 \arguments{
@@ -46,6 +48,11 @@ drawings are collected — this ensures a 1:1 pixel correspondence between
 the original drawing and the output. Increase for print-quality output
 (e.g. \code{300}), noting this does not affect the canvas dimensions, only
 output pixel density.}
+
+\item{type}{A string set to either 'path' or 'polygon'. The former (default)
+generates a png of the pain drawing with strokes illustrated as path. The
+latter generates a png with strokes as closed polygons in black, filled in
+with black. The latter is useful for generating templates of anatomy areas.}
 }
 \value{
 A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object. When \code{rasterize = TRUE}, the plot

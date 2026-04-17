@@ -1,4 +1,4 @@
-## code to prepare `DATASET` dataset goes here
+## code to prepare the demo `DATASET` goes here
 
 # Generate some demo data of anatomical regions from full body outline/template
 pd_d <- tibble::tibble(id=as.integer(), s=list(), p=list())
@@ -6,13 +6,13 @@ for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
   d <- read.csv(c, sep=";", header = FALSE)
   pd_d <- rbind(pd_d, tibble::tibble(
     id=fs::path_ext_remove(fs::path_file(c)), 
-    w=450,
-    h=500,
+    w=as.integer(450),
+    h=as.integer(500),
     coord="px",
     ts=as.character(Sys.time()),
     app="PainDraweR package",
-    s=list(tibble::tibble(i=1, q=1, t="pen", bw=1, c="#FF0000", a=256)), 
-    p=list(tibble::tibble(i=1, x=d[,1], y=d[,2]))))
+    s=list(tibble::tibble(i=as.integer(1), q=as.integer(1), t="pen", bw=as.integer(1), c="#FF0000", a=as.integer(256))), 
+    p=list(tibble::tibble(i=as.integer(1), x=d[,1], y=d[,2]))))
 } 
 
 # This is a bit quirky ... but necessary to ensure the variable is named correctly in rda:
@@ -45,10 +45,11 @@ pd_demo_data <- read.csv("data-raw/demo_data.csv") |>
     )
   }) |>
   dplyr::ungroup() 
+
 pd_demo_data <- pd_demo_data |>
   dplyr::mutate(f="data/pd_demo_data.csv") |>
-  dplyr::mutate(v=2) |>
-  dplyr::mutate(w=450, h=500) |>
+  dplyr::mutate(v=as.integer(2)) |>
+  dplyr::mutate(w=as.integer(450), h=as.integer(500)) |>
   dplyr::mutate(coord="px") |>
   dplyr::mutate(ts = as.character(Sys.time())) |>
   dplyr::mutate(app = "PainDrawR package") 
@@ -58,16 +59,16 @@ pd_demo_data$s <- pd_demo_data$s |> purrr::map(\(tb) {
     tb |> mutate(
       q=i,
       t="pen",
-      bw=1,
+      bw=as.integer(1),
       c="#FF0000",
-      a=128
+      a=as.integer(128)
     )
   } else {
     tb
   }
 })
 
-pd_demo_data <- rbind(tibble::tibble(id="No pain drawing", s=list(NA), p=list(NA), f="", v=2, w=NA, h=NA, coord="", ts=Sys.time(), app="PainDraweR package"), pd_demo_data)
+#pd_demo_data <- rbind(tibble::tibble(id="No pain drawing", s=list(NA), p=list(NA), f="", v=as.integer(2), w=as.integer(0), h=as.integer(0), coord="", ts=as.character(Sys.time()), app="PainDraweR package"), pd_demo_data)
 
 save(pd_demo_data, file="data/pd_demo_data.rda")
   

@@ -8,9 +8,7 @@
 #'
 #' @export
 #' @examples
-pd_spray_trim <- function(png, template) {
-
-  ## THIS IS UNFINISHED ... ! 
+pd_spray_trim <- function(png_files, template) {
 
   if (!fs::is_file(template) || fs::is_file_empty(template)) {
     stop("Provide a single valid png file path as 'template'")
@@ -19,24 +17,40 @@ pd_spray_trim <- function(png, template) {
     stop("Provide a vector of valid and non-empty png file paths as 'png'")
   }
 
-  result <- tibble::tibble(file = png, R = NA, G = NA, B = NA)
-
-  # ADD: If png_is a vector of files, read them into memory
+  if (!is.character(png_files) | length(png_files < 1)) {
+    stop("Provide a vector of one or more file names in 'png_files'")
+  }
+  
+  # png_files is (supposed to be) a vector of files, so read them into memory
   png_data <- list()
 
   for (i in seq_along(png_files)) {
-    png_data <- append(png_data, 
-      tryCatch(
-      expr = {
-        png::readPNG(png_files[i])
-      },
-      error = \(e) {
-        NA
-      })
-    )
+    if (fs::is_file(i) && !fs::is_file_empty(i)) {
+      png_data <- append(png_data, 
+        tryCatch(
+          expr = {png::readPNG(png_files[i])},
+          error = \(e) {NA}
+        )
+      )
+    }
   }
 
-  
+  # CHECK THAT PNG_FILES AND TEMPLATE HAVE SAME DIMENSIONS FOR X AND Y
+  png_data <- png_data |>
+    purrr::keep(\(png_mtx) {dim(png_mtx)[1:2] == dim(template)[1:2]})
 
-  return(result)
+  # If png_files contained valid png data, multiply each png data sets alpha channel by the alpha channel of the template png
+  if (length(png_data > 0)) {
+    png_data |> purrr::map(\(png_mtx) {
+      png_mtx[,,,4] <- png_mtx[,,,4] * template[,,,4]
+      png_mtx
+    })
+    tryCatch(
+          expr = {png::writePNG(png_mtx, target="/tmp/NEWFILE.png")},
+          error = \(e) {NA}
+        )
+  }  
+
+
+
 }

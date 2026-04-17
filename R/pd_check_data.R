@@ -76,12 +76,12 @@ pd_check_data <- function(d, verbose = TRUE) {
 
   # Check for duplicated pd id's
   if (any(duplicated(d$id))) {
-    if (verbose) {
-      warning("All elements of 'id' are unique: FAIL")
-    }
+    warning("All elements of 'id' are unique: FAIL")
     ok <- FALSE
   } else {
-    message("All elements of 'id' are unique: OK")
+    if (verbose) {
+      message("All elements of 'id' are unique: OK")
+    }
   }
 
   # Check all elements in the 's' column are tibbles

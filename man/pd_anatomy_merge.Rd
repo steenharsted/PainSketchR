@@ -14,7 +14,7 @@ Otherwise the function returns all drawings collapsed into a single pain drawing
 }
 \description{
 This assumes a pain drawing data structure of anatomical regions,
-where each row/pdpaindrawing is a single anatomical area defined by one stroke polygon
+where each row/paindrawing is a single anatomical area defined by one stroke polygon
 In other words each pain drawing (row) should contain only a single stroke/polygon.
 The function collapses n pain drawings of each 1 polygon
 into 1 pain drawing of n polygons.
