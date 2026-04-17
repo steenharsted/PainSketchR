@@ -9,7 +9,7 @@ for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
     w=450,
     h=500,
     coord="px",
-    ts=as.character(Sys.timer()),
+    ts=as.character(Sys.time()),
     app="PainDraweR package",
     s=list(tibble::tibble(i=1, q=1, t="pen", bw=1, c="#FF0000", a=256)), 
     p=list(tibble::tibble(i=1, x=d[,1], y=d[,2]))))
@@ -21,7 +21,7 @@ assign(var_name, pd_d)
 do.call(save, list(var_name, file="data/pd_demo_anatomy.rda"))
 
 # Generate png stencils for each anatomical region (to allow for finding intersections in spray pain drawings)
-pd_d$p |> purrr::map(\(x) {})
+# pd_d$p |> purrr::map(\(x) {})
 
 # Generate a demo data set of pain drawings
 # This is based on real-world data collection (mird)
@@ -45,8 +45,29 @@ pd_demo_data <- read.csv("data-raw/demo_data.csv") |>
     )
   }) |>
   dplyr::ungroup() 
+pd_demo_data <- pd_demo_data |>
+  dplyr::mutate(f="data/pd_demo_data.csv") |>
+  dplyr::mutate(v=2) |>
+  dplyr::mutate(w=450, h=500) |>
+  dplyr::mutate(coord="px") |>
+  dplyr::mutate(ts = as.character(Sys.time())) |>
+  dplyr::mutate(app = "PainDrawR package") 
+  
+pd_demo_data$s <- pd_demo_data$s |> purrr::map(\(tb) {
+  if(tibble::is_tibble(tb)) {
+    tb |> mutate(
+      q=i,
+      t="pen",
+      bw=1,
+      c="#FF0000",
+      a=128
+    )
+  } else {
+    tb
+  }
+})
 
-pd_demo_data <- rbind(tibble::tibble(id="No pain drawing", s=list(NA), p=list(NA)), pd_demo_data)
+pd_demo_data <- rbind(tibble::tibble(id="No pain drawing", s=list(NA), p=list(NA), f="", v=2, w=NA, h=NA, coord="", ts=Sys.time(), app="PainDraweR package"), pd_demo_data)
 
 save(pd_demo_data, file="data/pd_demo_data.rda")
   
