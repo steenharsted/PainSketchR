@@ -45,6 +45,6 @@ Any information pertaining to the individual stroke/marking (e.g. colour or thic
 \examples{
 pd_check_data(pd_demo_data, verbose = FALSE) # Will return TRUE
 
-pd_check_data(letter[1:10]) # Will return FALSE and provide details in stderr
+pd_check_data(letters[1:10]) # Will return FALSE and provide details in stderr
 
 }

@@ -35,7 +35,7 @@
 #'   the original drawing and the output. Increase for print-quality output
 #'   (e.g. `300`), noting this does not affect the canvas dimensions, only
 #'   output pixel density.
-#' 
+#'
 #' @param type A string set to either 'path' or 'polygon'. The former (default)
 #' generates a png of the pain drawing with strokes illustrated as path. The
 #' latter generates a png with strokes as closed polygons in black, filled in
@@ -47,7 +47,7 @@
 #'   layers and supports further ggplot2 additions.
 #'
 #' @seealso [pd_json2pd()] to read pain drawing JSON files,
-#'   [pd_add_png()] to store raster arrays as a column in the tibble,
+#'   [pd_to_png()] to store raster arrays as a column in the tibble,
 #'   [pd_to_png_single()] for the single-row raster primitive.
 #'
 #' @examples
@@ -81,10 +81,10 @@ pd_recreate_drawing <- function(
   rasterize = TRUE,
   clean_up = TRUE,
   dpi = 96,
-  type="path"
+  type = "path"
 ) {
   # Making sure data has required columns
-   pd_check_data(.data, verbose=FALSE)
+  pd_check_data(.data, verbose = FALSE)
 
   # Test that we only 1 height and width value, respectively
   if (
@@ -211,7 +211,7 @@ pd_recreate_drawing <- function(
   }
 
   ### Build plot(s) with pen strokes
-  if (type=="polygon") {
+  if (type == "polygon") {
     pd_base <- pd_base +
       ggplot2::coord_fixed(
         xlim = c(0, image_width),
@@ -223,32 +223,36 @@ pd_recreate_drawing <- function(
       ggplot2::scale_size_identity() +
       ggplot2::scale_alpha_identity() +
       ggplot2::scale_linewidth_identity() +
-      ggplot2::geom_polygon( #path
+      ggplot2::geom_polygon(
+        #path
         ggplot2::aes(
           group = paste0(id, "_", i),
           linewidth = size_mm + 1
         ),
-        linetype = 1, color="black", fill="black", alpha=1
+        linetype = 1,
+        color = "black",
+        fill = "black",
+        alpha = 1
       )
   } else {
     pd_base <- pd_base +
-    ggplot2::coord_fixed(
-      xlim = c(0, image_width),
-      ylim = c(0, image_height),
-      expand = FALSE
-    ) +
-    ggplot2::theme_void(base_size = 12) +
-    ggplot2::scale_color_identity() +
-    ggplot2::scale_size_identity() +
-    ggplot2::scale_alpha_identity() +
-    ggplot2::scale_linewidth_identity() +
-    ggplot2::geom_path(
-      ggplot2::aes(
-        group = paste0(id, "_", i),
-        linewidth = size_mm + 1
-      ),
-      linetype = 1
-    )
+      ggplot2::coord_fixed(
+        xlim = c(0, image_width),
+        ylim = c(0, image_height),
+        expand = FALSE
+      ) +
+      ggplot2::theme_void(base_size = 12) +
+      ggplot2::scale_color_identity() +
+      ggplot2::scale_size_identity() +
+      ggplot2::scale_alpha_identity() +
+      ggplot2::scale_linewidth_identity() +
+      ggplot2::geom_path(
+        ggplot2::aes(
+          group = paste0(id, "_", i),
+          linewidth = size_mm + 1
+        ),
+        linetype = 1
+      )
   }
 
   plot_out <- pd_base +
@@ -283,7 +287,7 @@ pd_recreate_drawing <- function(
   height_mm <- image_height * pixel_to_mm * n_row # ≈ 132.29 mm for single image
 
   tmp <- tempfile(fileext = ".png")
-print(tmp)
+  print(tmp)
   if (clean_up) {
     on.exit(unlink(tmp), add = TRUE)
   }

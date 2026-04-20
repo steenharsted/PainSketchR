@@ -11,8 +11,7 @@ pd_recreate_drawing(
   rasterize = TRUE,
   clean_up = TRUE,
   dpi = 96,
-  type = "path",
-  check_data_validity = FALSE
+  type = "path"
 )
 }
 \arguments{
@@ -88,6 +87,6 @@ pd |> pd_recreate_drawing(include_id = TRUE)
 }
 \seealso{
 \code{\link[=pd_json2pd]{pd_json2pd()}} to read pain drawing JSON files,
-\code{\link[=pd_add_png]{pd_add_png()}} to store raster arrays as a column in the tibble,
+\code{\link[=pd_to_png]{pd_to_png()}} to store raster arrays as a column in the tibble,
 \code{\link[=pd_to_png_single]{pd_to_png_single()}} for the single-row raster primitive.
 }

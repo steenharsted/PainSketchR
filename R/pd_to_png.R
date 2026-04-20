@@ -1,8 +1,8 @@
 #' Convert a single-row pain drawing to a PNG raster array
 #'
 #' Renders the strokes and spray points from a single-row pain drawing tibble
-#' into a PNG raster array. This is the low-level workhorse function; for
-#' processing multiple rows use [pd_add_png()].
+#' into a PNG raster array. This is the low-level workhorse called by
+#' [pd_to_png()].
 #'
 #' @param .data A single-row pain drawing tibble as produced by
 #'   [pd_json2pd()]. Must contain columns `id`, `s`, `p`, `w`, and `h`.
@@ -15,14 +15,13 @@
 #'   collected — this ensures a 1:1 pixel correspondence between the original
 #'   drawing and the output. Increase for print-quality output (e.g. `300`),
 #'   noting this does not affect the canvas dimensions, only output pixel
-#'   density. Must match the `dpi` used in [pd_add_png()] to ensure consistent
-#'   array dimensions across the `.png` column.
+#'   density.
 #'
 #' @return A numeric array of dimensions `height × width × 4` (RGBA channels,
 #'   values in \[0, 1\]) as returned by [png::readPNG()]. Array dimensions
 #'   scale with `dpi`.
 #'
-#' @seealso [pd_add_png()] for the user-facing multi-row wrapper.
+#' @seealso [pd_to_png()] for the user-facing vectorised wrapper.
 #'
 #' @examples
 #' \dontrun{
@@ -42,7 +41,7 @@ pd_to_png_single <- function(
   if (nrow(.data) != 1L) {
     cli::cli_abort(
       "{.fn pd_to_png_single} expects a single-row tibble, but received {nrow(.data)} rows.
-      Use {.fn pd_add_png} to process multiple rows."
+      Use {.fn pd_to_png} to process multiple rows."
     )
   }
 
@@ -158,30 +157,26 @@ pd_to_png_single <- function(
 }
 
 
-#' Add a PNG raster column to a pain drawing tibble
+#' Render pain drawings to PNG raster arrays
 #'
-#' Renders each row of a pain drawing tibble into a PNG raster array and stores
-#' the results in a new `.png` list-column. This is the user-facing wrapper
-#' around [pd_to_png_single()].
+#' Renders each row of a pain drawing tibble into a PNG raster array, returning
+#' a list suitable for use as a `mutate()` column. Column arguments default to
+#' the names produced by [pd_json2pd()], so calling `pd_to_png()` bare inside
+#' `mutate()` works without any extra arguments.
 #'
-#' @param .data A pain drawing tibble as produced by [pd_json2pd()], with one
-#'   row per drawing. Input is validated with [pd_check_data()] before
-#'   processing.
+#' @param p,s,w,h,id Tidy-selection expressions identifying the columns that
+#'   hold the point data, stroke data, canvas width, canvas height, and drawing
+#'   identifier respectively. Defaults match the column names produced by
+#'   [pd_json2pd()].
 #' @param clean_up Logical. If `TRUE` (default), temporary `.png` files are
 #'   deleted after each raster is read into memory. Passed through to
 #'   [pd_to_png_single()].
 #' @param dpi Resolution passed to [ggplot2::ggsave()] for each drawing.
 #'   Defaults to `96`, matching the CSS pixel density of the web canvas where
-#'   drawings are collected — this ensures a 1:1 pixel correspondence between
-#'   the original drawing and the output. Increase for print-quality output
-#'   (e.g. `300`), noting this does not affect canvas dimensions, only output
-#'   pixel density. All rows are rendered at the same `dpi`, ensuring consistent
-#'   array dimensions across the `.png` column.
+#'   drawings are collected. All rows are rendered at the same `dpi`.
 #'
-#' @return The input tibble with an additional `.png` list-column (placed after
-#'   `s`). Each element is a numeric array of dimensions
-#'   `height × width × 4` (RGBA channels, values in \[0, 1\]). Array dimensions
-#'   scale with `dpi`.
+#' @return A list of numeric arrays, one per row, each of dimensions
+#'   `height × width × 4` (RGBA channels, values in \[0, 1\]).
 #'
 #' @seealso [pd_to_png_single()] for the single-row primitive,
 #'   [pd_json2pd()] for reading pain drawing JSON files.
@@ -189,7 +184,9 @@ pd_to_png_single <- function(
 #' @examples
 #' \dontrun{
 #' pd <- pd_json2pd(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
-#' pd <- pd |> pd_add_png()
+#'
+#' # Bare call — column names match pd_json2pd() defaults
+#' pd <- pd |> dplyr::mutate(.png = pd_to_png())
 #'
 #' # Display the first drawing
 #' grid::grid.newpage()
@@ -197,13 +194,34 @@ pd_to_png_single <- function(
 #' }
 #'
 #' @export
-pd_add_png <- function(.data, clean_up = TRUE, dpi = 96) {
-  pd_check_data(.data)
+pd_to_png <- function(
+  p = p,
+  s = s,
+  w = w,
+  h = h,
+  id = id,
+  clean_up = TRUE,
+  dpi = 96
+) {
+  # Capture the calling environment to resolve bare column names
+  data_env <- parent.frame()
 
-  rasters <- purrr::map(
-    seq_len(nrow(.data)),
-    \(i) pd_to_png_single(.data[i, ], clean_up = clean_up, dpi = dpi)
-  )
+  p_col <- eval(substitute(p), envir = data_env)
+  s_col <- eval(substitute(s), envir = data_env)
+  w_col <- eval(substitute(w), envir = data_env)
+  h_col <- eval(substitute(h), envir = data_env)
+  id_col <- eval(substitute(id), envir = data_env)
 
-  dplyr::mutate(.data, .png = rasters, .after = s)
+  n <- length(p_col)
+
+  purrr::map(seq_len(n), function(i) {
+    row_tbl <- tibble::tibble(
+      id = id_col[[i]],
+      w = w_col[[i]],
+      h = h_col[[i]],
+      p = list(p_col[[i]]),
+      s = list(s_col[[i]])
+    )
+    pd_to_png_single(row_tbl, clean_up = clean_up, dpi = dpi)
+  })
 }

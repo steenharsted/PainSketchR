@@ -4,7 +4,7 @@
 \alias{pd_spray_trim}
 \title{Trim spray pain drawing to tempalte}
 \usage{
-pd_spray_trim(png, template)
+pd_spray_trim(png_files, template)
 }
 \value{
 A new png spray pain drawing
