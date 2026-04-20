@@ -175,11 +175,9 @@ pd <- pd |> pd_add_png()
 
 pd |>
     mutate(
-        intensity = pd_alpha_intensity(pngs = .png),
-        area = pd_alpha_area(pngs = .png),
-        intensity_over_50 = pd_alpha_intensity(
-            pngs = .png,
-            alpha_range = c(0.5, 1)
-        ),
-        area_over_50 = pd_alpha_area(pngs = .png, alpha_range = c(0.5, 1))
+        intensity = purrr::map_dbl(.png, pd_alpha_intensity),
+        area = purrr::map_dbl(.png, pd_alpha_area),
+        area_over_50 = purrr:::map_dbl(.png, \(x) {
+            pd_alpha_area(x, alpha_range = c(0.5, 1))
+        })
     )

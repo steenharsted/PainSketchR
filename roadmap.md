@@ -12,6 +12,9 @@
 - kan png filer skabes i ram uden at skrive til disk?
 - hvordan skal vi håndtere NA værdier -- f.eks hvis 's' og 'p' er NA? (pd_check_data)
 - pd_mird2pd skal generere fornuftige (og korrekte) default værdier for w, h, coord, etc
+- i DATASET.R ..  brug pd_mird2pd til at indlæse demo_data
+- pd_demodata skal indeholde to kategoriske og 1 kontinuerlig variabel til demonstration af pd_create_heatmap
+
 
 - webpage
 - gitlab SDU?
