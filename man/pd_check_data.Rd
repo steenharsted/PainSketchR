@@ -36,7 +36,7 @@ The \code{id} column of the data object must represent a unique identifier for e
 
 The \code{i} column in each of the \code{s} tibbles must represent an index number for each stroke or marking, in that pain drawing. Thus, the \code{s} tibbles should contain exactly one row for each stroke/marking with a unique \code{i}.
 
-The \code{i} column in each of the \code{p} tibbles will be repeated for each coordinate x,y pair in each stroke/marking.
+The \code{i} column in each of the \code{p} tibbles will be repeated for each coordinate x,y pair in each stroke/marking and should correspond to the \code{i} values of the \code{s} list column element of that row.
 
 The \code{x} and \code{y} columns must represent coordinates of each point in the pain drawing strokes.
 

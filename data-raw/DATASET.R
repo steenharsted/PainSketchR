@@ -72,3 +72,14 @@ pd_demo_data$s <- pd_demo_data$s |> purrr::map(\(tb) {
 
 save(pd_demo_data, file="data/pd_demo_data.rda")
   
+
+# Generate to simple text strings, which represent file paths to json files in the package
+pd_demo_filepath_json_file_1 <- system.file("extdata", "four_geoms.json", package = "paindrawings")
+save(pd_demo_filepath_json_file_1, file="data/pd_demo_filepath_json_file_1.rda")
+pd_demo_filepath_json_file_2 <- system.file("extdata", "two_geoms.json", package = "paindrawings")
+save(pd_demo_filepath_json_file_2, file="data/pd_demo_filepath_json_file_2.rda")
+
+pd_demo_filepath_background_image_body <- system.file("extdata", "mird_body_background.png", package = "paindrawings")
+save(pd_demo_filepath_background_image_body, file="data/pd_demo_filepath_background_image_body.rda")
+pd_demo_filepath_background_image_head <- system.file("extdata", "heads.png", package = "paindrawings")
+save(pd_demo_filepath_background_image_head, file="data/pd_demo_filepath_background_image_head.rda")
