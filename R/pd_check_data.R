@@ -1,26 +1,27 @@
 #' Check whether an R object is a valid pain drawing data structure
 #'
-#' A pain drawing data structure must comply with certain criteria -- see Details below.
+#' A pain drawing data structure must comply with certain criteria -- see Details below. This function return TRUE or FALSE and helpful warnings as a byproduct.
 #'
 #' @details
 #'
-#' This function will check whether an R object fulfills the following criteria and provide some feedback.
+#' This function will check whether an R object fulfills the following criteria and provide some feedback if it does not and `verbose` is `TRUE`.
 #'
 #' For an R object to be a valid pain drawing data object:
 #'
-#' * must be a tibble where each row represents a pain drawing
-#' * it must have three named columns: `id`, `s`, and `p` -- users are free to add additional columns.
-#' * the column `id` must be of type character
-#' * the columns `s` and `p` must be list columns where each element (corresponding to each row):
+#' * it must be a tibble where each row represents a pain drawing
+#' * it must have named columns: `id`, `coord`, `w`, `h`, `ts`, `s`, and `p` -- users are free to add additional columns.
+#' * the columns `id`, `w` and `h` must be of type integer (not nummeric)
+#' * the column `coord` and `ts` must be of type character
+#' * the columns `s` and `p` must be list columns of the same length as number of rows in the pain drawing data structure. Each list element:
 #'     - must be of type tibble
-#'     - the `s` tibbles must contain a col `i` of type integer
-#'     - the `p` tibble must contain cols `i`, `x` and `y` of types integer
+#'     - the `s` tibbles must contain columns `i`, `q`, `t`, `bw`, `c`, `a`, which are int int chr int chr int
+#'     - the `p` tibble must contain columns `i`, `x`, `y`, which are int int int
 #'
 #' The `id` column of the data object must represent a unique identifier for each pain drawing.
 #'
 #' The `i` column in each of the `s` tibbles must represent an index number for each stroke or marking, in that pain drawing. Thus, the `s` tibbles should contain exactly one row for each stroke/marking with a unique `i`.
 #'
-#' The `i` column in each of the `p` tibbles will be repeated for each coordinate x,y pair in each stroke/marking.
+#' The `i` column in each of the `p` tibbles will be repeated for each coordinate x,y pair in each stroke/marking and should correspond to the `i` values of the `s` list column element of that row.
 #'
 #' The `x` and `y` columns must represent coordinates of each point in the pain drawing strokes.
 #'

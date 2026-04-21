@@ -13,21 +13,22 @@ pd_check_data(d, verbose = TRUE)
 TRUE or FALSE. The function will also provide output to stderr pertaining to any issues detected.
 }
 \description{
-A pain drawing data structure must comply with certain criteria -- see Details below.
+A pain drawing data structure must comply with certain criteria -- see Details below. This function return TRUE or FALSE and helpful warnings as a byproduct.
 }
 \details{
-This function will check whether an R object fulfills the following criteria and provide some feedback.
+This function will check whether an R object fulfills the following criteria and provide some feedback if it does not and \code{verbose} is \code{TRUE}.
 
 For an R object to be a valid pain drawing data object:
 \itemize{
-\item must be a tibble where each row represents a pain drawing
-\item it must have three named columns: \code{id}, \code{s}, and \code{p} -- users are free to add additional columns.
-\item the column \code{id} must be of type character
-\item the columns \code{s} and \code{p} must be list columns where each element (corresponding to each row):
+\item it must be a tibble where each row represents a pain drawing
+\item it must have named columns: \code{id}, \code{coord}, \code{w}, \code{h}, \code{ts}, \code{s}, and \code{p} -- users are free to add additional columns.
+\item the columns \code{id}, \code{w} and \code{h} must be of type integer (not nummeric)
+\item the column \code{coord} and \code{ts} must be of type character
+\item the columns \code{s} and \code{p} must be list columns of the same length as number of rows in the pain drawing data structure. Each list element:
 \itemize{
 \item must be of type tibble
-\item the \code{s} tibbles must contain a col \code{i} of type integer
-\item the \code{p} tibble must contain cols \code{i}, \code{x} and \code{y} of types integer
+\item the \code{s} tibbles must contain columns \code{i}, \code{q}, \code{t}, \code{bw}, \code{c}, \code{a}, which are int int chr int chr int
+\item the \code{p} tibble must contain columns \code{i}, \code{x}, \code{y}, which are int int int
 }
 }
 

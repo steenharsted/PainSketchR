@@ -3,6 +3,7 @@
 
 ## To do
 
+- kunne pd_recreate_drawing plotte alle på samme baggrund i stedet for flere facetter?
 - ændre pd_spray_trim til pd_png_trim
 - i pd_png_trim : gange alpha med alpha kanal
 - i pd_png_trim funktionen kan vi droppe alt om fil-indlæsning og i stedet bruge .png kolonner genereret af Steens pd_to_png funktionen

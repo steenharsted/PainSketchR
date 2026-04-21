@@ -40,7 +40,7 @@
 #' pd_anatomy_merge(pd_demo_anatomy)
 #' 
 #' bi <- system.file("extdata", "mird_body_background.png", package = "paindrawings")
-#' pd_demo_anatomy |> pd_recreate_drawing(background_image = bi)
+#' pd_demo_anatomy |> pd_recreate_drawing(background_image = bi) # Note: execution time > 5 sec
 #' pd_demo_anatomy |> pd_anatomy_merge() |> pd_recreate_drawing(background_image = bi)
 #' 
 #' pd_demo_anatomy |> dplyr::filter(id %in% c("Front_left_thigh", "Front_left_leg", "Front_left_foot")) |> pd_recreate_drawing(background_image = bi)#' 
