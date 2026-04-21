@@ -2,33 +2,100 @@
 % Please edit documentation in R/pd_poly_cleanup.R
 \name{pd_poly_cleanup}
 \alias{pd_poly_cleanup}
-\title{Clean pain drawings for self-intersections and no-area polygons.}
+\title{Clean and normalize pain drawing stroke geometries}
 \usage{
 pd_poly_cleanup(
   p,
-  chull = TRUE,
   noarea_action = "buffer",
-  delta = 5,
-  overlaps = "nothing"
+  buffer_delta = 5,
+  chull = FALSE,
+  overlaps = "nothing",
+  close_polygon = FALSE
 )
 }
 \arguments{
-\item{noarea_action}{A string specifying how to manage polygons with no area (points and lines) -- accepted values: "drop" and "buffer"}
+\item{p}{A pain drawing data structure or a \code{p} list-column.}
 
-\item{delta}{A numeric value representing the buffering zone -- only relevant if noarea is set to "buffer"}
+\item{noarea_action}{Character string specifying how to handle strokes with
+fewer than 3 points. One of:
+\itemize{
+\item \code{"drop"}
+\item \code{"buffer"}
+}}
 
-\item{pd}{A valid pain drawing data structure -- see \link{pd_check_data} for more detail.}
+\item{buffer_delta}{Integer buffer radius (in coordinate units) used when
+\code{noarea_action = "buffer"}.}
+
+\item{chull}{Logical. If \code{TRUE}, replace each stroke with its convex hull.}
+
+\item{overlaps}{Character string controlling how overlapping polygons are handled.
+See \code{\link[=pd_poly_manage_overlaps]{pd_poly_manage_overlaps()}} for available options.}
+
+\item{close_polygon}{Logical. If \code{TRUE}, ensures that the first and last
+coordinate of each stroke are identical.}
 }
 \value{
-A pain drawing data structure
+If \code{p} is a pain drawing data structure, returns the same structure with a
+modified \code{p} column.
+
+If \code{p} is a list-column, returns a cleaned list-column of the same length.
 }
 \description{
-The function \code{pd_poly_cleanup()} removes self-intersections from pain drawing polygons by
-reducing them to their convex hull polygons.
-It also identifies \emph{no-area} polygons, i.e. single points and two-point lines,
-which have no area -- these can be either deleted or buffered into squares with areas.
+Processes stroke coordinate data (\code{p} column) by removing self-intersections,
+optionally buffering degenerate strokes, simplifying polygons, and applying
+additional geometric transformations.
 }
-\examples{
-pd_demo_data <- pd_demo_data |> mutate(p=pd_poly_cleanup(p))
+\details{
+The function accepts either:
+\itemize{
+\item a full pain drawing data structure (see \code{\link[=pd_check_data]{pd_check_data()}})
+\item or a \code{p} list-column from such a structure
+}
 
+In the former case, the \code{p} column is modified and the full data structure is returned.
+
+The following operations are applied in order:
+\enumerate{
+\item \strong{Degenerate stroke handling} (points or lines with < 3 vertices)
+Controlled by \code{noarea_action}:
+\itemize{
+\item \code{"drop"}: remove such strokes
+\item \code{"buffer"}: expand them into polygons using a buffer of size \code{buffer_delta}
+}
+\item \strong{Polygon simplification}
+\itemize{
+\item Removes self-intersections
+\item Removes duplicated vertices
+}
+\item \strong{Convex hull transformation} (optional)
+\itemize{
+\item If \code{chull = TRUE}, each stroke is replaced by its convex hull
+}
+\item \strong{Overlap handling} (optional)
+\itemize{
+\item Controlled by \code{overlaps}, see \code{\link[=pd_poly_manage_overlaps]{pd_poly_manage_overlaps()}}
+}
+\item \strong{Polygon closure} (optional)
+\itemize{
+\item If \code{close_polygon = TRUE}, ensures each stroke forms a closed ring
+}
+}
+}
+\section{Warning}{
+
+Using \code{overlaps != "nothing"} may invalidate the correspondence between the
+\code{p} and \code{s} columns (stroke indices). Consider writing results to a new column.
+}
+
+\examples{
+# Clean only the p column
+pd_demo_data$p <- pd_poly_cleanup(pd_demo_data$p)
+
+# Clean within a pipeline
+pd_demo_data <- pd_demo_data |>
+  dplyr::mutate(p = pd_poly_cleanup(p))
+
+# Apply convex hulls and close polygons
+pd_demo_data <- pd_demo_data |>
+  dplyr::mutate(p = pd_poly_cleanup(p, chull = TRUE, close_polygon = TRUE))
 }

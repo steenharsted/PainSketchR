@@ -3,9 +3,12 @@
 
 ## To do
 
+- i pd_json2pd .. skal vi flippe y aksen? skal det være en option?
 - kunne pd_recreate_drawing plotte alle på samme baggrund i stedet for flere facetter?
+- vi skal kigge nærmere ind i pd_json2pd funktionen med nogle ægte PainSketchR data -- 's' kolonnen, default w og h værdier?
 - ændre pd_spray_trim til pd_png_trim
 - i pd_png_trim : gange alpha med alpha kanal
+- skal a i kolonne s i pain drawing data struktur være 0:1 eller 0:255 eller 0:127
 - i pd_png_trim funktionen kan vi droppe alt om fil-indlæsning og i stedet bruge .png kolonner genereret af Steens pd_to_png funktionen
 - i pd_png_trim funktionen skal vi indføre en parameter i funktionskaldet 'col_name' som definerer kolonne navnet i pd data hvor den nye (trimmede) png data indsættes
 - i sammenfattende funktioner (f.eks pd_anatomy_merge) hvor et antal tegninger/række bliver 'summarized' til én skal vi sætte 's' kolonnen til fornuftige default værdier

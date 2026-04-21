@@ -2,46 +2,71 @@
 % Please edit documentation in R/pd_check_data.R
 \name{pd_check_data}
 \alias{pd_check_data}
-\title{Check whether an R object is a valid pain drawing data structure}
+\title{Validate a pain drawing data structure}
 \usage{
 pd_check_data(d, verbose = TRUE)
 }
 \arguments{
-\item{d}{The R object to examine}
+\item{d}{An object to validate.}
 }
 \value{
-TRUE or FALSE. The function will also provide output to stderr pertaining to any issues detected.
+\code{TRUE} if \code{d} is valid, otherwise \code{FALSE}.
+If \code{verbose = TRUE}, diagnostic messages are emitted.
 }
 \description{
-A pain drawing data structure must comply with certain criteria -- see Details below. This function return TRUE or FALSE and helpful warnings as a byproduct.
+A pain drawing data structure must comply with certain criteria -- see Details below. This function returns TRUE or FALSE and optionally emits diagnostic messages.
 }
 \details{
-This function will check whether an R object fulfills the following criteria and provide some feedback if it does not and \code{verbose} is \code{TRUE}.
+#' @details
+A valid pain drawing data structure must satisfy all of the following:
 
-For an R object to be a valid pain drawing data object:
+\strong{Top-level structure}
 \itemize{
-\item it must be a tibble where each row represents a pain drawing
-\item it must have named columns: \code{id}, \code{coord}, \code{w}, \code{h}, \code{ts}, \code{s}, and \code{p} -- users are free to add additional columns.
-\item the columns \code{id}, \code{w} and \code{h} must be of type integer (not nummeric)
-\item the column \code{coord} and \code{ts} must be of type character
-\item the columns \code{s} and \code{p} must be list columns of the same length as number of rows in the pain drawing data structure. Each list element:
-\itemize{
-\item must be of type tibble
-\item the \code{s} tibbles must contain columns \code{i}, \code{q}, \code{t}, \code{bw}, \code{c}, \code{a}, which are int int chr int chr int
-\item the \code{p} tibble must contain columns \code{i}, \code{x}, \code{y}, which are int int int
-}
+\item A tibble with one row per pain drawing
+\item Must contain columns: \code{id}, \code{coord}, \code{w}, \code{h}, \code{ts}, \code{s}, \code{p}
 }
 
-The \code{id} column of the data object must represent a unique identifier for each pain drawing.
+\strong{Column types}
+\itemize{
+\item \code{id}: character (unique identifier)
+\item \code{w}, \code{h}: integer
+\item \code{coord}, \code{ts}: character
+\item \code{s}, \code{p}: list columns
+}
 
-The \code{i} column in each of the \code{s} tibbles must represent an index number for each stroke or marking, in that pain drawing. Thus, the \code{s} tibbles should contain exactly one row for each stroke/marking with a unique \code{i}.
+\strong{Column constraints}
+\itemize{
+\item \code{id} values must be unique
+}
 
-The \code{i} column in each of the \code{p} tibbles will be repeated for each coordinate x,y pair in each stroke/marking and should correspond to the \code{i} values of the \code{s} list column element of that row.
+\strong{\code{s} column (stroke metadata)}
+Each element must be either \code{NA} or a tibble with:
+\itemize{
+\item Columns: \code{i}, \code{q}, \code{t}, \code{bw}, \code{c}, \code{a}
+\item Types: integer, integer, character, integer, character, integer
+\item One row per stroke (\code{i} must be unique)
+\item Exactly one unique value of \code{c} per tibble
+}
 
-The \code{x} and \code{y} columns must represent coordinates of each point in the pain drawing strokes.
+\strong{\code{p} column (stroke coordinates)}
+Each element must be either \code{NA} or a tibble with:
+\itemize{
+\item Columns: \code{i}, \code{x}, \code{y}
+\item All integer
+\item \code{i} values correspond to those in the matching \code{s} tibble
+}
 
-Users may store any other data in the data structure as relevant. Any information pertaining to the \emph{top level} pain drawing (e.g. date or project name) should be stored as columns in the top level tibble.
-Any information pertaining to the individual stroke/marking (e.g. colour or thickness) should be stored as columns in the tibbles in the \code{s} list column. Similarly, in the unlikely event, that any information needs to be stored pertaining to each coordinate pair, it should be store as columns in the \code{p} list column tibbles.
+#' \strong{Relationship between \code{s} and \code{p}}
+\itemize{
+\item Each row represents one pain drawing
+\item The \code{s} tibble defines strokes (one row per stroke)
+\item The \code{p} tibble defines coordinates (multiple rows per stroke)
+\item The \code{i} column links them:
+\itemize{
+\item \code{s$i}: unique stroke identifiers
+\item \code{p$i}: repeats to associate coordinates with a stroke
+}
+}
 }
 \examples{
 pd_check_data(pd_demo_data, verbose = FALSE) # Will return TRUE

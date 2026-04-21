@@ -2,24 +2,76 @@
 % Please edit documentation in R/pd_mird2pd.R
 \name{pd_mird2pd}
 \alias{pd_mird2pd}
-\title{Generate a valid paindrawing data structure from a MiRD paindrawing string}
+\title{Convert MiRD pain drawing strings to coordinate data}
 \usage{
 pd_mird2pd(mird_string, flip_y = TRUE)
 }
 \arguments{
-\item{flip_y}{-- TRUE (default) or FALSE -- should data be y-axis flipped to correspond to the MiRD pain drawing canvas}
+\item{mird_string}{Character vector of MiRD-encoded pain drawing strings.}
 
-\item{mird}{-- A data frame which must contain columns \code{id} (character) and \code{pd} (character), which represent a unique id and coordinates for each pain drawing.}
-
-\item{simplify}{-- If TRUE function will return a simple data frame. If FALSE (default) will return a valid pain drawing data structure -- see \link{pd_check_data}.}
+\item{flip_y}{Logical. If \code{TRUE} (default), flip y-coordinates to a
+lower-left origin coordinate system.}
 }
 \value{
-A valid paindrawing data structure
+A list of tibbles (one per input element). Each tibble contains:
+\itemize{
+\item \code{i} (integer): stroke index
+\item \code{x}, \code{y} (integer): coordinates
+}
+
+Elements corresponding to missing or invalid input are \code{NA}.
 }
 \description{
-Generate a valid paindrawing data structure from a MiRD paindrawing string
+Parses pain drawing data stored in the legacy \emph{MiRD} string format and
+converts it into a list-column of stroke coordinate tibbles compatible with
+the \code{p} column of a pain drawing data structure (see \code{\link[=pd_check_data]{pd_check_data()}}).
+}
+\details{
+Each input string represents one pain drawing and is converted into a tibble
+with columns \code{i}, \code{x}, and \code{y}, where \code{i} indexes individual strokes.
+
+\strong{MiRD string format}
+
+A MiRD pain drawing is encoded as a character string containing one or more
+strokes. Each stroke is represented as a sequence of x/y coordinate pairs:
+\itemize{
+\item Coordinates are stored as a flat sequence: \verb{(,x1,y1,x2,y2,...)}
+\item Multiple strokes are concatenated as:
+\verb{(,x1,y1,...,),(,x1,y1,...)}
+}
+
+This function:
+\itemize{
+\item Splits the string into individual strokes
+\item Converts coordinate sequences into \verb{(x, y)} pairs
+\item Assigns a stroke index \code{i} to each group of coordinates
+}
+
+\strong{Coordinate system}
+
+MiRD uses a coordinate system with origin in the upper-left corner.
+If \code{flip_y = TRUE}, the y-axis is flipped to match a lower-left origin
+(e.g. for plotting), using a fixed canvas height of 500 units.
+
+\strong{Missing or invalid input}
+\itemize{
+\item \code{NA} or malformed strings return \code{NA}
+\item No validation of coordinate consistency (e.g. odd-length sequences) is performed
+}
 }
 \examples{
-pd_df <- tibble::tibble(id=c("A", "B", "C"), mird_string = c(NA, "(,293,201,300,202,303,202,305,202,308,202,),(,198,104,206,103,203,100,209,108,202,109,)", "(,335,215,336,215,),(,331,211,331,212,331,213,331,214,),(,341,263,),(,341,272,),(,341,287,)"))
-pd_df <- pd_df |> dplyr::mutate(p = pd_mird2pd(mird_string, flip_y=TRUE))
+mird <- c(
+  NA,
+  "(,293,201,300,202,303,202,)",
+  "(,198,104,206,103,),(,203,100,209,108,)"
+)
+
+# Convert to list-column of coordinate tibbles
+p <- pd_mird2pd(mird)
+
+# Use inside a data pipeline
+pd_df <- tibble::tibble(id = c("A", "B", "C"), mird_string = mird)
+pd_df <- pd_df |>
+  dplyr::mutate(p = pd_mird2pd(mird_string))
+
 }
