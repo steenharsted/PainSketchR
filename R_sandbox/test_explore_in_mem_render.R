@@ -191,17 +191,23 @@ bench::mark(
 bench::mark(
   file_based = {
     set.seed(1)
-    pd |> pd_to_png()
+    pd[1,] |> pd_to_png_single()
   },
   in_memory = {
     set.seed(1)
-    pd_to_png_single_in_mem(pd[3, ])
+    pd[1,] |> pd_to_png_single_in_mem()
   },
   iterations = 20,
   check = FALSE,
   memory = FALSE
 )
 
+## RESULTS FROM WINDOWS 2026_04_22
+# A tibble: 2 × 13
+#   expression    min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory time       gc      
+#   <bch:expr> <bch:> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list> <list>     <list>  
+# 1 file_based  124ms  128ms      7.66        NA     4.13    13     7       1.7s <NULL> <NULL> <bench_tm> <tibble>
+# 2 in_memory   129ms  136ms      7.30        NA     4.87    12     8      1.64s <NULL> <NULL> <bench_tm> <tibble>
 
 pd <- pd_import_json(c(
   "data-raw/two_geoms.json",
@@ -231,3 +237,10 @@ bench::mark(
 #   <bch:expr> <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list> <list>          <list>
 # 1 file_based    275ms    286ms      3.34        NA     6.17    20    37      5.99s <NULL> <NULL> <bench_tm [20]> <tibble [20 × 3]>
 # 2 in_memory     315ms    326ms      2.89        NA     6.35    20    44      6.93s <NULL> <NULL> <bench_tm [20]> <tibble [20 × 3]>
+
+# output on Windows 2026_04_22
+# A tibble: 2 × 13
+#   expression      min   median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
+#   <bch:expr> <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>
+# 1 file_based 746.12ms 770.25ms     1.29         NA     2.64    20    41      15.5s <NULL> <NULL>
+# 2 in_memory     1.05s    1.08s     0.922        NA     1.89    20    41      21.7s <NULL> <NULL>
