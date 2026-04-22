@@ -202,4 +202,32 @@ bench::mark(
   memory = FALSE
 )
 
-pd |> pd_to_png()
+
+pd <- pd_import_json(c(
+  "data-raw/two_geoms.json",
+  "data-raw/four_geoms.json",
+  "data-raw/test_spray.json",
+  "data-raw/test_spray_bw.json",
+  "data-raw/Anon_pen_spray.json"
+))
+
+bench::mark(
+  file_based = {
+    set.seed(1)
+    pd |> mutate(.png = pd_to_png(pd))
+  },
+  in_memory = {
+    set.seed(1)
+    pd |> mutate(.png = pd_to_png_in_mem(pd))
+  },
+  iterations = 20,
+  check = FALSE,
+  memory = FALSE
+)
+
+# output on Linux 2026_04_22
+# A tibble: 2 × 13
+#   expression      min   median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory time            gc
+#   <bch:expr> <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list> <list>          <list>
+# 1 file_based    275ms    286ms      3.34        NA     6.17    20    37      5.99s <NULL> <NULL> <bench_tm [20]> <tibble [20 × 3]>
+# 2 in_memory     315ms    326ms      2.89        NA     6.35    20    44      6.93s <NULL> <NULL> <bench_tm [20]> <tibble [20 × 3]>

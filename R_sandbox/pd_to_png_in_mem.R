@@ -187,10 +187,8 @@ pd_to_png_single_in_mem <- function(
 #' the names produced by [pd_json2pd()], so calling `pd_to_png()` bare inside
 #' `mutate()` works without any extra arguments.
 #'
-#' @param p,s,w,h,id Tidy-selection expressions identifying the columns that
-#'   hold the point data, stroke data, canvas width, canvas height, and drawing
-#'   identifier respectively. Defaults match the column names produced by
-#'   [pd_json2pd()].
+#' @param .data A pain drawing tibble as produced by [pd_json2pd()]. Must
+#'   contain columns `id`, `s`, `p`, `w`, and `h`.
 #' @param clean_up Logical. If `TRUE` (default), temporary `.png` files are
 #'   deleted after each raster is read into memory. Passed through to
 #'   [pd_to_png_single()].
@@ -202,14 +200,14 @@ pd_to_png_single_in_mem <- function(
 #'   `height × width × 4` (RGBA channels, values in \[0, 1\]).
 #'
 #' @seealso [pd_to_png_single()] for the single-row primitive,
-#'   [pd_json2pd()] for reading pain drawing JSON files.
+#'   [pd_import_json()] for reading pain drawing JSON files.
 #'
 #' @examples
 #' \dontrun{
-#' pd <- pd_json2pd(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
+#' pd <- pd_import_pd(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
 #'
 #' # Bare call — column names match pd_json2pd() defaults
-#' pd <- pd |> dplyr::mutate(.png = pd_to_png_in_mem())
+#' pd <- pd |> dplyr::mutate(.png = pd_to_png(pd))
 #'
 #' # Display the first drawing
 #' grid::grid.newpage()
@@ -217,34 +215,9 @@ pd_to_png_single_in_mem <- function(
 #' }
 #'
 #' @export
-pd_to_png_in_mem <- function(
-  p = p,
-  s = s,
-  w = w,
-  h = h,
-  id = id,
-  clean_up = TRUE,
-  dpi = 96
-) {
-  # Capture the calling environment to resolve bare column names
-  data_env <- parent.frame()
-
-  p_col <- eval(substitute(p), envir = data_env)
-  s_col <- eval(substitute(s), envir = data_env)
-  w_col <- eval(substitute(w), envir = data_env)
-  h_col <- eval(substitute(h), envir = data_env)
-  id_col <- eval(substitute(id), envir = data_env)
-
-  n <- length(p_col)
-
-  purrr::map(seq_len(n), function(i) {
-    row_tbl <- tibble::tibble(
-      id = id_col[[i]],
-      w = w_col[[i]],
-      h = h_col[[i]],
-      p = list(p_col[[i]]),
-      s = list(s_col[[i]])
-    )
-    pd_to_png_single_in_mem(row_tbl, clean_up = clean_up, dpi = dpi)
-  })
+pd_to_png_in_mem <- function(.data, clean_up = TRUE, dpi = 96) {
+  purrr::map(
+    seq_len(nrow(.data)),
+    \(i) pd_to_png_single_in_mem(.data[i, ], clean_up = clean_up, dpi = dpi)
+  )
 }
