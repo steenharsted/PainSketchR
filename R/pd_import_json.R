@@ -69,7 +69,7 @@ pd_import_json <- function(files) {
   if(length(files)>1) {
     result <- tibble::tibble()
     for(f in files) {
-      result <- dplyr::bind_rows(result, #' pd_import_json(f))
+      result <- dplyr::bind_rows(result, pd_import_json(f))
     }
     return(result)
   } 
