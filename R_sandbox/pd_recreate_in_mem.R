@@ -275,14 +275,13 @@ pd_recreate_drawing_in_mem <- function(
   }
 
   ### Translate size to mm, accounting for facet grid dimensions
-  pixels_per_inch <- 96
   mm_per_inch <- 25.4
 
   # ncol defaults to what facet_wrap uses: ceiling(sqrt(n))
-  n_col <- 1 #ceiling(sqrt(id_n))
-  n_row <- 1 #ceiling(id_n / n_col)
+  n_col <- ceiling(sqrt(id_n))
+  n_row <- ceiling(id_n / n_col)
 
-  pixel_to_mm <- mm_per_inch / pixels_per_inch # ≈ 0.2646 mm per pixel
+  pixel_to_mm <- mm_per_inch / 96 # always 96 — physical canvas size is fixed
   width_mm <- image_width * pixel_to_mm * n_col # ≈ 119.07 mm for single image
   height_mm <- image_height * pixel_to_mm * n_row # ≈ 132.29 mm for single image
 
@@ -316,7 +315,8 @@ pd_recreate_drawing_in_mem <- function(
   rgba_int <- col2rgb(cap, alpha = TRUE) # 4 × (600*400) matrix, values 0-255
   rgba_arr <- array(
     t(rgba_int) / 255, # normalise to [0,1]
-    dim = c(image_height, image_width, 4) # height × width × RGBA
+    #dim = c(image_height*n_row, image_width*n_col, 4) # height × width × RGBA
+    dim = c(nrow(cap), ncol(cap), 4)
   )
 
   # Make it transparent black instead of transparent white
