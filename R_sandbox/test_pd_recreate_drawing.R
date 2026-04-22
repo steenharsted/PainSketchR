@@ -5,7 +5,7 @@ load_all()
 
 # Load sample data
 
-pd <- pd_json2pd(c(
+pd <- pd_import_json(c(
   "data-raw/two_geoms.json",
   "data-raw/four_geoms.json",
   "data-raw/test_spray.json",

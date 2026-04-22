@@ -3,8 +3,6 @@
 # First we need to be able to 100% recreate the ggsave output using png() og ugd_save
 
 library(ggplot2)
-library(unigd)
-
 a <- penguins |>
   ggplot(aes(x = bill_len, y = bill_dep, color = species)) +
   geom_point()
@@ -17,11 +15,6 @@ dev.off()
 # Save with ggsave
 ggsave("test_ggsave.png", a, width = 600, height = 400, units = "px")
 
-# Save with unigd
-ugd()
-a
-ugd_save(file = "test_ugd.png", width = 600, height = 400, as = "png")
-dev.off()
 
 # WHY ARE THE OUTPUTS SO DIFFERENT?
 
@@ -43,62 +36,7 @@ a
 dev.off()
 
 
-ugd()
-a
-ugd_save(
-  file = "test_ugd_match.png",
-  width = 600,
-  height = 400,
-  zoom = 300 / 96, # ~3.125 — matches ragg's 300 dpi rendering
-  as = "png"
-)
-dev.off()
-
-
-# Physical size in ugd pixels: 2in * 96dpi = 192 x 128
-# zoom = 300/96 scales that up to 600x400 output pixels
-ugd(width = 192, height = 128)
-a
-ugd_save(
-  file = "test_ugd_match.png",
-  width = 600,
-  height = 400,
-  zoom = 300 / 96,
-  as = "png"
-)
-dev.off()
-
-
-# Open ugd at full output resolution, no zoom
-ugd(width = 600, height = 400)
-a
-ugd_save(
-  file = "test_ugd_match.png",
-  width = 600,
-  height = 400,
-  zoom = 1,
-  as = "png"
-)
-dev.off()
-
-
 # in memeory render
-ugd()
-a
-a_render <- ugd_render(
-  width = 600,
-  height = 400,
-  zoom = 300 / 96, # ~3.125 — matches ragg's 300 dpi rendering
-  as = "png"
-)
-dev.off()
-
-
-a_render_png <- png::readPNG(a_render)
-
-grid::grid.newpage()
-a_render_png |> grid::grid.raster()
-
 
 arr <- ragg::agg_capture(width = 600, height = 400, units = "px", res = 300)
 a
@@ -119,7 +57,7 @@ rgba_arr |> grid::grid.raster()
 
 
 # data
-pd <- pd_json2pd(c(
+pd <- pd_import_json(c(
   "data-raw/two_geoms.json",
   "data-raw/four_geoms.json",
   "data-raw/test_spray.json",
@@ -201,3 +139,27 @@ pd |>
     clean_up = FALSE,
     dpi = 96
   )
+
+
+### Benchmark
+bench::mark(  
+  file_based = {
+    set.seed(1)
+    pd |> pd_recreate_drawing(background_image = background_image)
+  },
+  in_memory = {
+    set.seed(1)
+    pd |> pd_recreate_drawing_in_mem(background_image = background_image)
+  },
+  iterations = 10,
+  check = FALSE,
+  memory = FALSE
+)
+
+### Output on Windows labtop 2026_04_22
+# A tibble: 2 × 13
+#   expression      min   median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory
+#   <bch:expr> <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list>
+# 1 file_based 741.32ms 741.32ms     1.35         NA    12.1      1     9   741.32ms <NULL> <NULL>
+# 2 in_memory     1.54s    1.58s     0.633        NA     2.53     2     8      3.16s <NULL> <NULL>
+# # ℹ 2 more variables: time <list>, gc <list>
