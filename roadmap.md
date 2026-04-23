@@ -3,6 +3,7 @@
 
 ## To do
 
+- pd_poly_manage_overlaps ... should it be a hidden function? ... it is called by the pd_sanitize function
 - i pd_json2pd .. skal vi flippe y aksen? skal det være en option?
 - kunne pd_recreate_drawing plotte alle på samme baggrund i stedet for flere facetter?
 - vi skal kigge nærmere ind i pd_json2pd funktionen med nogle ægte PainSketchR data -- 's' kolonnen, default w og h værdier?

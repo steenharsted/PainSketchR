@@ -547,3 +547,25 @@ pd_quantile <- function(x, n_groups, txt = "pct") {
   return(bins)
 }
 
+check_p_col <- function(p) {
+  if (pd_check_data(p)) {
+    warning("`p` is a valid pain drawing data structure -- not a `p` column from such.")
+  }
+  if (!is.list(p)) {
+    warning("`p` is not a valid list-column")
+    return(FALSE)
+  } 
+  if (!all(p |> purrr::map_lgl(\(tib) {identical(tib, NA) || tibble::is_tibble(tib)}))) {
+    warning("Every element of `p` should be a tibble -- perhaps you should use `pd_sanitize()` in mutate calls?")
+    return(FALSE)
+  } 
+  if (!all(p |> purrr::map_lgl(\(tib) {identical(tib, NA) || all(c("i","x","y") %in% names(tib))}))) {
+    warning("Every tibble element of `p` must include columns i, x and y")
+    return(FALSE)
+  } 
+  if (!all(p |> purrr::map_lgl(\(tib) {identical(tib, NA) || all(is.integer(c(tib$i, tib$x, tib$y)))}))) {
+    warning("One or more tibble element of `p` includes columns i,x and/or y which are not integers")
+    return(FALSE)
+  }
+  return(TRUE)
+}
