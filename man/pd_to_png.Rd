@@ -4,13 +4,11 @@
 \alias{pd_to_png}
 \title{Render pain drawings to PNG raster arrays}
 \usage{
-pd_to_png(p = p, s = s, w = w, h = h, id = id, clean_up = TRUE, dpi = 96)
+pd_to_png(.data, clean_up = TRUE, dpi = 96, grey_scale = FALSE)
 }
 \arguments{
-\item{p, s, w, h, id}{Tidy-selection expressions identifying the columns that
-hold the point data, stroke data, canvas width, canvas height, and drawing
-identifier respectively. Defaults match the column names produced by
-\code{\link[=pd_json2pd]{pd_json2pd()}}.}
+\item{.data}{A pain drawing tibble as produced by \code{\link[=pd_json2pd]{pd_json2pd()}}. Must
+contain columns \code{id}, \code{s}, \code{p}, \code{w}, and \code{h}.}
 
 \item{clean_up}{Logical. If \code{TRUE} (default), temporary \code{.png} files are
 deleted after each raster is read into memory. Passed through to
@@ -32,10 +30,10 @@ the names produced by \code{\link[=pd_json2pd]{pd_json2pd()}}, so calling \code{
 }
 \examples{
 \dontrun{
-pd <- pd_json2pd(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
+pd <- pd_import_pd(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
 
 # Bare call — column names match pd_json2pd() defaults
-pd <- pd |> dplyr::mutate(.png = pd_to_png())
+pd <- pd |> dplyr::mutate(.png = pd_to_png(pd))
 
 # Display the first drawing
 grid::grid.newpage()
@@ -45,5 +43,5 @@ grid::grid.raster(pd$.png[[1]])
 }
 \seealso{
 \code{\link[=pd_to_png_single]{pd_to_png_single()}} for the single-row primitive,
-\code{\link[=pd_json2pd]{pd_json2pd()}} for reading pain drawing JSON files.
+\code{\link[=pd_import_json]{pd_import_json()}} for reading pain drawing JSON files.
 }

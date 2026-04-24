@@ -34,7 +34,7 @@ into a PNG raster array. This is the low-level workhorse called by
 }
 \examples{
 \dontrun{
-pd <- pd_json2pd("data-raw/two_geoms.json")
+pd <- pd_import_json("data-raw/two_geoms.json")
 raster <- pd_to_png_single(pd[1, ])
 grid::grid.newpage()
 grid::grid.raster(raster)

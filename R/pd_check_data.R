@@ -142,6 +142,12 @@ pd_check_data <- function(d, verbose = TRUE) {
   }
   ok("'p' column valid: OK")
 
+  # ---- identical 'i' in list column 'p' and 's' 
+  if (!all(purrr::map2_lgl(d$p, d$s, ~ setequal(unique(.x$i), .y$i)))) {
+    return(fail("Discrepancies in column 'i' in columns 'p' and 's'"))
+  }
+  ok("Column 'i' in list columns 'p' and 's' have same values")
+
   ok("Data structure is valid pain drawing data structure: OK")
   TRUE
 }
