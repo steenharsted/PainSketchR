@@ -1,15 +1,13 @@
-#' Recreate a pain drawing as a ggplot
-#'
-#' Renders stroke and spray data from a pain drawing tibble into a ggplot,
+#' Validate and process background_imageRenders stroke and spray data from a pain drawing tibble into a ggplot,
 #' optionally composited with a background image. When `rasterize = TRUE`
-#' (default), the plot is first saved to a temp file and returned as a
-#' pixel-accurate raster layer — preserving exact canvas proportions. When
+#' (default), the plot is rasterized and returned as a pixel-accurate raster
+#' layer — preserving exact canvas proportions. When
 #' `rasterize = FALSE`, the raw ggplot with vector strokes is returned instead.
 #'
 #' Multiple drawings are arranged with [ggplot2::facet_wrap()]. A warning is
 #' issued when more than 9 drawings are passed, as rendering may be slow.
 #'
-#' @param .data A pain drawing tibble as produced by [pd_json2pd()]. Must
+#' @param .data A pain drawing tibble as produced by [pd_import_json()]. Must
 #'   contain columns `id`, `s`, `p`, `w`, and `h`. All drawings must share the
 #'   same canvas dimensions (`w` and `h`).
 #' @param background_image Optional background image displayed behind the
@@ -20,42 +18,48 @@
 #'   Defaults to `NULL` (no background).
 #' @param include_id Logical. If `TRUE`, the `id` value is shown as a facet
 #'   strip label above each panel. Default is `FALSE`.
-#' @param rasterize Logical. If `TRUE` (default), the plot is rendered to a
-#'   temp PNG via [ggplot2::ggsave()], read back with [png::readPNG()], and
+#' @param rasterize Logical. If `TRUE` (default), the plot is rasterized and
 #'   returned as a new ggplot with [ggplot2::annotation_raster()]. The output
 #'   is pixel-accurate with a locked aspect ratio. If `FALSE`, the raw ggplot
 #'   with vector strokes is returned.
-#' @param clean_up Logical. If `TRUE` (default), the temporary PNG file created
-#'   during rasterization is deleted on exit. Set to `FALSE` to retain the file
-#'   for debugging.
-#'
-#' @param dpi Resolution passed to [ggplot2::ggsave()] when `rasterize = TRUE`.
-#'   Defaults to `96`, matching the CSS pixel density of the web canvas where
-#'   drawings are collected — this ensures a 1:1 pixel correspondence between
-#'   the original drawing and the output. Increase for print-quality output
-#'   (e.g. `300`), noting this does not affect the canvas dimensions, only
-#'   output pixel density.
-#'
-#' @param type A string set to either 'path' or 'polygon'. The former (default)
-#' generates a png of the pain drawing with strokes illustrated as path. The
-#' latter generates a png with strokes as closed polygons in black, filled in
-#' with black. The latter is useful for generating templates of anatomy areas.
+#' @param method Character. Controls the rasterization back-end when
+#'   `rasterize = TRUE`. Either:
+#'   * `"memory"` (default) — renders in-memory via [ragg::agg_capture()],
+#'     no temp file is written to disk.
+#'   * `"file"` — saves to a temporary PNG via [ggplot2::ggsave()] and reads
+#'     it back with [png::readPNG()]. Use this if the `"memory"` path produces
+#'     unexpected rendering artefacts.
+#' @param clean_up Logical. If `TRUE` (default), the temporary PNG file is
+#'   deleted on exit. Only relevant when `method = "file"`. Set to `FALSE` to
+#'   retain the file for debugging.
+#' @param dpi Resolution used during rasterization. Defaults to `96`, matching
+#'   the CSS pixel density of the web canvas where drawings are collected —
+#'   this ensures a 1:1 pixel correspondence between the original drawing and
+#'   the output. Increase for print-quality output (e.g. `300`), noting this
+#'   does not affect the canvas dimensions, only output pixel density.
+#' @param type A string set to either `"path"` or `"polygon"`. The former
+#'   (default) renders strokes as open paths. The latter renders strokes as
+#'   closed polygons filled in black, which is useful for generating anatomy
+#'   area templates.
 #'
 #' @return A [ggplot2::ggplot()] object. When `rasterize = TRUE`, the plot
 #'   contains a single [ggplot2::annotation_raster()] layer with a locked
 #'   aspect ratio. When `rasterize = FALSE`, the plot contains vector stroke
 #'   layers and supports further ggplot2 additions.
 #'
-#' @seealso [pd_json2pd()] to read pain drawing JSON files,
+#' @seealso [pd_import_json()] to read pain drawing JSON files,
 #'   [pd_to_png()] to store raster arrays as a column in the tibble,
 #'   [pd_to_png_single()] for the single-row raster primitive.
 #'
 #' @examples
 #' \dontrun{
-#' pd <- pd_json2pd(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
+#' pd <- pd_import_json(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
 #'
-#' # Default: rasterized output with background
+#' # Default: in-memory rasterization with background
 #' pd |> pd_recreate_drawing(background_image = "inst/background.png")
+#'
+#' # File-based rasterization
+#' pd |> pd_recreate_drawing(method = "file")
 #'
 #' # Vector output — can add further ggplot layers
 #' pd |> pd_recreate_drawing(rasterize = FALSE)
@@ -67,6 +71,7 @@
 #' @importFrom dplyr select mutate filter full_join join_by n
 #' @importFrom tidyr unnest uncount
 #' @importFrom png readPNG
+#' @importFrom ragg agg_capture
 #' @importFrom ggplot2 ggplot aes coord_fixed theme_void theme element_blank
 #'   scale_color_identity scale_size_identity scale_alpha_identity
 #'   scale_linewidth_identity geom_path geom_point facet_wrap
@@ -79,12 +84,16 @@ pd_recreate_drawing <- function(
   background_image = NULL,
   include_id = FALSE,
   rasterize = TRUE,
+  method = "memory",
   clean_up = TRUE,
   dpi = 96,
   type = "path"
 ) {
   # Making sure data has required columns
   pd_check_data(.data, verbose = FALSE)
+
+  # Validate method argument
+  method <- match.arg(method, choices = c("memory", "file"))
 
   # Test that we only 1 height and width value, respectively
   if (
@@ -224,7 +233,6 @@ pd_recreate_drawing <- function(
       ggplot2::scale_alpha_identity() +
       ggplot2::scale_linewidth_identity() +
       ggplot2::geom_polygon(
-        #path
         ggplot2::aes(
           group = paste0(id, "_", i),
           linewidth = size_mm + 1
@@ -275,37 +283,62 @@ pd_recreate_drawing <- function(
   }
 
   ### Translate size to mm, accounting for facet grid dimensions
-  pixels_per_inch <- 96
   mm_per_inch <- 25.4
 
   # ncol defaults to what facet_wrap uses: ceiling(sqrt(n))
   n_col <- ceiling(sqrt(id_n))
   n_row <- ceiling(id_n / n_col)
 
-  pixel_to_mm <- mm_per_inch / pixels_per_inch # ≈ 0.2646 mm per pixel
-  width_mm <- image_width * pixel_to_mm * n_col # ≈ 119.07 mm for single image
-  height_mm <- image_height * pixel_to_mm * n_row # ≈ 132.29 mm for single image
+  pixel_to_mm <- mm_per_inch / 96 # physical canvas size is fixed at 96 dpi
+  width_mm <- image_width * pixel_to_mm * n_col
+  height_mm <- image_height * pixel_to_mm * n_row
 
-  tmp <- tempfile(fileext = ".png")
-  print(tmp)
-  if (clean_up) {
-    on.exit(unlink(tmp), add = TRUE)
+  if (method == "memory") {
+    arr <- ragg::agg_capture(
+      width = width_mm,
+      height = height_mm,
+      units = "mm",
+      res = dpi,
+      bg = "transparent"
+    )
+    print(plot_out) # must explicitly print to render to the device
+    cap <- arr()
+    dev.off()
+
+    # Convert colour names → integer RGBA → numeric [0,1] array
+    rgba_int <- col2rgb(cap, alpha = TRUE) # 4 × (w*h) matrix, values 0-255
+    rgba_arr <- array(
+      t(rgba_int) / 255, # normalise to [0,1]
+      dim = c(nrow(cap), ncol(cap), 4)
+    )
+
+    # Make transparent pixels black (rather than transparent white)
+    rgba_arr[,, 1:3][rgba_arr[,, 4] == 0] <- 0
+
+    raster_img <- as.raster(rgba_arr)
+  } else {
+    tmp <- tempfile(fileext = ".png")
+    if (clean_up) {
+      on.exit(unlink(tmp), add = TRUE)
+    }
+
+    ggplot2::ggsave(
+      plot = plot_out,
+      file = tmp,
+      width = width_mm,
+      height = height_mm,
+      units = "mm",
+      dpi = dpi
+    )
+
+    raster_img <- as.raster(png::readPNG(tmp))
   }
-
-  ggplot2::ggsave(
-    plot = plot_out,
-    file = tmp,
-    width = width_mm,
-    height = height_mm,
-    units = "mm",
-    dpi = dpi
-  )
 
   raster_plot <- ggplot2::ggplot() +
     ggplot2::theme_void(base_size = 12) +
     ggplot2::coord_fixed(ratio = height_mm / width_mm) +
     ggplot2::annotation_raster(
-      as.raster(png::readPNG(tmp)),
+      raster_img,
       -Inf,
       Inf,
       -Inf,

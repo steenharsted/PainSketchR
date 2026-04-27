@@ -90,54 +90,55 @@ background_image <- png::readPNG("inst/extdata/feet_background.png")
 # No background image
 pd |>
   dplyr::filter(id == "Anon") |>
-  pd_recreate_drawing_in_mem()
+  pd_recreate_drawing(method = "memory")
+
+pd |>
+  dplyr::filter(id == "Anon") |>
+  pd_recreate_drawing(method = "file")
+
 
 # Background image
 pd |>
   dplyr::filter(id == "Anon") |>
-  pd_recreate_drawing_in_mem(
-    background_image = background_image
+  pd_recreate_drawing(
+    background_image = background_image,
+    method = "memory"
   )
+
+pd |>
+  dplyr::filter(id == "Anon") |>
+  pd_recreate_drawing(
+    background_image = background_image,
+    method = "file"
+  )
+
 
 # Background image no rasterize
 pd |>
   dplyr::filter(id == "Anon") |>
-  pd_recreate_drawing_in_mem(
+  pd_recreate_drawing(
     background_image = "inst/extdata/feet_background.png",
-    rasterize = TRUE
+    rasterize = FALSE
   )
 
 # Multiple drawings
 pd |>
-  pd_recreate_drawing_in_mem(
-    background_image = background_image
+  pd_recreate_drawing(
+    background_image = background_image,
+    method = "memory"
   )
 
 pd |>
   pd_recreate_drawing(
-    background_image = background_image
+    background_image = background_image,
+    method = "file"
   )
 
 
 pd |>
-  pd_recreate_drawing_in_mem(
+  pd_recreate_drawing(
     background_image = background_image,
     rasterize = FALSE
-  )
-
-
-pd |>
-  pd_recreate_drawing_in_mem(
-    background_image = background_image,
-    clean_up = FALSE,
-    dpi = 300
-  )
-
-pd |>
-  pd_recreate_drawing_in_mem(
-    background_image = background_image,
-    clean_up = FALSE,
-    dpi = 96
   )
 
 
@@ -145,11 +146,16 @@ pd |>
 bench::mark(
   file_based = {
     set.seed(1)
-    pd |> pd_recreate_drawing(background_image = background_image)
+    pd |>
+      pd_recreate_drawing(background_image = background_image, method = "file")
   },
   in_memory = {
     set.seed(1)
-    pd |> pd_recreate_drawing_in_mem(background_image = background_image)
+    pd |>
+      pd_recreate_drawing(
+        background_image = background_image,
+        method = "memory"
+      )
   },
   iterations = 10,
   check = FALSE,
@@ -191,11 +197,11 @@ bench::mark(
 bench::mark(
   file_based = {
     set.seed(1)
-    pd[1,] |> pd_to_png_single()
+    pd[1, ] |> pd_to_png_single()
   },
   in_memory = {
     set.seed(1)
-    pd[1,] |> pd_to_png_single_in_mem()
+    pd[1, ] |> pd_to_png_single_in_mem()
   },
   iterations = 20,
   check = FALSE,
@@ -204,8 +210,8 @@ bench::mark(
 
 ## RESULTS FROM WINDOWS 2026_04_22
 # A tibble: 2 × 13
-#   expression    min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory time       gc      
-#   <bch:expr> <bch:> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list> <list>     <list>  
+#   expression    min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc total_time result memory time       gc
+#   <bch:expr> <bch:> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list> <list>     <list>
 # 1 file_based  124ms  128ms      7.66        NA     4.13    13     7       1.7s <NULL> <NULL> <bench_tm> <tibble>
 # 2 in_memory   129ms  136ms      7.30        NA     4.87    12     8      1.64s <NULL> <NULL> <bench_tm> <tibble>
 
