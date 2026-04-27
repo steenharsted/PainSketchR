@@ -3,36 +3,12 @@ library(tidyverse)
 
 load_all()
 
-col_alpha_data <- pd_json2pd("data-raw/col_alpha_01_to_10.json")
+col_alpha_data <- pd_import_json("data-raw/col_alpha_01_to_10.json")
 
 col_alpha_data |> pd_recreate_drawing()
 
 grid::grid.newpage()
-col_alpha_data |> pd_to_png_single() |> grid::grid.raster()
-
-
-grid::grid.newpage()
-col_alpha_data |> pd_to_png_single(grey_scale = TRUE) |> grid::grid.raster()
-
-set.seed(1)
-my_array_col <- col_alpha_data |> pd_to_png_single()
-set.seed(1)
-my_array_grey <- col_alpha_data |> pd_to_png_single(grey_scale = TRUE)
-
-str(my_array_col)
-alpha_channel_col <- my_array_col[,, 4] # Extracts the alpha layer
-alpha_channel_grey <- my_array_grey[,, 4] # Extracts the alpha layer
-
-# THE ALPHA LAYER IS IDENTICAL REGARDLESS OF COLOR!!!!
-identical(alpha_channel_col, alpha_channel_grey)
-
-# THE LAYERS WITH COLOR ARE NOT IDENTICAL !!!
-identical(my_array_col[,, 3], my_array_grey[,, 3])
-identical(my_array_col[,, 2], my_array_grey[,, 2])
-identical(my_array_col[,, 1], my_array_grey[,, 1])
-
-# ALPHA LAYER AGAIN
-identical(my_array_col[,, 4], my_array_grey[,, 4])
+col_alpha_data |> pd_add_rgba_single() |> grid::grid.raster()
 
 
 ## Explore gglot
@@ -170,14 +146,14 @@ tibble(
 
 # Usage
 
-pd <- pd_json2pd(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
-pd <- pd |> pd_add_png()
+pd <- pd_import_json(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
+pd <- pd |> mutate(rgba = pd_add_rgba(pd))
+pd
+
 
 pd |>
     mutate(
-        intensity = purrr::map_dbl(.png, pd_alpha_intensity),
-        area = purrr::map_dbl(.png, pd_alpha_area),
-        area_over_50 = purrr:::map_dbl(.png, \(x) {
-            pd_alpha_area(x, alpha_range = c(0.5, 1))
-        })
+        intensity = pd_alpha_intensity(rgba),
+        area = pd_alpha_area(rgba),
+        area_over_50 = pd_alpha_area(rgba, alpha_range = c(0.5, 1))
     )

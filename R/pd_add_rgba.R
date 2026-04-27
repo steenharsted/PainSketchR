@@ -5,7 +5,8 @@
 #' [pd_add_rgba()].
 #'
 #' @param .data A single-row pain drawing tibble as produced by
-#'   [pd_import_json()]. Must contain columns `id`, `s`, `p`, `w`, and `h`.
+#'   [pd_import_json()]. Must contain columns `id`, `s`, `p`, `w`, and `h`
+#'   (or the names supplied via `col_*` arguments).
 #'   Passing more than one row is an error.
 #' @param method Character. Controls the rasterization back-end. Either:
 #'   * `"memory"` (default) — renders in-memory via [ragg::agg_capture()],
@@ -21,6 +22,10 @@
 #'   this ensures a 1:1 pixel correspondence between the original drawing and
 #'   the output. Increase for print-quality output (e.g. `300`), noting this
 #'   does not affect the canvas dimensions, only output pixel density.
+#' @param col_id,col_s,col_p,col_w,col_h Column name strings for the drawing
+#'   ID, strokes list-column, points list-column, canvas width, and canvas
+#'   height respectively. Defaults match the output of [pd_import_json()]:
+#'   `"id"`, `"s"`, `"p"`, `"w"`, `"h"`.
 #'
 #' @return A numeric array of dimensions `height × width × 4` (RGBA channels,
 #'   values in \[0, 1\]). Transparent pixels are set to black
@@ -36,7 +41,7 @@
 #' grid::grid.raster(raster)
 #' }
 #'
-#' @importFrom dplyr select mutate filter full_join join_by n
+#' @importFrom dplyr select mutate filter full_join n
 #' @importFrom tidyr unnest uncount
 #' @importFrom png readPNG
 #' @importFrom ragg agg_capture
@@ -50,7 +55,12 @@ pd_add_rgba_single <- function(
   .data,
   method = "memory",
   clean_up = TRUE,
-  dpi = 96
+  dpi = 96,
+  col_id = "id",
+  col_s = "s",
+  col_p = "p",
+  col_w = "w",
+  col_h = "h"
 ) {
   if (nrow(.data) != 1L) {
     cli::cli_abort(
@@ -62,19 +72,19 @@ pd_add_rgba_single <- function(
   method <- match.arg(method, choices = c("memory", "file"))
 
   # Extract height and width from the single row
-  image_width <- .data$w[[1]]
-  image_height <- .data$h[[1]]
+  image_width <- .data[[col_w]][[1]]
+  image_height <- .data[[col_h]][[1]]
 
   # Unnest and join the s (strokes) and p (points) list-columns
   pd_s <- .data |>
-    dplyr::select(id, s) |>
-    tidyr::unnest(cols = s)
+    dplyr::select(dplyr::all_of(c(col_id, col_s))) |>
+    tidyr::unnest(cols = dplyr::all_of(col_s))
 
   pd_p <- .data |>
-    dplyr::select(id, p) |>
-    tidyr::unnest(cols = p)
+    dplyr::select(dplyr::all_of(c(col_id, col_p))) |>
+    tidyr::unnest(cols = dplyr::all_of(col_p))
 
-  pd <- dplyr::full_join(pd_s, pd_p, by = dplyr::join_by(id, i))
+  pd <- dplyr::full_join(pd_s, pd_p, by = c(col_id, "i")) # "i" is the stroke-index-column that comes from unnesting s and p
 
   # Scale brush width (pixels) to mm for ggplot rendering
   pd <- pd |>
@@ -120,7 +130,7 @@ pd_add_rgba_single <- function(
     ggplot2::scale_linewidth_identity() +
     ggplot2::geom_path(
       ggplot2::aes(
-        group = paste0(id, "_", i),
+        group = paste0(.data[[col_id]], "_", i),
         linewidth = size_mm + 1
       ),
       linetype = 1
@@ -189,7 +199,8 @@ pd_add_rgba_single <- function(
 #' returns a list suitable for use as a new column via [dplyr::mutate()].
 #'
 #' @param .data A pain drawing tibble as produced by [pd_import_json()]. Must
-#'   contain columns `id`, `s`, `p`, `w`, and `h`.
+#'   contain columns `id`, `s`, `p`, `w`, and `h` (or the names supplied via
+#'   `col_*` arguments).
 #' @param method Character. Controls the rasterization back-end. Either
 #'   `"memory"` (default, via [ragg::agg_capture()]) or `"file"` (via
 #'   [ggplot2::ggsave()] and [png::readPNG()]). Passed through to
@@ -200,6 +211,11 @@ pd_add_rgba_single <- function(
 #' @param dpi Resolution used during rasterization. Defaults to `96`, matching
 #'   the CSS pixel density of the web canvas where drawings are collected.
 #'   All rows are rendered at the same `dpi`.
+#' @param col_id,col_s,col_p,col_w,col_h Column name strings for the drawing
+#'   ID, strokes list-column, points list-column, canvas width, and canvas
+#'   height respectively. Defaults match the output of [pd_import_json()]:
+#'   `"id"`, `"s"`, `"p"`, `"w"`, `"h"`. Passed through to
+#'   [pd_add_rgba_single()].
 #'
 #' @return A list of numeric arrays, one per row, each of dimensions
 #'   `height × width × 4` (RGBA channels, values in \[0, 1\]).
@@ -223,9 +239,31 @@ pd_add_rgba_single <- function(
 #' @importFrom cli cli_abort
 #'
 #' @export
-pd_add_rgba <- function(.data, method = "memory", clean_up = TRUE, dpi = 96) {
+pd_add_rgba <- function(
+  .data,
+  method = "memory",
+  clean_up = TRUE,
+  dpi = 96,
+  col_id = "id",
+  col_s = "s",
+  col_p = "p",
+  col_w = "w",
+  col_h = "h"
+) {
   purrr::map(
     seq_len(nrow(.data)),
-    \(i) pd_add_rgba_single(.data[i, ], method = method, clean_up = clean_up, dpi = dpi)
+    \(i) {
+      pd_add_rgba_single(
+        .data[i, ],
+        method = method,
+        clean_up = clean_up,
+        dpi = dpi,
+        col_id = col_id,
+        col_s = col_s,
+        col_p = col_p,
+        col_w = col_w,
+        col_h = col_h
+      )
+    }
   )
 }
