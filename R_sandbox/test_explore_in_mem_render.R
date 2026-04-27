@@ -67,19 +67,23 @@ pd <- pd_import_json(c(
 
 set.seed(1)
 # memory
-raster_mem <- pd_to_png_single_in_mem(pd[3, ])
+raster_mem <- pd_add_rgba_single(pd[3, ], method = "memory")
 grid::grid.newpage()
 grid::grid.raster(raster_mem)
 
 set.seed(1)
 # original
-raster_org <- pd_to_png_single(pd[3, ])
+raster_file <- pd_add_rgba_single(pd[3, ], method = "file")
 grid::grid.newpage()
-grid::grid.raster(raster_org)
+grid::grid.raster(raster_file)
 
 str(raster_mem)
-str(raster_org)
-identical(raster_mem, raster_org)
+str(raster_file)
+
+# They are not IDENTICAL - probably because floating point rounding, but they are essentially identical
+identical(raster_mem, raster_file)
+((raster_mem[,, 4] |> as.double()) - (raster_file[,, 4] |> as.double())) |>
+  quantile(seq(0, 1, 0.01))
 
 
 # Test recreate_in_mem()
@@ -176,11 +180,11 @@ bench::mark(
 bench::mark(
   file_based = {
     set.seed(1)
-    pd_to_png_single(pd[3, ])
+    pd_add_rgba_single(pd[3, ], method = "file")
   },
   in_memory = {
     set.seed(1)
-    pd_to_png_single_in_mem(pd[3, ])
+    pd_add_rgba_single(pd[3, ], method = "memory")
   },
   iterations = 20,
   check = FALSE,
@@ -193,20 +197,6 @@ bench::mark(
 #   <bch:expr> <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl> <int> <dbl>   <bch:tm> <list> <list> <list>          <list>
 # 1 file_based   54.3ms   55.8ms      17.1        NA     14.0    11     9      642ms <NULL> <NULL> <bench_tm [20]> <tibble [20 × 3]>
 # 2 in_memory    57.4ms   58.8ms      16.8        NA     16.8    10    10      596ms <NULL> <NULL> <bench_tm [20]> <tibble [20 × 3]>
-
-bench::mark(
-  file_based = {
-    set.seed(1)
-    pd[1, ] |> pd_to_png_single()
-  },
-  in_memory = {
-    set.seed(1)
-    pd[1, ] |> pd_to_png_single_in_mem()
-  },
-  iterations = 20,
-  check = FALSE,
-  memory = FALSE
-)
 
 ## RESULTS FROM WINDOWS 2026_04_22
 # A tibble: 2 × 13
@@ -226,11 +216,11 @@ pd <- pd_import_json(c(
 bench::mark(
   file_based = {
     set.seed(1)
-    pd |> mutate(.png = pd_to_png(pd))
+    pd |> mutate(rgba = pd_add_rgba(pd, method = "file"))
   },
   in_memory = {
     set.seed(1)
-    pd |> mutate(.png = pd_to_png_in_mem(pd))
+    pd |> mutate(rgba = pd_add_rgba(pd, method = "memory"))
   },
   iterations = 20,
   check = FALSE,

@@ -10,7 +10,7 @@ pd_alpha_area(pngs, alpha_range = c(0, 1))
 \item{pngs}{A list of numeric arrays, each of dimensions
 \verb{[height, width, 4]} representing an RGBA image. The fourth slice
 (\code{png[,, 4]}) must contain alpha values in the range [0, 1].
-Typically the \code{.png} list-column produced by \code{\link[=pd_to_png]{pd_to_png()}}.}
+Typically the \code{.png} list-column produced by \code{\link[=pd_add_rgba]{pd_add_rgba()}}.}
 
 \item{alpha_range}{A numeric vector of length 2 specifying the lower and
 upper bounds of the alpha range (lower is exclusive, upper is inclusive).
@@ -32,7 +32,7 @@ a large light drawing.
 }
 \examples{
 pd <- pd_json2pd("data-raw/two_geoms.json") |>
-  dplyr::mutate(.png = pd_to_png())
+  dplyr::mutate(.png = pd_add_rgba(pick(everything())))
 
 # Proportion of all drawn pixels (any alpha > 0)
 pd_alpha_area(pd$.png)

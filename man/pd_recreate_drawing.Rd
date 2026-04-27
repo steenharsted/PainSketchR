@@ -2,20 +2,25 @@
 % Please edit documentation in R/pd_recreate_drawing.R
 \name{pd_recreate_drawing}
 \alias{pd_recreate_drawing}
-\title{Recreate a pain drawing as a ggplot}
+\title{Validate and process background_imageRenders stroke and spray data from a pain drawing tibble into a ggplot,
+optionally composited with a background image. When \code{rasterize = TRUE}
+(default), the plot is rasterized and returned as a pixel-accurate raster
+layer — preserving exact canvas proportions. When
+\code{rasterize = FALSE}, the raw ggplot with vector strokes is returned instead.}
 \usage{
 pd_recreate_drawing(
   .data,
   background_image = NULL,
   include_id = FALSE,
   rasterize = TRUE,
+  method = "memory",
   clean_up = TRUE,
   dpi = 96,
   type = "path"
 )
 }
 \arguments{
-\item{.data}{A pain drawing tibble as produced by \code{\link[=pd_json2pd]{pd_json2pd()}}. Must
+\item{.data}{A pain drawing tibble as produced by \code{\link[=pd_import_json]{pd_import_json()}}. Must
 contain columns \code{id}, \code{s}, \code{p}, \code{w}, and \code{h}. All drawings must share the
 same canvas dimensions (\code{w} and \code{h}).}
 
@@ -31,27 +36,35 @@ Defaults to \code{NULL} (no background).}
 \item{include_id}{Logical. If \code{TRUE}, the \code{id} value is shown as a facet
 strip label above each panel. Default is \code{FALSE}.}
 
-\item{rasterize}{Logical. If \code{TRUE} (default), the plot is rendered to a
-temp PNG via \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}}, read back with \code{\link[png:readPNG]{png::readPNG()}}, and
+\item{rasterize}{Logical. If \code{TRUE} (default), the plot is rasterized and
 returned as a new ggplot with \code{\link[ggplot2:annotation_raster]{ggplot2::annotation_raster()}}. The output
 is pixel-accurate with a locked aspect ratio. If \code{FALSE}, the raw ggplot
 with vector strokes is returned.}
 
-\item{clean_up}{Logical. If \code{TRUE} (default), the temporary PNG file created
-during rasterization is deleted on exit. Set to \code{FALSE} to retain the file
-for debugging.}
+\item{method}{Character. Controls the rasterization back-end when
+\code{rasterize = TRUE}. Either:
+\itemize{
+\item \code{"memory"} (default) — renders in-memory via \code{\link[ragg:agg_capture]{ragg::agg_capture()}},
+no temp file is written to disk.
+\item \code{"file"} — saves to a temporary PNG via \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}} and reads
+it back with \code{\link[png:readPNG]{png::readPNG()}}. Use this if the \code{"memory"} path produces
+unexpected rendering artefacts.
+}}
 
-\item{dpi}{Resolution passed to \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}} when \code{rasterize = TRUE}.
-Defaults to \code{96}, matching the CSS pixel density of the web canvas where
-drawings are collected — this ensures a 1:1 pixel correspondence between
-the original drawing and the output. Increase for print-quality output
-(e.g. \code{300}), noting this does not affect the canvas dimensions, only
-output pixel density.}
+\item{clean_up}{Logical. If \code{TRUE} (default), the temporary PNG file is
+deleted on exit. Only relevant when \code{method = "file"}. Set to \code{FALSE} to
+retain the file for debugging.}
 
-\item{type}{A string set to either 'path' or 'polygon'. The former (default)
-generates a png of the pain drawing with strokes illustrated as path. The
-latter generates a png with strokes as closed polygons in black, filled in
-with black. The latter is useful for generating templates of anatomy areas.}
+\item{dpi}{Resolution used during rasterization. Defaults to \code{96}, matching
+the CSS pixel density of the web canvas where drawings are collected —
+this ensures a 1:1 pixel correspondence between the original drawing and
+the output. Increase for print-quality output (e.g. \code{300}), noting this
+does not affect the canvas dimensions, only output pixel density.}
+
+\item{type}{A string set to either \code{"path"} or \code{"polygon"}. The former
+(default) renders strokes as open paths. The latter renders strokes as
+closed polygons filled in black, which is useful for generating anatomy
+area templates.}
 }
 \value{
 A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object. When \code{rasterize = TRUE}, the plot
@@ -60,22 +73,18 @@ aspect ratio. When \code{rasterize = FALSE}, the plot contains vector stroke
 layers and supports further ggplot2 additions.
 }
 \description{
-Renders stroke and spray data from a pain drawing tibble into a ggplot,
-optionally composited with a background image. When \code{rasterize = TRUE}
-(default), the plot is first saved to a temp file and returned as a
-pixel-accurate raster layer — preserving exact canvas proportions. When
-\code{rasterize = FALSE}, the raw ggplot with vector strokes is returned instead.
-}
-\details{
 Multiple drawings are arranged with \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}}. A warning is
 issued when more than 9 drawings are passed, as rendering may be slow.
 }
 \examples{
 \dontrun{
-pd <- pd_json2pd(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
+pd <- pd_import_json(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
 
-# Default: rasterized output with background
+# Default: in-memory rasterization with background
 pd |> pd_recreate_drawing(background_image = "inst/background.png")
+
+# File-based rasterization
+pd |> pd_recreate_drawing(method = "file")
 
 # Vector output — can add further ggplot layers
 pd |> pd_recreate_drawing(rasterize = FALSE)
@@ -86,7 +95,7 @@ pd |> pd_recreate_drawing(include_id = TRUE)
 
 }
 \seealso{
-\code{\link[=pd_json2pd]{pd_json2pd()}} to read pain drawing JSON files,
-\code{\link[=pd_to_png]{pd_to_png()}} to store raster arrays as a column in the tibble,
-\code{\link[=pd_to_png_single]{pd_to_png_single()}} for the single-row raster primitive.
+\code{\link[=pd_import_json]{pd_import_json()}} to read pain drawing JSON files,
+\code{\link[=pd_add_rgba]{pd_add_rgba()}} to store raster arrays as a column in the tibble,
+\code{\link[=pd_add_rgba_single]{pd_add_rgba_single()}} for the single-row raster primitive.
 }

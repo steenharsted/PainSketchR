@@ -48,8 +48,8 @@
 #'   layers and supports further ggplot2 additions.
 #'
 #' @seealso [pd_import_json()] to read pain drawing JSON files,
-#'   [pd_to_png()] to store raster arrays as a column in the tibble,
-#'   [pd_to_png_single()] for the single-row raster primitive.
+#'   [pd_add_rgba()] to store raster arrays as a column in the tibble,
+#'   [pd_add_rgba_single()] for the single-row raster primitive.
 #'
 #' @examples
 #' \dontrun{
