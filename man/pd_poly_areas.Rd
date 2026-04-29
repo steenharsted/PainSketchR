@@ -7,7 +7,7 @@
 pd_poly_areas(p, by = "drawings")
 }
 \arguments{
-\item{p}{A list of tibbles of i,x and y columns (as integers) -- see \link{pd_check_data} for more detail.}
+\item{p}{A list of tibbles of i,x and y columns (as integers) -- see \link{pdr_check_data} for more detail.}
 
 \item{by}{A string of either 'strokes', 'drawings' or 'both'.}
 }

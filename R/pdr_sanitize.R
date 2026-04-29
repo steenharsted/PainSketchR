@@ -1,19 +1,20 @@
 #' Clean and normalize pain drawing stroke geometries
 #'
-#' Processes stroke coordinate data (`p` column) by removing self-intersections,
-#' optionally buffering degenerate strokes, simplifying polygons, and applying
-#' additional geometric transformations.
+#' Processes stroke coordinate data (`p` column) by removing 
+#' self-intersections, optionally buffering strokes with 
+#' no area, simplifying polygons, and applying additional 
+#' geometric transformations.
 #'
 #' The function accepts either:
-#' * a full pain drawing data structure (see [pd_check_data()])
-#' * or a `p` list-column from such a structure
-#'
-#' In the former case, the `p` column is modified and the full data structure is returned.
+#' * a full pain drawing data structure (see [pdr_check_data()])
+#'   - In this case the `p` column is modified and the full data structure is returned.
+#' * a `p` list-column from such a structure
+#'   - In this case a replacement `p` column is return, useful for `mutate()` calls
 #'
 #' @details
 #' The following operations are applied in order:
 #'
-#' 1. **Degenerate stroke handling** (points or lines with < 3 vertices)
+#' 1. **No-area-stroke handling** (points or lines with < 3 vertices)
 #'    Controlled by `noarea_action`:
 #'    * `"drop"`: remove such strokes
 #'    * `"buffer"`: expand them into polygons using a buffer of size `buffer_delta`
@@ -26,7 +27,7 @@
 #'    * If `chull = TRUE`, each stroke is replaced by its convex hull
 #'
 #' 4. **Overlap handling** (optional)
-#'    * Controlled by `overlaps`, see [pd_poly_manage_overlaps()]
+#'    * Controlled by `overlaps`, 
 #'
 #' 5. **Polygon closure** (optional)
 #'    * If `close_polygon = TRUE`, ensures each stroke forms a closed ring
@@ -44,7 +45,7 @@
 #' @param chull Logical. If `TRUE`, replace each stroke with its convex hull.
 #'
 #' @param overlaps Character string controlling how overlapping polygons are handled.
-#'   See [pd_poly_manage_overlaps()] for available options.
+#'   See [pdr_poly_manage_overlaps()] for available options.
 #'
 #' @param close_polygon Logical. If `TRUE`, ensures that the first and last
 #'   coordinate of each stroke are identical.
@@ -63,30 +64,34 @@
 #'
 #' @examples
 #' # Clean only the p column
-#' pd_demo_data$p <- pd_sanitize(pd_demo_data$p)
+#' pdr_demo_data$p <- pdr_sanitize(pdr_demo_data$p)
 #'
 #' # Clean within a pipeline
-#' pd_demo_data <- pd_demo_data |>
-#'   dplyr::mutate(p = pd_sanitize(p))
+#' pdr_demo_data <- pdr_demo_data |>
+#'   dplyr::mutate(p = pdr_sanitize(p))
 #'
 #' # Apply convex hulls and close polygons
-#' pd_demo_data <- pd_demo_data |>
-#'   dplyr::mutate(p = pd_sanitize(p, chull = TRUE, close_polygon = TRUE))
-pd_sanitize <- function(p, noarea_action="buffer", buffer_delta=5, chull=FALSE, overlaps="nothing", close_polygon=FALSE) {
+#' pdr_demo_data <- pdr_demo_data |>
+#'   dplyr::mutate(p = pdr_sanitize(p, chull = TRUE, close_polygon = TRUE))
+pdr_sanitize <- function(p, noarea_action="buffer", buffer_delta=5, chull=FALSE, overlaps="nothing", close_polygon=FALSE) {
   # This function takes a single p column from a valid pain drawing data set
   # p: a list of tibbles of i,x,y
   # However, if an entire pain drawing data structure is passed as `p`, simply mutate that column:
-  if (pd_check_data(p)) {
-    return(p |> dplyr::mutate(p=pd_sanitize(p, noarea_action, buffer_delta, chull, overlaps, close_polygon)))
+  if (pdr_check_data(p)) {
+    # This next line is not easy to parse 'p' is input parameter
+    # of this function, but in the mutate call it is column 'p'
+    # of that input parameter (when it is in fact a pd tibble)
+    return(p |> dplyr::mutate(p=pdr_sanitize(p, noarea_action, buffer_delta, chull, overlaps, close_polygon)))
   }
 
-  # As we made it this far, `p` is a probably a p-column from a pain drawing data structure called by mutate
+  # As we made it this far, `p` is a not a valid pd tibble, but
+  # probably a p-column from a such a pd tibble called by mutate()
   # Sanity check!
   if (!is.list(p)) {
     stop("`p` is not a valid list-column")
   } 
   if (!all(p |> purrr::map_lgl(\(tib) {identical(tib, NA) || tibble::is_tibble(tib)}))) {
-    stop("Every element of `p` should be a tibble -- perhaps you should use `pd_sanitize()` in mutate calls?")
+    stop("Every element of `p` should be a tibble -- perhaps you should use `pdr_sanitize()` in mutate calls?")
   } 
   if (!all(p |> purrr::map_lgl(\(tib) {identical(tib, NA) || all(c("i","x","y") %in% names(tib))}))) {
     stop("Every tibble element of `p` must include columns i, x and y")
@@ -96,7 +101,7 @@ pd_sanitize <- function(p, noarea_action="buffer", buffer_delta=5, chull=FALSE, 
   }
 
   if(overlaps != "nothing") { 
-    warning(("Calling `pd_sanitize()` with the parameter `overlaps` specified will return a (potentially) different set of brush stroke data (column `p`) -- brush stroke data in the `s` column may thus become invalid. We recommend to `mutate()` to a new column rather than replacing col `p`."))
+    warning(("Calling `pdr_sanitize()` with the parameter `overlaps` specified will return a (potentially) different set of brush stroke data (column `p`) -- brush stroke data in the `s` column may thus become invalid. We recommend to `mutate()` to a new column rather than replacing col `p`."))
   }
 
   # Now manage brush stroke polygons which are points or two-point lines:
@@ -169,7 +174,7 @@ pd_sanitize <- function(p, noarea_action="buffer", buffer_delta=5, chull=FALSE, 
   }
 
   if (overlaps != "nothing") {
-    p <- p |> pd_poly_manage_overlaps()
+    p <- p |> pdr_poly_manage_overlaps()
   }
 
     if (close_polygon) {

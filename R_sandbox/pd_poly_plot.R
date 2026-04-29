@@ -3,7 +3,7 @@
 #' This function is a simple wrapper of the ggplot function with pain drawing points represented as geom_polygon in separate colours (alpha=0.5) and
 #' each separate pain drawing presented as a wrapped facet.
 #' 
-#' @param pd A valid pain drawing data structure -- see [pd_check_data] for more detail.
+#' @param pd A valid pain drawing data structure -- see [pdr_check_data] for more detail.
 #'
 #' @returns A ggplot2 plot
 #'

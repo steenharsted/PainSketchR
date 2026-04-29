@@ -4,11 +4,22 @@
 \alias{pd_add_rgba}
 \title{Add RGBA raster arrays to a pain drawing tibble}
 \usage{
-pd_add_rgba(.data, method = "memory", clean_up = TRUE, dpi = 96)
+pd_add_rgba(
+  .data,
+  method = "memory",
+  clean_up = TRUE,
+  dpi = 96,
+  col_id = "id",
+  col_s = "s",
+  col_p = "p",
+  col_w = "w",
+  col_h = "h"
+)
 }
 \arguments{
 \item{.data}{A pain drawing tibble as produced by \code{\link[=pd_import_json]{pd_import_json()}}. Must
-contain columns \code{id}, \code{s}, \code{p}, \code{w}, and \code{h}.}
+contain columns \code{id}, \code{s}, \code{p}, \code{w}, and \code{h} (or the names supplied via
+\verb{col_*} arguments).}
 
 \item{method}{Character. Controls the rasterization back-end. Either
 \code{"memory"} (default, via \code{\link[ragg:agg_capture]{ragg::agg_capture()}}) or \code{"file"} (via
@@ -22,6 +33,12 @@ deleted after each raster is read into memory. Only relevant when
 \item{dpi}{Resolution used during rasterization. Defaults to \code{96}, matching
 the CSS pixel density of the web canvas where drawings are collected.
 All rows are rendered at the same \code{dpi}.}
+
+\item{col_id, col_s, col_p, col_w, col_h}{Column name strings for the drawing
+ID, strokes list-column, points list-column, canvas width, and canvas
+height respectively. Defaults match the output of \code{\link[=pd_import_json]{pd_import_json()}}:
+\code{"id"}, \code{"s"}, \code{"p"}, \code{"w"}, \code{"h"}. Passed through to
+\code{\link[=pd_add_rgba_single]{pd_add_rgba_single()}}.}
 }
 \value{
 A list of numeric arrays, one per row, each of dimensions

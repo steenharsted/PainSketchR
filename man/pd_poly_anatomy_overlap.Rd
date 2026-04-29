@@ -7,11 +7,11 @@
 pd_poly_anatomy_overlap(p, anatomy_pd, anatomy_id = "Not specified")
 }
 \arguments{
-\item{anatomy_pd}{A valid pain drawing data structure -- see \link{pd_check_data} for more detail.}
+\item{anatomy_pd}{A valid pain drawing data structure -- see \link{pdr_check_data} for more detail.}
 
 \item{anatomy_id}{A unique id from the anatomy_pd}
 
-\item{pd}{A valid pain drawing data structure -- see \link{pd_check_data} for more detail.}
+\item{pd}{A valid pain drawing data structure -- see \link{pdr_check_data} for more detail.}
 
 \item{c}{The column of pd which holds stroke/polygon coordinates}
 }

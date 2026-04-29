@@ -548,7 +548,7 @@ pd_quantile <- function(x, n_groups, txt = "pct") {
 }
 
 check_p_col <- function(p) {
-  if (pd_check_data(p)) {
+  if (pdr_check_data(p)) {
     warning("`p` is a valid pain drawing data structure -- not a `p` column from such.")
   }
   if (!is.list(p)) {
@@ -568,4 +568,33 @@ check_p_col <- function(p) {
     return(FALSE)
   }
   return(TRUE)
+}
+
+psr_example <- function(path = NULL) {
+  # This function provides users with easy access to example
+  # data stored in the inst/extdata folder
+  if (is.null(path)) {
+    dir(system.file("extdata", package = "paindrawr"))
+  } else {
+    system.file("extdata", path, package = "paindrawr", mustWork = TRUE)
+  }
+}
+
+pd_poly_clip <- function(A, B, operation="intersection") {
+  # This function is a simple wrapper for polyclip::polyclip
+  # A and B should be dataframes which contain two columns x and y
+  result <- polyclip::polyclip(
+    A = list(x=A$x , y=A$y),
+    B = list(x=B$x , y=B$y),
+    op=operation) 
+  
+  if(purrr::is_empty(result)) {
+    result <- tibble::tibble(i=as.integer(), x=as.integer(), y=as.integer())
+  } else {
+      result <- result |> purrr::map_dfr(\(q) {q}, .id="i") |>
+      dplyr::mutate(i = as.integer(i),
+                    x = as.integer(round(x)),
+                    y = as.integer(round(y)))
+  }
+  result
 }

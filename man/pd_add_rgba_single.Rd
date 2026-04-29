@@ -4,11 +4,22 @@
 \alias{pd_add_rgba_single}
 \title{Convert a single-row pain drawing to an RGBA raster array}
 \usage{
-pd_add_rgba_single(.data, method = "memory", clean_up = TRUE, dpi = 96)
+pd_add_rgba_single(
+  .data,
+  method = "memory",
+  clean_up = TRUE,
+  dpi = 96,
+  col_id = "id",
+  col_s = "s",
+  col_p = "p",
+  col_w = "w",
+  col_h = "h"
+)
 }
 \arguments{
 \item{.data}{A single-row pain drawing tibble as produced by
-\code{\link[=pd_import_json]{pd_import_json()}}. Must contain columns \code{id}, \code{s}, \code{p}, \code{w}, and \code{h}.
+\code{\link[=pd_import_json]{pd_import_json()}}. Must contain columns \code{id}, \code{s}, \code{p}, \code{w}, and \code{h}
+(or the names supplied via \verb{col_*} arguments).
 Passing more than one row is an error.}
 
 \item{method}{Character. Controls the rasterization back-end. Either:
@@ -29,6 +40,11 @@ the CSS pixel density of the web canvas where drawings are collected —
 this ensures a 1:1 pixel correspondence between the original drawing and
 the output. Increase for print-quality output (e.g. \code{300}), noting this
 does not affect the canvas dimensions, only output pixel density.}
+
+\item{col_id, col_s, col_p, col_w, col_h}{Column name strings for the drawing
+ID, strokes list-column, points list-column, canvas width, and canvas
+height respectively. Defaults match the output of \code{\link[=pd_import_json]{pd_import_json()}}:
+\code{"id"}, \code{"s"}, \code{"p"}, \code{"w"}, \code{"h"}.}
 }
 \value{
 A numeric array of dimensions \verb{height × width × 4} (RGBA channels,

@@ -49,11 +49,11 @@
 #'
 #' @export
 #' @examples
-#' pd_check_data(pd_demo_data, verbose = FALSE) # Will return TRUE
+#' pdr_check_data(pdr_demo_data, verbose = FALSE) # Will return TRUE
 #'
-#' pd_check_data(letters[1:10]) # Will return FALSE and provide details in stderr
+#' pdr_check_data(letters[1:10]) # Will return FALSE and provide details
 #'
-pd_check_data <- function(d, verbose = TRUE) {
+pdr_check_data <- function(d, verbose = TRUE) {
 
   # ---- helpers ----
   fail <- function(msg) {

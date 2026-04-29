@@ -18,7 +18,7 @@
     - OBS navne ændret til rgba
 - i pd_png_trim funktionen skal vi indføre en parameter i funktionskaldet 'col_name' som definerer kolonne navnet i pd data hvor den nye (trimmede) png data indsættes
 - i sammenfattende funktioner (f.eks pd_anatomy_merge) hvor et antal tegninger/række bliver 'summarized' til én skal vi sætte 's' kolonnen til fornuftige default værdier
-- hvordan skal vi håndtere NA værdier -- f.eks hvis 's' og 'p' er NA? (pd_check_data)
+- hvordan skal vi håndtere NA værdier -- f.eks hvis 's' og 'p' er NA? (pdr_check_data)
 - pd_mird2pd skal generere fornuftige (og korrekte) default værdier for w, h, coord, etc
 - i DATASET.R ..  brug pd_mird2pd til at indlæse demo_data
 - pd_demodata skal indeholde to kategoriske og 1 kontinuerlig variabel til demonstration af pd_create_heatmap
@@ -29,7 +29,7 @@
 
 ## Done
 
-- SON: pd_check_data skal tjekke indholdet af p og s, højde og bredde m.m.
+- SON: pdr_check_data skal tjekke indholdet af p og s, højde og bredde m.m.
 - SON: Warning hvis flere farver 
 - SH: summary af .png (intensitet / alpha)
 - SH: ændret pd_add_png() til pd_to_png() den virker nu via mutate(). pd_add_png() er fjernet

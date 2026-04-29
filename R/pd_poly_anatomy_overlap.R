@@ -3,9 +3,9 @@
 #'
 #' This function ...
 #'
-#' @param pd A valid pain drawing data structure -- see [pd_check_data] for more detail.
+#' @param pd A valid pain drawing data structure -- see [pdr_check_data] for more detail.
 #' @param c The column of pd which holds stroke/polygon coordinates
-#' @param anatomy_pd A valid pain drawing data structure -- see [pd_check_data] for more detail.
+#' @param anatomy_pd A valid pain drawing data structure -- see [pdr_check_data] for more detail.
 #' @param anatomy_id A unique id from the anatomy_pd
 #'
 #' @returns A valid pain drawing data structure

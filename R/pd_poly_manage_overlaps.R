@@ -1,23 +1,3 @@
-#' Manage overlapping markings in pain drawings
-#' 
-#' This function will manage overlapping markings/strokes in pain drawings by the chosen method. The method <chr> can be 'merge', 'split', 'adoptA' or 'adoptB'. 
-#' 
-#' The `method` parameter determines the way overlaps are managed:
-#' * "intersection" will merge pairwise overlapping markings _only if_ overlap in a way which creates an area
-#' * "union" will merge pairwise overlapping markings -- -- _even if_ two the markings only share vertices or lines with no overlapping area
-#' * "split" will subtract the overlapping area from both markings and create a new marking representing the overlap -- not currently implemented!
-#' * "adoptA" will retain the first of the markings unchanged, and subtract the overlap from the second marking -- not currently implemented!
-#' * "adoptB" will retain the second of the markings unchanged, and subtract the overlap from the first marking -- not currently implemented!
-#'
-#' @param pd A valid pain drawing data structure -- see [pd_check_data] for details.
-#' @param method A string -- eigher "merge", "split", "adoptA" or "adoptB" -- currently only "merge" is implemented
-#'
-#' @returns A valid pain drawing data structure
-#'
-#' @export
-#' @examples
-#' pd_demo_data[1:5,] |> mutate(p = pd_poly_cleanup(p, delta=20)) |> mutate(p = pd_poly_manage_overlaps(p))
-#' 
 pd_poly_manage_overlaps <- function(p, method="intersection") {
   # This function takes the column p from a pain drawing data structure and for each pain drawing (row)
   # it handles any overlapping polygons

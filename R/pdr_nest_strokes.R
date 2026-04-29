@@ -46,7 +46,7 @@
 #' pd_demo_anatomy |> dplyr::filter(id %in% c("Front_left_thigh", "Front_left_leg", "Front_left_foot")) |> pd_recreate_drawing(background_image = bi)#' 
 #' pd_demo_anatomy |> dplyr::filter(id %in% c("Front_left_thigh", "Front_left_leg", "Front_left_foot")) |> pd_anatomy_merge() |> pd_recreate_drawing(background_image = bi)
 #' 
-pd_anatomy_merge <- function(pd) {
+pdr_nest_strokes <- function(pd) {
   if (!pdr_check_data(pd, verbose=FALSE)) { stop("`pd` must be a valid pain drawing data structure")}
 
   if(length(unique(pd$w))>1 | length(unique(pd$h))>1) {
@@ -54,7 +54,8 @@ pd_anatomy_merge <- function(pd) {
   }
 
   if (pd$s |> purrr::map_int(\(t) nrow(t)) |> max() > 1) {
-    stop("One or more rows contain more than one stroke/polygons.")
+    # just call unnest ...
+    #stop("One or more rows contain more than one stroke/polygons -- perhaps run `pdr_unnest_strokes()` before `pdr_nest_strokes()`")
   }
 
   # Each row in pd is a pain drawing with just one stroke/polygon
@@ -62,25 +63,20 @@ pd_anatomy_merge <- function(pd) {
   # multiple strokes/polygons, numbered (i) 1:n, where n is nrow(pd).
 
   # Retain all other columns in `pd` but `p`...
-  all_but_p <- pd |> dplyr::select(-p)
+  all_but_p_and_s <- pd |> dplyr::select(-p, -s)
   # Create a new tibble ... pd collapsed into just column p with only one element - a tibble with a unique 'i' for each pain drawing in pd
   just_p_collapsed <- tibble::tibble(p = pd |> dplyr::pull(p) |> purrr::list_rbind(names_to = 'i') |> list() )
-  # Now merge overlapping strokes/polygons ... this is time consuming!
-  just_p_collapsed <- just_p_collapsed |> mutate(p=pd_poly_manage_overlaps(p, method="union"))
-  # Get the surviving `i` values from the merged pain drawings -- which correspond to the row number in pd
-  i_survivors <- unique(just_p_collapsed$p[[1]]$i)
-  # Reduce `all_but_p` to the rows which survived pain drawing merger
-  result <- all_but_p[i_survivors,]
-  # Un-collapse/split just_p into a list and set the i to 1 in each tibble
-  just_p <- 
-    just_p_collapsed$p[[1]] |> 
-    dplyr::group_by(i) |> 
-    dplyr::group_split() |>
-    purrr::map(\(tbl) {
-      tbl$i <- as.integer(1)
-      tbl
-    })
-  # Just latch `p` onto `result`
-  result$p <- just_p
-  return(result) 
+  just_s_collapsed <- tibble::tibble(s = pd |> dplyr::pull(s) |> purrr::list_rbind(names_to = 'i') |> list() )
+
+  # just_p <- 
+  #   just_p_collapsed$p[[1]] |> 
+  #   dplyr::group_by(i) |> 
+  #   dplyr::group_split() |>
+  #   purrr::map(\(tbl) {
+  #     tbl$i <- as.integer(1)
+  #     tbl
+  #   })
+  # # Just latch `p` onto `result`
+  # result$p <- just_p
+  # return(result) 
 }

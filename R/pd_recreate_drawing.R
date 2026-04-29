@@ -90,7 +90,7 @@ pd_recreate_drawing <- function(
   type = "path"
 ) {
   # Making sure data has required columns
-  pd_check_data(.data, verbose = FALSE)
+  pdr_check_data(.data, verbose = FALSE)
 
   # Validate method argument
   method <- match.arg(method, choices = c("memory", "file"))

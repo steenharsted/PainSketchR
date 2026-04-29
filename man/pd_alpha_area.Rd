@@ -4,13 +4,13 @@
 \alias{pd_alpha_area}
 \title{Calculate the proportion of canvas covered in a pain drawing PNG}
 \usage{
-pd_alpha_area(pngs, alpha_range = c(0, 1))
+pd_alpha_area(rgbas, alpha_range = c(0, 1))
 }
 \arguments{
-\item{pngs}{A list of numeric arrays, each of dimensions
+\item{rgbas}{A list of numeric arrays, each of dimensions
 \verb{[height, width, 4]} representing an RGBA image. The fourth slice
-(\code{png[,, 4]}) must contain alpha values in the range [0, 1].
-Typically the \code{.png} list-column produced by \code{\link[=pd_add_rgba]{pd_add_rgba()}}.}
+(\code{rgba[,, 4]}) must contain alpha values in the range [0, 1].
+Typically the \code{rgba} list-column produced by \code{\link[=pd_add_rgba]{pd_add_rgba()}}.}
 
 \item{alpha_range}{A numeric vector of length 2 specifying the lower and
 upper bounds of the alpha range (lower is exclusive, upper is inclusive).
@@ -18,7 +18,7 @@ Defaults to \code{c(0, 1)}, i.e. all drawn pixels regardless of intensity.
 Use e.g. \code{c(0.5, 1)} to restrict to heavily drawn pixels only.}
 }
 \value{
-A numeric vector of length \code{length(pngs)}. Each element is the
+A numeric vector of length \code{length(rgbas)}. Each element is the
 proportion of canvas pixels with alpha in
 \verb{(alpha_range[1], alpha_range[2]]} -- i.e. strictly greater than the
 lower bound and less than or equal to the upper bound.
@@ -31,19 +31,19 @@ independently of stroke intensity. Use in combination with
 a large light drawing.
 }
 \examples{
-pd <- pd_json2pd("data-raw/two_geoms.json") |>
-  dplyr::mutate(.png = pd_add_rgba(pick(everything())))
+pd <- pd_import_json("data-raw/two_geoms.json") |>
+  dplyr::mutate(rgba = pd_add_rgba(pick(everything())))
 
 # Proportion of all drawn pixels (any alpha > 0)
-pd_alpha_area(pd$.png)
+pd_alpha_area(pd$rgba)
 
 # Proportion of heavily drawn pixels only (alpha > 0.5)
-pd_alpha_area(pd$.png, alpha_range = c(0.5, 1))
+pd_alpha_area(pd$rgba, alpha_range = c(0.5, 1))
 
 # Use inside mutate()
 pd |> dplyr::mutate(
-  area         = pd_alpha_area(.png),
-  area_over_50 = pd_alpha_area(.png, alpha_range = c(0.5, 1))
+  area         = pd_alpha_area(rgba),
+  area_over_50 = pd_alpha_area(rgba, alpha_range = c(0.5, 1))
 )
 }
 \seealso{

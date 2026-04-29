@@ -1,10 +1,10 @@
 ## code to prepare the demo `DATASET` goes here
 
 # Generate some demo data of anatomical regions from full body outline/template
-pd_d <- tibble::tibble(id=as.integer(), s=list(), p=list())
+pdr_d <- tibble::tibble(id=as.integer(), s=list(), p=list())
 for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
   d <- read.csv(c, sep=";", header = FALSE)
-  pd_d <- rbind(pd_d, tibble::tibble(
+  pdr_d <- rbind(pdr_d, tibble::tibble(
     id=fs::path_ext_remove(fs::path_file(c)), 
     w=as.integer(450),
     h=as.integer(500),
@@ -16,17 +16,17 @@ for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
 } 
 
 # This is a bit quirky ... but necessary to ensure the variable is named correctly in rda:
-var_name <- "pd_demo_anatomy"
-assign(var_name, pd_d)
-do.call(save, list(var_name, file="data/pd_demo_anatomy.rda"))
+var_name <- "pdr_example_anatomy"
+assign(var_name, pdr_d)
+do.call(save, list(var_name, file="data/pdr_example_anatomy.rda"))
 
 # Generate png stencils for each anatomical region (to allow for finding intersections in spray pain drawings)
-# pd_d$p |> purrr::map(\(x) {})
+# pdr_d$p |> purrr::map(\(x) {})
 
 # Generate a demo data set of pain drawings
 # This is based on real-world data collection (mird)
 # With an added observation where paindrawing is NA
-pd_demo_data <- read.csv("data-raw/demo_data.csv") |> 
+pdr_example_data <- read.csv("data-raw/demo_data.csv") |> 
   dplyr::mutate(paindrawing_LBP = stringr::str_replace_all(paindrawing_LBP, ",\\),\\(,", ";")) |> 
   dplyr::mutate(paindrawing_LBP = stringr::str_replace_all(paindrawing_LBP, "\\(,", "")) |>
   dplyr::mutate(paindrawing_LBP = stringr::str_replace_all(paindrawing_LBP, ",\\)", "")) |>
@@ -46,17 +46,17 @@ pd_demo_data <- read.csv("data-raw/demo_data.csv") |>
   }) |>
   dplyr::ungroup() 
 
-pd_demo_data <- pd_demo_data |>
-  dplyr::mutate(f="data/pd_demo_data.csv") |>
+pdr_example_data <- pdr_example_data |>
+  dplyr::mutate(f="data/pdr_example_data.csv") |>
   dplyr::mutate(v=as.integer(2)) |>
   dplyr::mutate(w=as.integer(450), h=as.integer(500)) |>
   dplyr::mutate(coord="px") |>
   dplyr::mutate(ts = as.character(Sys.time())) |>
-  dplyr::mutate(app = "PainDrawR package") 
+  dplyr::mutate(app = "paindrawr package") 
   
-pd_demo_data$s <- pd_demo_data$s |> purrr::map(\(tb) {
+pdr_example_data$s <- pdr_example_data$s |> purrr::map(\(tb) {
   if(tibble::is_tibble(tb)) {
-    tb |> mutate(
+    tb |> dplyr::mutate(
       q=i,
       t="pen",
       bw=as.integer(1),
@@ -68,18 +68,7 @@ pd_demo_data$s <- pd_demo_data$s |> purrr::map(\(tb) {
   }
 })
 
-#pd_demo_data <- rbind(tibble::tibble(id="No pain drawing", s=list(NA), p=list(NA), f="", v=as.integer(2), w=as.integer(0), h=as.integer(0), coord="", ts=as.character(Sys.time()), app="PainDraweR package"), pd_demo_data)
+#pdr_demo_data <- rbind(tibble::tibble(id="No pain drawing", s=list(NA), p=list(NA), f="", v=as.integer(2), w=as.integer(0), h=as.integer(0), coord="", ts=as.character(Sys.time()), app="PainDraweR package"), pdr_demo_data)
 
-save(pd_demo_data, file="data/pd_demo_data.rda")
+save(pdr_example_data, file="data/pdr_example_data.rda")
   
-
-# Generate to simple text strings, which represent file paths to json files in the package
-pd_demo_filepath_json_file_1 <- system.file("extdata", "four_geoms.json", package = "paindrawings")
-save(pd_demo_filepath_json_file_1, file="data/pd_demo_filepath_json_file_1.rda")
-pd_demo_filepath_json_file_2 <- system.file("extdata", "two_geoms.json", package = "paindrawings")
-save(pd_demo_filepath_json_file_2, file="data/pd_demo_filepath_json_file_2.rda")
-
-pd_demo_filepath_background_image_body <- system.file("extdata", "mird_body_background.png", package = "paindrawings")
-save(pd_demo_filepath_background_image_body, file="data/pd_demo_filepath_background_image_body.rda")
-pd_demo_filepath_background_image_head <- system.file("extdata", "heads.png", package = "paindrawings")
-save(pd_demo_filepath_background_image_head, file="data/pd_demo_filepath_background_image_head.rda")

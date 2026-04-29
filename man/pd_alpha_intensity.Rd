@@ -4,21 +4,21 @@
 \alias{pd_alpha_intensity}
 \title{Calculate mean alpha intensity of drawn pixels in a pain drawing PNG}
 \usage{
-pd_alpha_intensity(pngs, alpha_range = c(0, 1))
+pd_alpha_intensity(rgbas, alpha_range = c(0, 1))
 }
 \arguments{
-\item{pngs}{A list of numeric arrays, each of dimensions
-\verb{[height, width, 4]} representing an RGBA image. The fourth slice
-(\code{png[,, 4]}) must contain alpha values in the range [0, 1].
-Typically the \code{.png} list-column produced by \code{\link[=pd_add_rgba]{pd_add_rgba()}}.}
-
 \item{alpha_range}{A numeric vector of length 2 specifying the lower and
 upper bounds of the alpha range (lower is exclusive, upper is inclusive).
 Defaults to \code{c(0, 1)}, i.e. all drawn pixels regardless of intensity.
 Use e.g. \code{c(0.5, 1)} to restrict to heavily drawn pixels only.}
+
+\item{pngs}{A list of numeric arrays, each of dimensions
+\verb{[height, width, 4]} representing an RGBA image. The fourth slice
+(\code{rgba[,, 4]}) must contain alpha values in the range [0, 1].
+Typically the \code{rgba} list-column produced by \code{\link[=pd_add_rgba]{pd_add_rgba()}}.}
 }
 \value{
-A numeric vector of length \code{length(pngs)}. Each element is the
+A numeric vector of length \code{length(rgbas)}. Each element is the
 mean alpha of pixels with alpha in \verb{(alpha_range[1], alpha_range[2]]}
 for the corresponding array, or \code{NA_real_} if no pixels fall in that
 range.
@@ -31,17 +31,17 @@ covered. Use in combination with \code{\link[=pd_alpha_area]{pd_alpha_area()}} t
 small intense drawing and a large light drawing.
 }
 \examples{
-pd <- pd_json2pd("data-raw/two_geoms.json") |>
-  dplyr::mutate(.png = pd_add_rgba(pick(everything())))
+pd <- pd_import_json("data-raw/two_geoms.json") |>
+  dplyr::mutate(rgba = pd_add_rgba(pick(everything())))
 
 # Mean intensity across all drawn pixels
-pd_alpha_intensity(pd$.png)
+pd_alpha_intensity(pd$rgba)
 
 # Exclude very faint pixels (alpha <= 0.05)
-pd_alpha_intensity(pd$.png, alpha_range = c(0.05, 1))
+pd_alpha_intensity(pd$rgba, alpha_range = c(0.05, 1))
 
 # Use inside mutate()
-pd |> dplyr::mutate(intensity = pd_alpha_intensity(.png))
+pd |> dplyr::mutate(intensity = pd_alpha_intensity(rgba))
 
 }
 \seealso{

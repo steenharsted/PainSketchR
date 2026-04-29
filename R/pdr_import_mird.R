@@ -2,7 +2,7 @@
 #'
 #' Parses pain drawing data stored in the legacy *MiRD* string format and
 #' converts it into a list-column of stroke coordinate tibbles compatible with
-#' the `p` column of a pain drawing data structure (see [pd_check_data()]).
+#' the `p` column of a pain drawing data structure (see [pdr_check_data()]).
 #'
 #' Each input string represents one pain drawing and is converted into a tibble
 #' with columns `i`, `x`, and `y`, where `i` indexes individual strokes.
@@ -57,14 +57,14 @@
 #' )
 #'
 #' # Convert to list-column of coordinate tibbles
-#' p <- pd_import_mird(mird)
+#' p <- pdr_import_mird(mird)
 #'
 #' # Use inside a data pipeline
-#' pd_df <- tibble::tibble(id = c("A", "B", "C"), mird_string = mird)
-#' pd_df <- pd_df |>
-#'   dplyr::mutate(p = pd_import_mird(mird_string))
+#' pdr_df <- tibble::tibble(id = c("A", "B", "C"), mird_string = mird)
+#' pdr_df <- pdr_df |>
+#'   dplyr::mutate(p = pdr_import_mird(mird_string))
 #' 
-pd_import_mird <- function(mird_string, flip_y=TRUE) {
+pdr_import_mird <- function(mird_string, flip_y=TRUE) {
   if (!is.character(mird_string) || length(mird_string) < 1) {
     stop("Parameter `mird_string` must be a vector of characters of length 1+")
   }

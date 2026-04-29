@@ -24,7 +24,7 @@ Elements corresponding to missing or invalid input are \code{NA}.
 \description{
 Parses pain drawing data stored in the legacy \emph{MiRD} string format and
 converts it into a list-column of stroke coordinate tibbles compatible with
-the \code{p} column of a pain drawing data structure (see \code{\link[=pd_check_data]{pd_check_data()}}).
+the \code{p} column of a pain drawing data structure (see \code{\link[=pdr_check_data]{pdr_check_data()}}).
 }
 \details{
 Each input string represents one pain drawing and is converted into a tibble

@@ -84,7 +84,7 @@ pd_recreate_drawing_in_mem <- function(
   type = "path"
 ) {
   # Making sure data has required columns
-  pd_check_data(.data, verbose = FALSE)
+  pdr_check_data(.data, verbose = FALSE)
 
   # Test that we only 1 height and width value, respectively
   if (

@@ -2,7 +2,7 @@
 #'
 #' Calculate the area of each marking/stroke as a closed polygon. Either on a per-stroke basis, per-drawing basis or both.
 #' 
-#' @param p A list of tibbles of i,x and y columns (as integers) -- see [pd_check_data] for more detail.
+#' @param p A list of tibbles of i,x and y columns (as integers) -- see [pdr_check_data] for more detail.
 #' @param by A string of either 'strokes', 'drawings' or 'both'. 
 #'
 #' @returns If `by` is "strokes", the function will return a list of tibbles of stroke areas (as integers) -- one list element (tibble) for each row in `p`. 
@@ -11,10 +11,15 @@
 #'
 #' @export
 #' @examples
-#' overlap <- pd_poly_anatomy_overlap(pd_demo_data[1:3,], pd_Back_right_leg)
-#' pd_poly_areas(overlap, by="both")
+#' overlap <- pdr_poly_anatomy_overlap(pdr_demo_data[1:3,], pdr_Back_right_leg)
+#' pdr_poly_areas(overlap, by="both")
 #'  
-pd_poly_areas <- function(p, by="drawings") {
+pdr_poly_areas <- function(p, by="drawings") {
+  # if p is a full pain drawing data set, add results as a column
+  if (pdr_check_data(p, verbose=FALSE)) {
+
+  }
+
 
   # Calculate the area of each stroke/polygon -- this is necessary irrespective of 'by' parameter
   p <- p |> 

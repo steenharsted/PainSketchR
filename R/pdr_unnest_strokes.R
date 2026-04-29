@@ -14,7 +14,7 @@
 #' * The stroke index `i` is reset to `1` in both `s` and `p`
 #'
 #' The output preserves the structure of a valid pain drawing data structure
-#' (see [pd_check_data()]), but with:
+#' (see [pdr_check_data()]), but with:
 #'
 #' * A new `id` column: sequential integers (`1:n`)
 #' * An `old_id` column: original pain drawing identifier
@@ -24,7 +24,7 @@
 #' * If `s` or `p` is `NA` or empty, the corresponding output rows will
 #'   contain `NA` in those columns
 #'
-#' @param pd A valid pain drawing data structure (see [pd_check_data()]).
+#' @param pd A valid pain drawing data structure (see [pdr_check_data()]).
 #'
 #' @returns
 #' A tibble representing a valid pain drawing data structure where each row
@@ -43,16 +43,16 @@
 #'
 #' @examples
 #' # Explode strokes into separate rows
-#' pd_exploded <- pd_xy_explode(pd_demo_data)
+#' pdr_exploded <- pdr_xy_explode(pdr_demo_data)
 #'
 #' # Inspect how many strokes per original drawing
-#' pd_exploded |>
+#' pdr_exploded |>
 #'   dplyr::count(old_id)
 #'
 #' # Each row now contains exactly one stroke
-#' pd_exploded$p[[1]]
-pd_unnest_strokes <- function(pd) {
-  if(!pd_check_data(pd, verbose=FALSE)) {
+#' pdr_exploded$p[[1]]
+pdr_unnest_strokes <- function(pd) {
+  if(!pdr_check_data(pd, verbose=FALSE)) {
     stop("`pd`is not valid pain drawing data.")
   }
 
@@ -64,15 +64,15 @@ pd_unnest_strokes <- function(pd) {
   pd |> 
     # Rowwise or grouped by id should be the same: 1 row only!
     dplyr::group_by(id) |>
-    dplyr::group_modify(\(pd_row, r_indx) {
+    dplyr::group_modify(\(pdr_row, r_indx) {
       # Retain all discrete info pertaining to paindrawing 
-      toplevel_info <- pd_row |> dplyr::select(-s, -p)
+      toplevel_info <- pdr_row |> dplyr::select(-s, -p)
 
       # Explode the 's' column into list of single row tibbles
-      if (identical(NA, pd_row$s[[1]]) || length(pd_row$s[[1]])==0) {
+      if (identical(NA, pdr_row$s[[1]]) || length(pdr_row$s[[1]])==0) {
         col_s <- NA
       } else {
-        col_s <- pd_row$s[[1]] |> 
+        col_s <- pdr_row$s[[1]] |> 
           dplyr::mutate(old_i = i, i = 1) |>
           dplyr::rowwise() |>
             tidyr::nest(.key="s") |> 
@@ -80,10 +80,10 @@ pd_unnest_strokes <- function(pd) {
       }
       
       # Explode the 'p' column into list of single row tibbles
-      if (identical(NA, pd_row$p[[1]]) || length(pd_row$p[[1]])==0) {  
+      if (identical(NA, pdr_row$p[[1]]) || length(pdr_row$p[[1]])==0) {  
         col_p <- NA
       } else {
-        col_p <- pd_row$p[[1]] |> 
+        col_p <- pdr_row$p[[1]] |> 
           dplyr::mutate(grp_i = i, old_i = i, i = 1) |> 
           dplyr::group_by(old_i) |> 
           tidyr::nest(.key="p") |>

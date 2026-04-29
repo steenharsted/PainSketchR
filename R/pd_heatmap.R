@@ -128,7 +128,7 @@ pd_create_heatmap <- function(
   message("Validating inputs...")
 
   # Making sure data has required columns
-  pd_check_data(.data)
+  pdr_check_data(.data)
 
   # Validating input specific to pd_create_heatmap
   validate_heatmap_inputs(
