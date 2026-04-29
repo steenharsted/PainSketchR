@@ -37,31 +37,37 @@
 #'
 #' @export
 #' @examples
-#' pd_anatomy_merge(pd_demo_anatomy)
+#' pdr_implode(pd_demo_anatomy)
 #' 
-#' bi <- system.file("extdata", "mird_body_background.png", package = "paindrawings")
+#' bi <- pdr_example("mird_body_background")
 #' pd_demo_anatomy |> pd_recreate_drawing(background_image = bi) # Note: execution time > 5 sec
-#' pd_demo_anatomy |> pd_anatomy_merge() |> pd_recreate_drawing(background_image = bi)
+#' pd_demo_anatomy |> pd_implode() |> pd_recreate_drawing(background_image = bi)
+#' pd_demo_anatomy |> pd_implode() |> pd_sanitize(overlaps="merge") |> pd_recreate_drawing(background_image = bi)
 #' 
 #' pd_demo_anatomy |> dplyr::filter(id %in% c("Front_left_thigh", "Front_left_leg", "Front_left_foot")) |> pd_recreate_drawing(background_image = bi)#' 
-#' pd_demo_anatomy |> dplyr::filter(id %in% c("Front_left_thigh", "Front_left_leg", "Front_left_foot")) |> pd_anatomy_merge() |> pd_recreate_drawing(background_image = bi)
+#' pd_demo_anatomy |> dplyr::filter(id %in% c("Front_left_thigh", "Front_left_leg", "Front_left_foot")) |> pd_implode() |> pd_recreate_drawing(background_image = bi)
 #' 
-pdr_nest_strokes <- function(pd) {
+pdr_implode <- function(pd) {
   if (!pdr_check_data(pd, verbose=FALSE)) { stop("`pd` must be a valid pain drawing data structure")}
 
+  ## Handle rest-of-data where it is not all the same, e.g id and canvas sizes ...
+  ## sensible defaults or NA?  
   if(length(unique(pd$w))>1 | length(unique(pd$h))>1) {
     stop("More than one width or height value of pain drawing canvas found.")
   }
 
-  if (pd$s |> purrr::map_int(\(t) nrow(t)) |> max() > 1) {
+  # If there are pain drawings (rows) with more than one stroke
+  # unnest the data first
+  if (any(pd$s |> purrr::map_lgl(\(t) nrow(t)) > 1)) {
     # just call unnest ...
     #stop("One or more rows contain more than one stroke/polygons -- perhaps run `pdr_unnest_strokes()` before `pdr_nest_strokes()`")
   }
 
-  # Each row in pd is a pain drawing with just one stroke/polygon
+  # Now, each row in pd is a pain drawing with just one stroke/polygon
   # We can thus collapse this into a pd data structure with just one pain drawing of
   # multiple strokes/polygons, numbered (i) 1:n, where n is nrow(pd).
 
+  p <- pd$p 
   # Retain all other columns in `pd` but `p`...
   all_but_p_and_s <- pd |> dplyr::select(-p, -s)
   # Create a new tibble ... pd collapsed into just column p with only one element - a tibble with a unique 'i' for each pain drawing in pd

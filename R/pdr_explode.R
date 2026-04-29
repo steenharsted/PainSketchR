@@ -43,7 +43,7 @@
 #'
 #' @examples
 #' # Explode strokes into separate rows
-#' pdr_exploded <- pdr_xy_explode(pdr_demo_data)
+#' pdr_exploded <- pdr_explode(pdr_demo_data)
 #'
 #' # Inspect how many strokes per original drawing
 #' pdr_exploded |>
@@ -51,7 +51,7 @@
 #'
 #' # Each row now contains exactly one stroke
 #' pdr_exploded$p[[1]]
-pdr_unnest_strokes <- function(pd) {
+pdr_explode <- function(pd) {
   if(!pdr_check_data(pd, verbose=FALSE)) {
     stop("`pd`is not valid pain drawing data.")
   }
@@ -74,9 +74,11 @@ pdr_unnest_strokes <- function(pd) {
       } else {
         col_s <- pdr_row$s[[1]] |> 
           dplyr::mutate(old_i = i, i = 1) |>
-          dplyr::rowwise() |>
-            tidyr::nest(.key="s") |> 
-            dplyr::ungroup()
+          dplyr::group_by(old_i) |>
+          tidyr::nest(.key="s") |> 
+          dplyr::ungroup() |> 
+          dplyr::select(-old_i) |>
+          dplyr::select(s)
       }
       
       # Explode the 'p' column into list of single row tibbles
@@ -84,10 +86,11 @@ pdr_unnest_strokes <- function(pd) {
         col_p <- NA
       } else {
         col_p <- pdr_row$p[[1]] |> 
-          dplyr::mutate(grp_i = i, old_i = i, i = 1) |> 
+          dplyr::mutate(old_i = i, i = 1) |> 
           dplyr::group_by(old_i) |> 
           tidyr::nest(.key="p") |>
           dplyr::ungroup() |>
+          dplyr::select(-old_i) |>
           dplyr::select(p) 
       }
 
