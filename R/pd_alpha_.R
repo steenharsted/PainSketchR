@@ -24,7 +24,7 @@
 #'
 #' @export
 #' @examples
-#' pd <- pd_json2pd("data-raw/two_geoms.json") |>
+#' pd <- pd_import_json("data-raw/two_geoms.json") |>
 #'   dplyr::mutate(rgba = pd_add_rgba(pick(everything())))
 #'
 #' # Mean intensity across all drawn pixels
@@ -95,7 +95,7 @@ pd_alpha_intensity <- function(rgbas, alpha_range = c(0, 1)) {
 #'
 #' @export
 #' @examples
-#' pd <- pd_json2pd("data-raw/two_geoms.json") |>
+#' pd <- pd_import_json("data-raw/two_geoms.json") |>
 #'   dplyr::mutate(rgba = pd_add_rgba(pick(everything())))
 #'
 #' # Proportion of all drawn pixels (any alpha > 0)
