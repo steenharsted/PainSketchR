@@ -57,17 +57,17 @@ pdr_implode <- function(pd) {
   }
 
   # If there are pain drawings (rows) with more than one stroke
-  # unnest the data first
-  if (any(pd$s |> purrr::map_lgl(\(t) nrow(t)) > 1)) {
-    # just call unnest ...
-    #stop("One or more rows contain more than one stroke/polygons -- perhaps run `pdr_unnest_strokes()` before `pdr_nest_strokes()`")
+  # explode the data first, before we implode it
+  if (any(pd$s |> purrr::map_lgl(\(s_elements) {nrow(s_elements) > 1}))) {
+    pd <-  pdr_explode(pd)#stop("One or more rows contain more than one stroke/polygons -- perhaps run `pdr_unnest_strokes()` before `pdr_nest_strokes()`")
   }
 
   # Now, each row in pd is a pain drawing with just one stroke/polygon
   # We can thus collapse this into a pd data structure with just one pain drawing of
   # multiple strokes/polygons, numbered (i) 1:n, where n is nrow(pd).
 
-  p <- pd$p 
+  s <- pd |> dplyr::select(s) |> tidyr::unnest(cols=s)
+  p <- pd |> dplyr::select(p) |> tidyr::unnest(cols=p)
   # Retain all other columns in `pd` but `p`...
   all_but_p_and_s <- pd |> dplyr::select(-p, -s)
   # Create a new tibble ... pd collapsed into just column p with only one element - a tibble with a unique 'i' for each pain drawing in pd
