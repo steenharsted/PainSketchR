@@ -2,50 +2,32 @@
 % Please edit documentation in R/pdr_implode.R
 \name{pdr_implode}
 \alias{pdr_implode}
-\title{Merge connected and overlapping anatomical regions}
+\title{Implode several pain drawwings into one.}
 \usage{
 pdr_implode(pd)
 }
 \arguments{
 \item{pd}{must be a valid pain drawing data structure. Furthermore, each row in \code{pd}
-should consist of a pain drawing with just a single stroke/polygon.}
+should consist of a pain drawing with just a single stroke/polygon -- if not, the pain
+drawing will be exploded into multiple paindrawings before imploding.}
 }
 \value{
-A new pain drawing data structure where the column \code{p} has been collapsed into a
-merged pain area -- all other columns retain values from the first pain drawing of that merger.
+A new pain drawing data structure where the column \code{p} has been imploded into one
+set of coordinates, of multiple strokes. THe \code{s} columns retains all information from the
+original strokes (in multiple pain drawings), but all other columns are replaced so the
+result contains a single row: \code{w} and \code{h} are replaced by the maximum value observed,
+id is placed with 'imploded', \code{coord} and \code{app} are retained or replace with 'multiple' if
+muliple values are observed, \code{ts} is replaced by the maximum (latest) value observed. All
+other columns (if present) are deleted.
 }
 \description{
-This function merges all connected or overlapping anatomical regions into one region. Any
-unconnected or none-overlapping regions are retained as separate regions.
+This function takes as input a pain drawing data structure, where each row (pain drawing)
+represents e.g. an anatomical region. The function merges these into a single pain drawing
+(row) with multiple strokes/polygons.
 }
 \details{
-This function takes as input a pain drawing data structure, where each row (pain drawing)
-represents an anatomical region, and each anatomical region is defined by a single
-stroke/polygon.
-
-The function merges those anatomcial regions (represented in pd as pain drawings) which
-are connected or overlap.
-\itemize{
-\item Any connected or overlapping anatomical areas will be merged.
-\item Any discrete (groups of) unconnected and not-overlapping anatomical areas will be returned
-as separate resulting pain drawings (rows).
-}
-
-Thus if \code{pd} consists of three pain drawings (rows) with id = 'A', 'B' and 'C', where only
-'A' and 'B' overlap, the resulting pain drawing data structure will consist of two pain
-drawings (rows): 'A' (the resulting merger of 'A' and 'B') and 'C'. Note, that mergers will
-retain all other variables (columns) from the first pain drawing in that subset of rows, e.g.
-the \code{id} 'A'.
-
-This function is useful for creating anatomical templates -- e.g. the anterior aspect of a
-full body template may consist of n different anatomical areas which all border or overlap
-each other. The function can be used to collapse these into a single pain drawing of n
-polygons, which are then merged.
-The resulting pain drawing structure with a single polygon (anterior aspect of the body
-outline) can be used to define a new anatomical region for analyses.
-Similarly, a pain drawing data structure with discrete groups of anatomical areas such as
-e.g. both the anterior and posterior aspects will return separate regions where subregions
-are merged within the anterior and posterior regions.
+The function is useful for merging anatomcial regions (represented in pd as pain drawings)
+which are connected or overlap.
 }
 \examples{
 pdr_implode(pd_demo_anatomy)

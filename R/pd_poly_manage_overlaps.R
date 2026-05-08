@@ -1,4 +1,4 @@
-pd_poly_manage_overlaps <- function(p, method="intersection") {
+pdr_poly_manage_overlaps <- function(p, method="intersection") {
   # This function takes the column p from a pain drawing data structure and for each pain drawing (row)
   # it handles any overlapping polygons
 

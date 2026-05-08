@@ -73,31 +73,31 @@
 #' # Apply convex hulls and close polygons
 #' pdr_demo_data <- pdr_demo_data |>
 #'   dplyr::mutate(p = pdr_sanitize(p, chull = TRUE, close_polygon = TRUE))
-pdr_sanitize <- function(p, noarea_action="buffer", buffer_delta=5, chull=FALSE, overlaps="nothing", close_polygon=FALSE) {
+pdr_sanitize <- function(pd, noarea_action="buffer", buffer_delta=5, chull=FALSE, overlaps="nothing", close_polygon=FALSE) {
   # This function takes a single p column from a valid pain drawing data set
   # p: a list of tibbles of i,x,y
   # However, if an entire pain drawing data structure is passed as `p`, simply mutate that column:
-  if (pdr_check_data(p)) {
+  if (pdr_check_data(pd, verbose = FALSE)) {
     # This next line is not easy to parse 'p' is input parameter
     # of this function, but in the mutate call it is column 'p'
     # of that input parameter (when it is in fact a pd tibble)
-    return(p |> dplyr::mutate(p=pdr_sanitize(p, noarea_action, buffer_delta, chull, overlaps, close_polygon)))
+    return(pd |> dplyr::mutate(p=pdr_sanitize(p, noarea_action, buffer_delta, chull, overlaps, close_polygon)))
   }
 
   # As we made it this far, `p` is a not a valid pd tibble, but
   # probably a p-column from a such a pd tibble called by mutate()
   # Sanity check!
-  if (!is.list(p)) {
-    stop("`p` is not a valid list-column")
+  if (!is.list(pd)) {
+    stop("`pd` is not a valid list-column")
   } 
-  if (!all(p |> purrr::map_lgl(\(tib) {identical(tib, NA) || tibble::is_tibble(tib)}))) {
-    stop("Every element of `p` should be a tibble -- perhaps you should use `pdr_sanitize()` in mutate calls?")
+  if (!all(pd |> purrr::map_lgl(\(tib) {identical(tib, NA) || tibble::is_tibble(tib)}))) {
+    stop("Every element of `pd` should be a tibble -- perhaps you should use `pdr_sanitize()` in mutate calls?")
   } 
-  if (!all(p |> purrr::map_lgl(\(tib) {identical(tib, NA) || all(c("i","x","y") %in% names(tib))}))) {
-    stop("Every tibble element of `p` must include columns i, x and y")
+  if (!all(pd |> purrr::map_lgl(\(tib) {identical(tib, NA) || all(c("i","x","y") %in% names(tib))}))) {
+    stop("Every tibble element of `pd` must include columns i, x and y")
   } 
-  if (!all(p |> purrr::map_lgl(\(tib) {identical(tib, NA) || all(is.integer(c(tib$i, tib$x, tib$y)))}))) {
-    stop("One or more tibble element of `p` includes columns i,x and/or y which are not integers")
+  if (!all(pd |> purrr::map_lgl(\(tib) {identical(tib, NA) || all(is.integer(c(tib$i, tib$x, tib$y)))}))) {
+    stop("One or more tibble element of `pd` includes columns i,x and/or y which are not integers")
   }
 
   if(overlaps != "nothing") { 
@@ -107,7 +107,7 @@ pdr_sanitize <- function(p, noarea_action="buffer", buffer_delta=5, chull=FALSE,
   # Now manage brush stroke polygons which are points or two-point lines:
   # We run this BEFORE the polyclip::simplify because, it always deletes points and lines
   buffer_delta <- as.integer(round(buffer_delta))
-  p <- p |> 
+  pd <- pd |> 
     purrr::map(\(df, i_df) {
       if(!tibble::is_tibble(df) || nrow(df)==0) {
         NA 
@@ -140,7 +140,7 @@ pdr_sanitize <- function(p, noarea_action="buffer", buffer_delta=5, chull=FALSE,
   }) # purrr:map
 
   # Remove self-intersections and duplicated vertices
-  p <- p |> purrr::map(\(df, i_df) {
+  pd <- pd |> purrr::map(\(df, i_df) {
     if(!tibble::is_tibble(df) || nrow(df)==0) {
       NA
     } else {
@@ -158,7 +158,7 @@ pdr_sanitize <- function(p, noarea_action="buffer", buffer_delta=5, chull=FALSE,
   
   # Replace each stroke polygon by its own convex hull
   if (chull) {
-    p <- p |>
+    pd <- pd |>
     purrr::map(\(df) {
       if(!tibble::is_tibble(df) || nrow(df)==0) {
         NA
@@ -174,11 +174,11 @@ pdr_sanitize <- function(p, noarea_action="buffer", buffer_delta=5, chull=FALSE,
   }
 
   if (overlaps != "nothing") {
-    p <- p |> pdr_poly_manage_overlaps()
+    pd <- pd |> pdr_poly_manage_overlaps()
   }
 
     if (close_polygon) {
-    p <- p |>
+    pd <- pd |>
       purrr::map(\(df) {
         if(!tibble::is_tibble(df) || nrow(df)==0) {
           NA
@@ -196,6 +196,6 @@ pdr_sanitize <- function(p, noarea_action="buffer", buffer_delta=5, chull=FALSE,
       }) # map
   } # if
 
-  return(p)
+  return(pd)
 }
 
