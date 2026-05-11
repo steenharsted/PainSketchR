@@ -33,6 +33,8 @@
 #'    * If `close_polygon = TRUE`, ensures each stroke forms a closed ring
 #'
 #' @param p A pain drawing data structure or a `p` list-column.
+#' 
+#' @empty2na TRUE or FALSE -- convert empty drawings to NA
 #'
 #' @param noarea_action Character string specifying how to handle strokes with
 #'   fewer than 3 points. One of:
@@ -42,6 +44,8 @@
 #' @param buffer_delta Integer buffer radius (in coordinate units) used when
 #'   `noarea_action = "buffer"`.
 #'
+#' @param simplify Clean strokes/polygons of self-intersections and duplicate vertices
+#' 
 #' @param chull Logical. If `TRUE`, replace each stroke with its convex hull.
 #'
 #' @param overlaps Character string controlling how overlapping polygons are handled.
@@ -73,73 +77,108 @@
 #' # Apply convex hulls and close polygons
 #' pdr_demo_data <- pdr_demo_data |>
 #'   dplyr::mutate(p = pdr_sanitize(p, chull = TRUE, close_polygon = TRUE))
-pdr_sanitize <- function(pd, noarea_action="buffer", buffer_delta=5, chull=FALSE, overlaps="nothing", close_polygon=FALSE) {
-  # This function takes a single p column from a valid pain drawing data set
-  # p: a list of tibbles of i,x,y
-  # However, if an entire pain drawing data structure is passed as `p`, simply mutate that column:
-  if (pdr_check_data(pd, verbose = FALSE)) {
-    # This next line is not easy to parse 'p' is input parameter
-    # of this function, but in the mutate call it is column 'p'
-    # of that input parameter (when it is in fact a pd tibble)
-    return(pd |> dplyr::mutate(p=pdr_sanitize(p, noarea_action, buffer_delta, chull, overlaps, close_polygon)))
+pdr_sanitize <- function(pd, empty2na=TRUE, noarea_action="buffer", buffer_delta=5, simplify=TRUE, chull=FALSE, overlaps="union", close_polygon=TRUE) {
+  # This function takes a valid pain drawing data set as input
+  if (!pdr_check_data(pd, verbose = FALSE)) {
+    pdr_check_data(pd, verbose = TRUE)
+    stop("The function `pdr_sanitize()` expects a valid pain data set as input.")
   }
 
-  # As we made it this far, `p` is a not a valid pd tibble, but
-  # probably a p-column from a such a pd tibble called by mutate()
-  # Sanity check!
-  if (!is.list(pd)) {
-    stop("`pd` is not a valid list-column")
-  } 
-  if (!all(pd |> purrr::map_lgl(\(tib) {identical(tib, NA) || tibble::is_tibble(tib)}))) {
-    stop("Every element of `pd` should be a tibble -- perhaps you should use `pdr_sanitize()` in mutate calls?")
-  } 
-  if (!all(pd |> purrr::map_lgl(\(tib) {identical(tib, NA) || all(c("i","x","y") %in% names(tib))}))) {
-    stop("Every tibble element of `pd` must include columns i, x and y")
-  } 
-  if (!all(pd |> purrr::map_lgl(\(tib) {identical(tib, NA) || all(is.integer(c(tib$i, tib$x, tib$y)))}))) {
-    stop("One or more tibble element of `pd` includes columns i,x and/or y which are not integers")
+  # A simple helper function
+  is_not_tibble_with_content <- function(t) {
+    any(
+          !tibble::is_tibble(t),
+          nrow(t)==0
+        )
   }
+ 
 
-  if(overlaps != "nothing") { 
-    warning(("Calling `pdr_sanitize()` with the parameter `overlaps` specified will return a (potentially) different set of brush stroke data (column `p`) -- brush stroke data in the `s` column may thus become invalid. We recommend to `mutate()` to a new column rather than replacing col `p`."))
+  # Convert empty pain drawings (no coordinates) to NA
+  if (empty2na) {
+    pd <- pd |>
+      # ...one row (by id) at a time
+      dplyr::group_by(id) |>
+      dplyr::group_modify(\(pd_row, indx) {
+        # In a single row, 'p' and 's' are list of just 1 element
+        if(pd_row$p[[1]] |> is_not_tibble_with_content()) { 
+          pd_row$p[[1]] <- NA
+          pd_row$s[[1]] <- NA
+        }
+      })
   }
+  
 
-  # Now manage brush stroke polygons which are points or two-point lines:
+  
+  # Now manage stroke polygons which are points or two-point lines:
   # We run this BEFORE the polyclip::simplify because, it always deletes points and lines
-  buffer_delta <- as.integer(round(buffer_delta))
-  pd <- pd |> 
-    purrr::map(\(df, i_df) {
-      if(!tibble::is_tibble(df) || nrow(df)==0) {
-        NA 
-      } else {
-        if(noarea_action=="drop") {
-          # Drop the strokes from coordinate data, if point or two-points 
-          df |> 
+  
+  # Drop pain drawing strokes with no area
+  if (noarea_action = "drop") {
+    pd <- pd |>
+    # ...one row (by id) at a time
+      dplyr::group_by(id) |>
+      dplyr::group_modify(\(pd_row, indx) {
+        if (!is.na(pd_row$p[[1]])) {
+          # Only keep strokes with 3+ coordinate pairs (rows)
+          pd_row$p[[1]] <- pd_row$p[[1]] |>
             dplyr::group_by(i) |> 
-            dplyr::filter(dplyr::n()>2) |> # only retain of more than 2 rows of coordinates
-            dplyr::ungroup() # exit map iteration
-        } else if(noarea_action=="buffer") {
-          # Buffer the strokes' coordinate data, if a point or two points
-          df |> 
+            dplyr::filter(dplyr::n()>2) |> 
+            dplyr::ungroup()
+          # Only keep stroke info in strokes still have coordinates
+          pd_row$s[[1]] <- pd_row$s[[1]] |>
+            dplyr::group_by(i) |>
+            dplyr::filter(i %in% pd_row$p[[1]]$i) |>
+            dplyr::ungroup()
+          pd_row
+        } else {
+          pd_row
+        }
+      })
+  }
+
+    
+  # Buffer pain drawing strokes with no area
+  if (noarea_action = "buffer") {
+    buffer_delta <- as.integer(round(buffer_delta))
+    pd <- pd |>
+    # ...one row (by id) at a time
+      dplyr::group_by(id) |>
+      dplyr::group_modify(\(pd_row, indx) {
+        if(!is.na(pd_row$p[[1]])) {
+          pd_row$p[[1]] <- pd_row$p[[1]] |> 
             dplyr::group_by(i) |>
             dplyr::group_modify(\(dfgr, i_dfgr) {
               if(nrow(dfgr)<3) { # its a point or a line
-                if(nrow(dfgr) == 1) {dfgr <- rbind(dfgr, dfgr+c(1,0)) } # Its a point -- add another point, 1 pixel away and move on
+                # Its a point -- add another point, 1 pixel away and move on
+                if(nrow(dfgr) == 1) {dfgr <- rbind(dfgr, dfgr+c(1,0)) } 
+                # Its (now) a line
                 polyclip::polylineoffset(list(x=dfgr$x, y=dfgr$y), delta=buffer_delta, endtype="round") |> 
                   purrr::map_dfr(\(q) {
                     tibble::tibble(x=as.integer(round(q$x)),
-                                   y=as.integer(round(q$y)))  # exit map-in-map iteration
+                                  y=as.integer(round(q$y)))  # exit map-in-map iteration
                   })
               } else {
                 dfgr  # exit map-in-map iteration
               }
             }) |>
             dplyr::ungroup()
+          pd_row
+        } else {
+          pd_row
         }
-      }
-  }) # purrr:map
+      })
+  }
 
   # Remove self-intersections and duplicated vertices
+  if (simplify) {
+    pd <- pd |>
+    # ...one row (by id) at a time
+      dplyr::group_by(id) |>
+      dplyr::group_modify(\(pd_row, indx) {
+
+      })
+  }
+
   pd <- pd |> purrr::map(\(df, i_df) {
     if(!tibble::is_tibble(df) || nrow(df)==0) {
       NA
@@ -173,11 +212,8 @@ pdr_sanitize <- function(pd, noarea_action="buffer", buffer_delta=5, chull=FALSE
     })
   }
 
-  if (overlaps != "nothing") {
-    pd <- pd |> pdr_poly_manage_overlaps()
-  }
-
-    if (close_polygon) {
+  # Close polygon
+  if (close_polygon) {
     pd <- pd |>
       purrr::map(\(df) {
         if(!tibble::is_tibble(df) || nrow(df)==0) {
@@ -196,6 +232,11 @@ pdr_sanitize <- function(pd, noarea_action="buffer", buffer_delta=5, chull=FALSE
       }) # map
   } # if
 
+  if (overlaps != "nothing") {
+    pd <- pd |> pdr_poly_manage_overlaps(method = overlaps)
+    # Must fix 's' column now
+  }
+
   return(pd)
-}
+    }
 
