@@ -5,7 +5,7 @@
 \title{Clean and normalize pain drawing stroke geometries}
 \usage{
 pdr_sanitize(
-  p,
+  pd,
   noarea_action = "buffer",
   buffer_delta = 5,
   chull = FALSE,
@@ -14,8 +14,6 @@ pdr_sanitize(
 )
 }
 \arguments{
-\item{p}{A pain drawing data structure or a \code{p} list-column.}
-
 \item{noarea_action}{Character string specifying how to handle strokes with
 fewer than 3 points. One of:
 \itemize{
@@ -33,6 +31,8 @@ See \code{\link[=pdr_poly_manage_overlaps]{pdr_poly_manage_overlaps()}} for avai
 
 \item{close_polygon}{Logical. If \code{TRUE}, ensures that the first and last
 coordinate of each stroke are identical.}
+
+\item{p}{A pain drawing data structure or a \code{p} list-column.}
 }
 \value{
 If \code{p} is a pain drawing data structure, returns the same structure with a

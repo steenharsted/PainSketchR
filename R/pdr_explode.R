@@ -62,7 +62,7 @@ pdr_explode <- function(pd) {
   # It duplictates all other columns for each new row added
 
   pd |> 
-    # Rowwise or grouped by id should be the same: 1 row only!
+    # Grouped by id should be 1 row at the time
     dplyr::group_by(id) |>
     dplyr::group_modify(\(pdr_row, r_indx) {
       # Retain all discrete info pertaining to paindrawing 
@@ -73,7 +73,7 @@ pdr_explode <- function(pd) {
         col_s <- NA
       } else {
         col_s <- pdr_row$s[[1]] |> 
-          dplyr::mutate(old_i = i, i = 1) |>
+          dplyr::mutate(old_i = i, i = as.integer(1)) |>
           dplyr::group_by(old_i) |>
           tidyr::nest(.key="s") |> 
           dplyr::ungroup() |> 
@@ -86,7 +86,7 @@ pdr_explode <- function(pd) {
         col_p <- NA
       } else {
         col_p <- pdr_row$p[[1]] |> 
-          dplyr::mutate(old_i = i, i = 1) |> 
+          dplyr::mutate(old_i = i, i = as.integer(1)) |> 
           dplyr::group_by(old_i) |> 
           tidyr::nest(.key="p") |>
           dplyr::ungroup() |>
@@ -102,5 +102,7 @@ pdr_explode <- function(pd) {
       
     }) |>
       dplyr::ungroup() |>
-      mutate(old_id = id , id = dplyr::row_number())
+      mutate(old_id = id , id = dplyr::row_number()) |> 
+      mutate(id = as.character(id))
+  
 }
