@@ -3,13 +3,13 @@
 #' Computes the mean alpha value across all pixels whose alpha falls strictly
 #' within `alpha_range`. This captures how intensely a patient drew -- i.e.
 #' how dark or opaque the strokes are -- independently of how much area was
-#' covered. Use in combination with [pd_alpha_area()] to distinguish between a
+#' covered. Use in combination with [pdr_alpha_area()] to distinguish between a
 #' small intense drawing and a large light drawing.
 #'
 #' @param pngs A list of numeric arrays, each of dimensions
 #'   `[height, width, 4]` representing an RGBA image. The fourth slice
 #'   (`rgba[,, 4]`) must contain alpha values in the range \[0, 1\].
-#'   Typically the `rgba` list-column produced by [pd_add_rgba()].
+#'   Typically the `rgba` list-column produced by [pdr_add_rgba()].
 #' @param alpha_range A numeric vector of length 2 specifying the lower and
 #'   upper bounds of the alpha range (lower is exclusive, upper is inclusive).
 #'   Defaults to `c(0, 1)`, i.e. all drawn pixels regardless of intensity.
@@ -20,23 +20,23 @@
 #'   for the corresponding array, or `NA_real_` if no pixels fall in that
 #'   range.
 #'
-#' @seealso [pd_alpha_area()] for the complementary area-based metric.
+#' @seealso [pdr_alpha_area()] for the complementary area-based metric.
 #'
 #' @export
 #' @examples
-#' pd <- pd_import_json("data-raw/two_geoms.json") |>
-#'   dplyr::mutate(rgba = pd_add_rgba(pick(everything())))
+#' pd <- pdr_import_json("data-raw/two_geoms.json") |>
+#'   dplyr::mutate(rgba = pdr_add_rgba(pick(everything())))
 #'
 #' # Mean intensity across all drawn pixels
-#' pd_alpha_intensity(pd$rgba)
+#' pdr_alpha_intensity(pd$rgba)
 #'
 #' # Exclude very faint pixels (alpha <= 0.05)
-#' pd_alpha_intensity(pd$rgba, alpha_range = c(0.05, 1))
+#' pdr_alpha_intensity(pd$rgba, alpha_range = c(0.05, 1))
 #'
 #' # Use inside mutate()
-#' pd |> dplyr::mutate(intensity = pd_alpha_intensity(rgba))
+#' pd |> dplyr::mutate(intensity = pdr_alpha_intensity(rgba))
 #'
-pd_alpha_intensity <- function(rgbas, alpha_range = c(0, 1)) {
+pdr_alpha_intensity <- function(rgbas, alpha_range = c(0, 1)) {
   # --- input checks ---
   if (!is.list(rgbas)) {
     stop(
@@ -74,13 +74,13 @@ pd_alpha_intensity <- function(rgbas, alpha_range = c(0, 1)) {
 #' Computes the proportion of total pixels whose alpha value falls strictly
 #' within `alpha_range`. This captures how much of the canvas was drawn on,
 #' independently of stroke intensity. Use in combination with
-#' [pd_alpha_intensity()] to distinguish between a small intense drawing and
+#' [pdr_alpha_intensity()] to distinguish between a small intense drawing and
 #' a large light drawing.
 #'
 #' @param rgbas A list of numeric arrays, each of dimensions
 #'   `[height, width, 4]` representing an RGBA image. The fourth slice
 #'   (`rgba[,, 4]`) must contain alpha values in the range \[0, 1\].
-#'   Typically the `rgba` list-column produced by [pd_add_rgba()].
+#'   Typically the `rgba` list-column produced by [pdr_add_rgba()].
 #' @param alpha_range A numeric vector of length 2 specifying the lower and
 #'   upper bounds of the alpha range (lower is exclusive, upper is inclusive).
 #'   Defaults to `c(0, 1)`, i.e. all drawn pixels regardless of intensity.
@@ -91,25 +91,25 @@ pd_alpha_intensity <- function(rgbas, alpha_range = c(0, 1)) {
 #'   `(alpha_range[1], alpha_range[2]]` -- i.e. strictly greater than the
 #'   lower bound and less than or equal to the upper bound.
 #'
-#' @seealso [pd_alpha_intensity()] for the complementary intensity-based metric.
+#' @seealso [pdr_alpha_intensity()] for the complementary intensity-based metric.
 #'
 #' @export
 #' @examples
-#' pd <- pd_import_json("data-raw/two_geoms.json") |>
-#'   dplyr::mutate(rgba = pd_add_rgba(pick(everything())))
+#' pd <- pdr_import_json("data-raw/two_geoms.json") |>
+#'   dplyr::mutate(rgba = pdr_add_rgba(pick(everything())))
 #'
 #' # Proportion of all drawn pixels (any alpha > 0)
-#' pd_alpha_area(pd$rgba)
+#' pdr_alpha_area(pd$rgba)
 #'
 #' # Proportion of heavily drawn pixels only (alpha > 0.5)
-#' pd_alpha_area(pd$rgba, alpha_range = c(0.5, 1))
+#' pdr_alpha_area(pd$rgba, alpha_range = c(0.5, 1))
 #'
 #' # Use inside mutate()
 #' pd |> dplyr::mutate(
-#'   area         = pd_alpha_area(rgba),
-#'   area_over_50 = pd_alpha_area(rgba, alpha_range = c(0.5, 1))
+#'   area         = pdr_alpha_area(rgba),
+#'   area_over_50 = pdr_alpha_area(rgba, alpha_range = c(0.5, 1))
 #' )
-pd_alpha_area <- function(rgbas, alpha_range = c(0, 1)) {
+pdr_alpha_area <- function(rgbas, alpha_range = c(0, 1)) {
   # --- input checks ---
   if (!is.list(rgbas)) {
     stop(

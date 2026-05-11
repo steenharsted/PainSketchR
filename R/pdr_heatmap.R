@@ -61,7 +61,7 @@
 #' }
 #'
 #' For spray tool data, the function recreates spray effects similar to
-#' pd_recreate_drawing(). Grid size determines visualization resolution;
+#' pdr_recreate_drawing(). Grid size determines visualization resolution;
 #' smaller values (e.g., 5) produce finer detail but are slower.
 #'
 #' @section Warnings:
@@ -75,14 +75,14 @@
 #' @examples
 #' \dontrun{
 #' # Two-way stratification
-#' pd_create_heatmap(
+#' pdr_create_heatmap(
 #'   drawing_data,
 #'   variables = c("age_group", "pain_duration"),
 #'   n_groups = c(3, 2)
 #' )
 #'
 #' # Single variable with custom settings
-#' result <- pd_create_heatmap(
+#' result <- pdr_create_heatmap(
 #'   drawing_data,
 #'   variables = "pain_intensity",
 #'   n_groups = 4,
@@ -92,20 +92,17 @@
 #' )
 #' }
 #'
-#' @importFrom dplyr select mutate filter full_join join_by n_distinct
-#'   slice_sample summarize all_of count left_join distinct pull n
+#' @importFrom dplyr select mutate filter full_join join_by n_distinct slice_sample summarize all_of count left_join distinct pull n
 #' @importFrom tidyr unnest uncount
 #' @importFrom rlang sym
 #' @importFrom png readPNG
 #' @importFrom scales percent
-#' @importFrom ggplot2 ggplot aes coord_fixed theme_minimal scale_colour_viridis_c
-#'   geom_jitter facet_wrap facet_grid annotation_raster labs theme element_rect
-#'   element_blank element_text geom_text guide_colorbar guides vars
+#' @importFrom ggplot2 ggplot aes coord_fixed theme_minimal scale_colour_viridis_c geom_jitter facet_wrap facet_grid annotation_raster labs theme element_rect element_blank element_text geom_text guide_colorbar guides vars
 #' @importFrom ggtext element_markdown
 #' @importFrom vctrs vec_ptype_abbr
 #'
 #' @export
-pd_create_heatmap <- function(
+pdr_create_heatmap <- function(
   .data,
   id_col = "id",
   variables = NULL,
@@ -130,7 +127,7 @@ pd_create_heatmap <- function(
   # Making sure data has required columns
   pdr_check_data(.data)
 
-  # Validating input specific to pd_create_heatmap
+  # Validating input specific to pdr_create_heatmap
   validate_heatmap_inputs(
     .data = .data,
     id_col = id_col,
@@ -172,7 +169,7 @@ pd_create_heatmap <- function(
     )
   }
 
-  # Validate and process background_image (same logic as pd_recreate_drawing)
+  # Validate and process background_image (same logic as pdr_recreate_drawing)
   if (!is.null(background_image)) {
     if (is.character(background_image)) {
       if (!file.exists(background_image)) {
@@ -233,17 +230,17 @@ pd_create_heatmap <- function(
 
   group_vars <- paste0(".VAR", seq_along(variables), "_grp")
 
-  pd_s <- data_grouped |>
+  pdr_s <- data_grouped |>
     dplyr::select(dplyr::all_of(c(id_col, "s", group_vars))) |>
     tidyr::unnest(cols = s)
 
-  pd_p <- data_grouped |>
+  pdr_p <- data_grouped |>
     dplyr::select(dplyr::all_of(c(id_col, "p"))) |>
     tidyr::unnest(cols = p)
 
   coords_with_groups <- dplyr::full_join(
-    pd_s,
-    pd_p,
+    pdr_s,
+    pdr_p,
     by = dplyr::join_by(!!rlang::sym(id_col), i)
   )
 

@@ -2,10 +2,10 @@
 #'
 #' Renders the strokes and spray points from a single-row pain drawing tibble
 #' into an RGBA numeric array. This is the low-level workhorse called by
-#' [pd_add_rgba()].
+#' [pdr_add_rgba()].
 #'
 #' @param .data A single-row pain drawing tibble as produced by
-#'   [pd_import_json()]. Must contain columns `id`, `s`, `p`, `w`, and `h`
+#'   [pdr_import_json()]. Must contain columns `id`, `s`, `p`, `w`, and `h`
 #'   (or the names supplied via `col_*` arguments).
 #'   Passing more than one row is an error.
 #' @param method Character. Controls the rasterization back-end. Either:
@@ -24,19 +24,19 @@
 #'   does not affect the canvas dimensions, only output pixel density.
 #' @param col_id,col_s,col_p,col_w,col_h Column name strings for the drawing
 #'   ID, strokes list-column, points list-column, canvas width, and canvas
-#'   height respectively. Defaults match the output of [pd_import_json()]:
+#'   height respectively. Defaults match the output of [pdr_import_json()]:
 #'   `"id"`, `"s"`, `"p"`, `"w"`, `"h"`.
 #'
 #' @return A numeric array of dimensions `height × width × 4` (RGBA channels,
 #'   values in \[0, 1\]). Transparent pixels are set to black
 #'   (`RGB = 0`) rather than transparent white.
 #'
-#' @seealso [pd_add_rgba()] for the user-facing vectorised wrapper.
+#' @seealso [pdr_add_rgba()] for the user-facing vectorised wrapper.
 #'
 #' @examples
 #' \dontrun{
-#' pd <- pd_import_json("data-raw/two_geoms.json")
-#' raster <- pd_add_rgba_single(pd[1, ])
+#' pd <- pdr_import_json("data-raw/two_geoms.json")
+#' raster <- pdr_add_rgba_single(pd[1, ])
 #' grid::grid.newpage()
 #' grid::grid.raster(raster)
 #' }
@@ -45,13 +45,11 @@
 #' @importFrom tidyr unnest uncount
 #' @importFrom png readPNG
 #' @importFrom ragg agg_capture
-#' @importFrom ggplot2 ggplot aes coord_fixed theme_void scale_color_identity
-#'   scale_size_identity scale_alpha_identity scale_linewidth_identity
-#'   geom_path geom_point ggsave
+#' @importFrom ggplot2 ggplot aes coord_fixed theme_void scale_color_identity scale_size_identity scale_alpha_identity scale_linewidth_identity geom_path geom_point ggsave
 #' @importFrom cli cli_abort
 #'
 #' @export
-pd_add_rgba_single <- function(
+pdr_add_rgba_single <- function(
   .data,
   method = "memory",
   clean_up = TRUE,
@@ -64,8 +62,8 @@ pd_add_rgba_single <- function(
 ) {
   if (nrow(.data) != 1L) {
     cli::cli_abort(
-      "{.fn pd_add_rgba_single} expects a single-row tibble, but received {nrow(.data)} rows.
-      Use {.fn pd_add_rgba} to process multiple rows."
+      "{.fn pdr_add_rgba_single} expects a single-row tibble, but received {nrow(.data)} rows.
+      Use {.fn pdr_add_rgba} to process multiple rows."
     )
   }
 
@@ -76,27 +74,27 @@ pd_add_rgba_single <- function(
   image_height <- .data[[col_h]][[1]]
 
   # Unnest and join the s (strokes) and p (points) list-columns
-  pd_s <- .data |>
+  pdr_s <- .data |>
     dplyr::select(dplyr::all_of(c(col_id, col_s))) |>
     tidyr::unnest(cols = dplyr::all_of(col_s))
 
-  pd_p <- .data |>
+  pdr_p <- .data |>
     dplyr::select(dplyr::all_of(c(col_id, col_p))) |>
     tidyr::unnest(cols = dplyr::all_of(col_p))
 
-  pd <- dplyr::full_join(pd_s, pd_p, by = c(col_id, "i")) # "i" is the stroke-index-column that comes from unnesting s and p
+  pd <- dplyr::full_join(pdr_s, pdr_p, by = c(col_id, "i")) # "i" is the stroke-index-column that comes from unnesting s and p
 
   # Scale brush width (pixels) to mm for ggplot rendering
   pd <- pd |>
-    dplyr::mutate(size_mm = pd_scale_bw(bw))
+    dplyr::mutate(size_mm = pdr_scale_bw(bw))
 
   # Split into pen and spray subsets
-  pd_pen <- dplyr::filter(pd, t == "pen")
-  pd_spray <- dplyr::filter(pd, t == "spray")
+  pdr_pen <- dplyr::filter(pd, t == "pen")
+  pdr_spray <- dplyr::filter(pd, t == "spray")
 
   # Recreate spray jitter — only when spray strokes exist
-  if (nrow(pd_spray) > 0) {
-    pd_spray <- pd_spray |>
+  if (nrow(pdr_spray) > 0) {
+    pdr_spray <- pdr_spray |>
       tidyr::uncount(weights = .data$pd) |>
 
       # Uniform distribution within a circle of radius pr
@@ -111,7 +109,7 @@ pd_add_rgba_single <- function(
   }
 
   # Base plot (pen strokes)
-  pd_base <- pd_pen |>
+  pdr_base <- pdr_pen |>
     ggplot2::ggplot(ggplot2::aes(
       x = x,
       y = y,
@@ -137,9 +135,9 @@ pd_add_rgba_single <- function(
     )
 
   # Add spray points on top
-  plot_out <- pd_base +
+  plot_out <- pdr_base +
     ggplot2::geom_point(
-      data = pd_spray,
+      data = pdr_spray,
       ggplot2::aes(size = size_mm),
       shape = 15
     )
@@ -198,37 +196,37 @@ pd_add_rgba_single <- function(
 #' Renders each row of a pain drawing tibble into an RGBA numeric array and
 #' returns a list suitable for use as a new column via [dplyr::mutate()].
 #'
-#' @param .data A pain drawing tibble as produced by [pd_import_json()]. Must
+#' @param .data A pain drawing tibble as produced by [pdr_import_json()]. Must
 #'   contain columns `id`, `s`, `p`, `w`, and `h` (or the names supplied via
 #'   `col_*` arguments).
 #' @param method Character. Controls the rasterization back-end. Either
 #'   `"memory"` (default, via [ragg::agg_capture()]) or `"file"` (via
 #'   [ggplot2::ggsave()] and [png::readPNG()]). Passed through to
-#'   [pd_add_rgba_single()].
+#'   [pdr_add_rgba_single()].
 #' @param clean_up Logical. If `TRUE` (default), temporary PNG files are
 #'   deleted after each raster is read into memory. Only relevant when
-#'   `method = "file"`. Passed through to [pd_add_rgba_single()].
+#'   `method = "file"`. Passed through to [pdr_add_rgba_single()].
 #' @param dpi Resolution used during rasterization. Defaults to `96`, matching
 #'   the CSS pixel density of the web canvas where drawings are collected.
 #'   All rows are rendered at the same `dpi`.
 #' @param col_id,col_s,col_p,col_w,col_h Column name strings for the drawing
 #'   ID, strokes list-column, points list-column, canvas width, and canvas
-#'   height respectively. Defaults match the output of [pd_import_json()]:
+#'   height respectively. Defaults match the output of [pdr_import_json()]:
 #'   `"id"`, `"s"`, `"p"`, `"w"`, `"h"`. Passed through to
-#'   [pd_add_rgba_single()].
+#'   [pdr_add_rgba_single()].
 #'
 #' @return A list of numeric arrays, one per row, each of dimensions
 #'   `height × width × 4` (RGBA channels, values in \[0, 1\]).
 #'
-#' @seealso [pd_add_rgba_single()] for the single-row primitive,
-#'   [pd_import_json()] for reading pain drawing JSON files.
+#' @seealso [pdr_add_rgba_single()] for the single-row primitive,
+#'   [pdr_import_json()] for reading pain drawing JSON files.
 #'
 #' @examples
 #' \dontrun{
-#' pd <- pd_import_json(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
+#' pd <- pdr_import_json(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
 #'
 #' # Add RGBA arrays as a new column
-#' pd <- pd |> dplyr::mutate(rgba = pd_add_rgba(pd))
+#' pd <- pd |> dplyr::mutate(rgba = pdr_add_rgba(pd))
 #'
 #' # Display the first drawing
 #' grid::grid.newpage()
@@ -239,7 +237,7 @@ pd_add_rgba_single <- function(
 #' @importFrom cli cli_abort
 #'
 #' @export
-pd_add_rgba <- function(
+pdr_add_rgba <- function(
   .data,
   method = "memory",
   clean_up = TRUE,
@@ -253,7 +251,7 @@ pd_add_rgba <- function(
   purrr::map(
     seq_len(nrow(.data)),
     \(i) {
-      pd_add_rgba_single(
+      pdr_add_rgba_single(
         .data[i, ],
         method = method,
         clean_up = clean_up,

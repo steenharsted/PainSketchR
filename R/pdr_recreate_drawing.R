@@ -7,7 +7,7 @@
 #' Multiple drawings are arranged with [ggplot2::facet_wrap()]. A warning is
 #' issued when more than 9 drawings are passed, as rendering may be slow.
 #'
-#' @param .data A pain drawing tibble as produced by [pd_import_json()]. Must
+#' @param .data A pain drawing tibble as produced by [pdr_import_json()]. Must
 #'   contain columns `id`, `s`, `p`, `w`, and `h`. All drawings must share the
 #'   same canvas dimensions (`w` and `h`).
 #' @param background_image Optional background image displayed behind the
@@ -47,39 +47,36 @@
 #'   aspect ratio. When `rasterize = FALSE`, the plot contains vector stroke
 #'   layers and supports further ggplot2 additions.
 #'
-#' @seealso [pd_import_json()] to read pain drawing JSON files,
-#'   [pd_add_rgba()] to store raster arrays as a column in the tibble,
-#'   [pd_add_rgba_single()] for the single-row raster primitive.
+#' @seealso [pdr_import_json()] to read pain drawing JSON files,
+#'   [pdr_add_rgba()] to store raster arrays as a column in the tibble,
+#'   [pdr_add_rgba_single()] for the single-row raster primitive.
 #'
 #' @examples
 #' \dontrun{
-#' pd <- pd_import_json(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
+#' pd <- pdr_import_json(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
 #'
 #' # Default: in-memory rasterization with background
-#' pd |> pd_recreate_drawing(background_image = "inst/background.png")
+#' pd |> pdr_recreate_drawing(background_image = "inst/background.png")
 #'
 #' # File-based rasterization
-#' pd |> pd_recreate_drawing(method = "file")
+#' pd |> pdr_recreate_drawing(method = "file")
 #'
 #' # Vector output — can add further ggplot layers
-#' pd |> pd_recreate_drawing(rasterize = FALSE)
+#' pd |> pdr_recreate_drawing(rasterize = FALSE)
 #'
 #' # Show id labels in facet strips
-#' pd |> pd_recreate_drawing(include_id = TRUE)
+#' pd |> pdr_recreate_drawing(include_id = TRUE)
 #' }
 #'
 #' @importFrom dplyr select mutate filter full_join join_by n
 #' @importFrom tidyr unnest uncount
 #' @importFrom png readPNG
 #' @importFrom ragg agg_capture
-#' @importFrom ggplot2 ggplot aes coord_fixed theme_void theme element_blank
-#'   scale_color_identity scale_size_identity scale_alpha_identity
-#'   scale_linewidth_identity geom_path geom_point facet_wrap
-#'   annotation_raster ggsave
+#' @importFrom ggplot2 ggplot aes coord_fixed theme_void theme element_blank scale_color_identity scale_size_identity scale_alpha_identity scale_linewidth_identity geom_path geom_point facet_wrap annotation_raster ggsave
 #' @importFrom cli cli_warn cli_abort
 #'
 #' @export
-pd_recreate_drawing <- function(
+pdr_recreate_drawing <- function(
   .data,
   background_image = NULL,
   include_id = FALSE,
@@ -146,36 +143,36 @@ pd_recreate_drawing <- function(
   image_height <- .data$h |> unique()
 
   # Unnest and Join the s and p columns
-  pd_s <- .data |>
+  pdr_s <- .data |>
     dplyr::select(id, s) |>
     tidyr::unnest(cols = s)
 
-  pd_p <- .data |>
+  pdr_p <- .data |>
     dplyr::select(id, p) |>
     tidyr::unnest(cols = p)
 
-  .data <- dplyr::full_join(pd_s, pd_p, by = dplyr::join_by(id, i))
+  .data <- dplyr::full_join(pdr_s, pdr_p, by = dplyr::join_by(id, i))
 
   # map bw to size in mm using scale_bw funtion
   .data <- .data |>
     dplyr::mutate(
-      size_mm = pd_scale_bw(bw)
+      size_mm = pdr_scale_bw(bw)
     )
 
   ## Spray and Pen needs to be plotted differently
   ## We achieve this by making a coordinate set for Spray and Pen, respectively
 
-  pd_pen <- .data |>
+  pdr_pen <- .data |>
     dplyr::filter(t == "pen")
 
-  pd_spray <- .data |>
+  pdr_spray <- .data |>
     dplyr::filter(t == "spray")
 
   ### Recreate jitter in spray Data
   ### But only if spray data exists
 
-  if (nrow(pd_spray) > 0) {
-    pd_spray <- pd_spray |>
+  if (nrow(pdr_spray) > 0) {
+    pdr_spray <- pdr_spray |>
 
       # Create extra rows according to spray density (pd)
       tidyr::uncount(weights = .data$pd) |>
@@ -199,7 +196,7 @@ pd_recreate_drawing <- function(
   ## Lets plot!
 
   ### Base plot
-  pd_base <- pd_pen |>
+  pdr_base <- pdr_pen |>
     ggplot2::ggplot(ggplot2::aes(
       x = x,
       y = y,
@@ -209,7 +206,7 @@ pd_recreate_drawing <- function(
 
   ### If background image is provided, we plot it now
   if (!is.null(background_image)) {
-    pd_base <- pd_base +
+    pdr_base <- pdr_base +
       ggplot2::annotation_raster(
         as.raster(background_image),
         -Inf,
@@ -221,7 +218,7 @@ pd_recreate_drawing <- function(
 
   ### Build plot(s) with pen strokes
   if (type == "polygon") {
-    pd_base <- pd_base +
+    pdr_base <- pdr_base +
       ggplot2::coord_fixed(
         xlim = c(0, image_width),
         ylim = c(0, image_height),
@@ -243,7 +240,7 @@ pd_recreate_drawing <- function(
         alpha = 1
       )
   } else {
-    pd_base <- pd_base +
+    pdr_base <- pdr_base +
       ggplot2::coord_fixed(
         xlim = c(0, image_width),
         ylim = c(0, image_height),
@@ -263,9 +260,9 @@ pd_recreate_drawing <- function(
       )
   }
 
-  plot_out <- pd_base +
+  plot_out <- pdr_base +
     ggplot2::geom_point(
-      data = pd_spray,
+      data = pdr_spray,
       ggplot2::aes(size = size_mm),
       shape = 15
     )
