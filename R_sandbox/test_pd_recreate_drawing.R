@@ -6,11 +6,10 @@ load_all()
 # Load sample data
 
 pd <- pdr_import_json(c(
-  "data-raw/two_geoms.json",
-  "data-raw/four_geoms.json",
   "data-raw/test_spray.json",
   "data-raw/test_spray_bw.json",
-  "data-raw/Anon_pen_spray.json"
+  "data-raw/Anon_pen_spray.json",
+  "data-raw/col_alpha_01_to_10.json"
 ))
 
 background_image <- png::readPNG("inst/extdata/feet_background.png")
@@ -18,19 +17,19 @@ background_image <- png::readPNG("inst/extdata/feet_background.png")
 
 # No background image
 pd |>
-  dplyr::filter(id == "Anon") |>
+  dplyr::filter(id == "test_spray") |>
   pdr_recreate_drawing()
 
 # Background image
 pd |>
-  dplyr::filter(id == "Anon") |>
+  dplyr::filter(id == "test_spray") |>
   pdr_recreate_drawing(
     background_image = background_image
   )
 
 # Background image with id
 pd |>
-  dplyr::filter(id == "Anon") |>
+  dplyr::filter(id == "test_spray") |>
   pdr_recreate_drawing(
     background_image = background_image,
     include_id = TRUE
@@ -39,7 +38,7 @@ pd |>
 
 # Background image no rasterize
 pd |>
-  dplyr::filter(id == "Anon") |>
+  dplyr::filter(id == "test_spray") |>
   pdr_recreate_drawing(
     background_image = "inst/extdata/feet_background.png",
     rasterize = TRUE

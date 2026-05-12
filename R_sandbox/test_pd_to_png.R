@@ -5,7 +5,7 @@ load_all()
 # Quick test -------------------------------------------------------------------
 
 # Get some data
-pd <- pd_json2pd(c(
+pd <- pdr_import_json(c(
   "data-raw/two_geoms.json",
   "data-raw/four_geoms.json",
   "data-raw/test_spray.json",

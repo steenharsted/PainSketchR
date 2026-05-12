@@ -3,16 +3,10 @@ library(devtools)
 
 load_all()
 
-load("data/pdr_demo_data.rda")
+load("data/pdr_example_data.rda")
 background_image <- png::readPNG("inst/extdata/mird_body_background.png")
 
-demo <- pdr_demo_data |>
-
-  # Give width and Height
-  mutate(
-    w = 450,
-    h = 500
-  ) |>
+demo <- pdr_example_data |>
 
   filter(row_number() != 1) |>
   mutate(
@@ -33,6 +27,14 @@ demo <- pdr_demo_data |>
 demo |>
   pdr_create_heatmap(
     variables = c("cat_1", "cat_2"),
+    n_groups = c(4, 2),
+    background_image = background_image
+  )
+
+
+demo |>
+  pdr_create_heatmap(
+    variables = c("quant_1", "cat_2"),
     n_groups = c(4, 2),
     background_image = background_image
   )
