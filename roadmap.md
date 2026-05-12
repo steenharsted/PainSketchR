@@ -34,6 +34,7 @@
 - alle funktioner nødvendige?
     * SON + SFH kigger lige funktions listen igennem -- har vi det (og kun det) vi skal bruge?
 - functioner som kalder sig selv re-kursivt, f.eks pdr_sanitize vil give en Warning (fra pdr_cheack_data) ... what to do?
+- skriv en 'get_pd_id' funktion til at trække id ud fra smertetegninger
 
 ## Done
 
