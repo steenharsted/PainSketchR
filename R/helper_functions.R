@@ -692,10 +692,10 @@ loop_pairwise <- function(df, method="intersection") {
 
       # The following will return a df of x and y polygon coordinates (one for each intersection)
       if (method=="intersection") {
-        intersection <- pd_poly_clip(a, b, op = "intersection") 
+        intersection <- pdr_poly_clip(a, b, op = "intersection") 
         they_overlap <- nrow(intersection)>1 # TRUE or FALSE -- intersection is false if no area to overlap (e.g. overlapping vertices)
       } else if (method=="union") {
-        intersection <- pd_poly_clip(a, b, op = "union") 
+        intersection <- pdr_poly_clip(a, b, op = "union") 
         they_overlap <- length(unique(intersection$i))==1 # TRUE or FALSE -- If no overlap: length=2 
       }
       
@@ -703,7 +703,7 @@ loop_pairwise <- function(df, method="intersection") {
         if (method=="intersection" | method=="union") {
           # Replace p1 by the union of p1 and p2, delete p2, reset length of strokes and reset p2=p1+1
           # and keep only the first polygon (the rest are holes)
-          merge_result <- pd_poly_clip(a, b, op = "union") |> dplyr::filter(i==1) 
+          merge_result <- pdr_poly_clip(a, b, op = "union") |> dplyr::filter(i==1) 
           df <- df |>
             dplyr::group_by(i) |>
             dplyr::group_modify(\(grp, indx) {

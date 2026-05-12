@@ -1,6 +1,57 @@
 
 # Roadmap
 
+# Main programmer on functions:
+
+* Both SFH + SON
+    - helper_functions.R
+* SFH:
+    - pdr_add_rgba.R
+    - pdr_alpha.R
+    - pdr_heatmap.R
+    - pdr_recreate_drawing.R
+* SON
+    - pdr_check_data.R
+    - pdr_explode.R
+    - pdr_implode.R
+    - pdr_import_json.R
+    - pdr_import_mird.R
+    - pdr_poly_anatomy_overlap.R **DEFUNCT -- TO BE REMOVED**
+    - pdr_poly_areas.R
+    - pdr_poly_manage_overlaps.R **DEFUNCT -- NOW IN HELPER FUNCS**
+    - pdr_sanitize.R
+    - pdr_spray_trim.R **SHOULD BE RGBA_TRIM**
+    - pdr_spray_areas.R **DEFUNCT -- REMOVE**
+
+
+## Convert from old to new pd data structure:
+
+Old structure: a tibble with list-col's 's' and 'p'
+New structure: a list of lists (one for each pain drawing)
+
+Converte to new satructure (mark with DONE, when converted and working)?
+* Both SFH + SON
+    - helper_functions.R
+* SFH:
+    - pdr_add_rgba.R
+    - pdr_alpha.R
+    - pdr_heatmap.R
+    - pdr_recreate_drawing.R
+    - pdr_spray_areas.R **SHOULD BE SPRAY_RGBA**
+* SON
+    - **DONE** DATASET.R 
+    - **DONE** pdr_check_data.R
+    - pdr_explode.R
+    - pdr_implode.R
+    - **DONE** pdr_import_json.R
+    - pdr_import_mird.R --- this function expects a string - not a filename
+    - pdr_poly_anatomy_overlap.R **DEFUNCT -- TO BE REMOVED**
+    - pdr_poly_areas.R
+    - pdr_poly_manage_overlaps.R **DEFUNCT -- NOW IN HELPER FUNCS**
+    - pdr_sanitize.R
+    - pdr_spray_trim.R **SHOULD BE RGBA_TRIM**
+
+
 ## To do
 
 - pd_poly_manage_overlaps ... should it be a hidden function? ... it is called by the pd_sanitize function
@@ -34,7 +85,8 @@
 - alle funktioner nødvendige?
     * SON + SFH kigger lige funktions listen igennem -- har vi det (og kun det) vi skal bruge?
 - functioner som kalder sig selv re-kursivt, f.eks pdr_sanitize vil give en Warning (fra pdr_cheack_data) ... what to do?
-- skriv en 'get_pd_id' funktion til at trække id ud fra smertetegninger
+- skriv en 'get_pd_id' funktion til at trække id ud fra smertetegninger -- eller bredere: en pdr_summary function 
+- i pdr_check_data -- skal vi lave en bruger service hvis de bruger en 'list of named variable' i stedet for en 'list of lists of...' -- altså de har indsendt en enkelt pd, ikke en liste af pd
 
 ## Done
 

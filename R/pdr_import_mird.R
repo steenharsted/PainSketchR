@@ -121,6 +121,9 @@ pdr_import_mird <- function(mird_string, flip_y=TRUE) {
     s = s,
     p = p
   )
+
+  # Finally transpose the whole tibble into a list of lists
+  #result <- purrr::transpose(result)
   
   return(result)
 }

@@ -14,6 +14,8 @@ for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
     s=list(tibble::tibble(i=as.integer(1), q=as.integer(1), t="pen", bw=as.integer(1), c="#FF0000", a=as.integer(256))), 
     p=list(tibble::tibble(i=as.integer(1), x=d[,1], y=d[,2]))))
 } 
+# The following was added by SON to change this to the new pdr data format format 
+pdr_d <- pdr_d |> purrr::transpose()
 
 # This is a bit quirky ... but necessary to ensure the variable is named correctly in rda:
 var_name <- "pdr_example_anatomy"
@@ -68,7 +70,10 @@ pdr_example_data$s <- pdr_example_data$s |> purrr::map(\(tb) {
   }
 })
 
-#pdr_demo_data <- rbind(tibble::tibble(id="No pain drawing", s=list(NA), p=list(NA), f="", v=as.integer(2), w=as.integer(0), h=as.integer(0), coord="", ts=as.character(Sys.time()), app="PainDraweR package"), pdr_demo_data)
+pdr_example_data <- pdr_example_data |>
+  dplyr::relocate(s, .after=last_col()) |>
+  dplyr::relocate(p, .after=last_col()) |>
+  purrr::transpose()
 
 save(pdr_example_data, file="data/pdr_example_data.rda")
   

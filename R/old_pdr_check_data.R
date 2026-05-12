@@ -1,41 +1,38 @@
 #' Validate a pain drawing data structure
 #'
-#' A pain drawing data structure must comply with certain criteria -- see Details below. 
-#' This function returns TRUE or FALSE and optionally emits diagnostic messages.
+#' A pain drawing data structure must comply with certain criteria -- see Details below. This function returns TRUE or FALSE and optionally emits diagnostic messages.
 #'
 #' #' @details
 #' A valid pain drawing data structure must satisfy all of the following:
 #'
 #' **Top-level structure**
-#' * An unnamed list with one element per pain drawing
-#' 
-#' **Second-level structure**
-#' * A list with one named elment per variable
-#'     - Must contain elements: `id`, `coord`, `w`, `h`, `ts`, `s`, `p`
+#' * A tibble with one row per pain drawing
+#' * Must contain columns: `id`, `coord`, `w`, `h`, `ts`, `s`, `p`
 #'
-#' **Second-level element types**
+#' **Column types**
 #' * `id`: character (unique identifier)
 #' * `w`, `h`: integer
-#' * `coord`, `ts`: character or NA
-#' * `s`, `p`: tibble or NA
+#' * `coord`, `ts`: character
+#' * `s`, `p`: list columns
 #'
-#' **Elelment constraints**
+#' **Column constraints**
 #' * `id` values must be unique
 #'
-#' **`s` tibble or NA (stroke metadata)**
-#' If tibble, must be structured as:
+#' **`s` column (stroke metadata)**
+#' Each element must be either `NA` or a tibble with:
 #' * Columns: `i`, `q`, `t`, `bw`, `c`, `a`
 #' * Types: integer, integer, character, integer, character, integer
 #' * One row per stroke (`i` must be unique)
 #' * Exactly one unique value of `c` per tibble
 #'
-#' **`p` tibble or NA (stroke coordinates)**
-#' If tibble, must be structured as:
+#' **`p` column (stroke coordinates)**
+#' Each element must be either `NA` or a tibble with:
 #' * Columns: `i`, `x`, `y`
 #' * All integer
 #' * `i` values correspond to those in the matching `s` tibble
 #' 
 #' #' **Relationship between `s` and `p`**
+#' * Each row represents one pain drawing
 #' * The `s` tibble defines strokes (one row per stroke)
 #' * The `p` tibble defines coordinates (multiple rows per stroke)
 #' * The `i` column links them:
@@ -43,6 +40,7 @@
 #'   - `p$i`: repeats to associate coordinates with a stroke
 #' 
 #' 
+#'
 #' @param d An object to validate.
 #'
 #' @returns
@@ -56,10 +54,6 @@
 #' pdr_check_data(letters[1:10]) # Will return FALSE and provide details
 #'
 pdr_check_data <- function(d, verbose = TRUE) {
-  if (!is.list(d)) {
-    warning("Data 'd' is not a list", call. = FALSE)
-    return(FALSE)
-  }
 
   # ---- helpers ----
   fail <- function(msg) {
@@ -75,8 +69,8 @@ pdr_check_data <- function(d, verbose = TRUE) {
     identical(x, NA)
   }
 
-  is_list_or_na <- function(x) {
-    is.list(x) || is_na_scalar(x)
+  is_tibble_or_na <- function(x) {
+    tibble::is_tibble(x) || is_na_scalar(x)
   }
 
   has_names <- function(x, required) {
@@ -105,28 +99,18 @@ pdr_check_data <- function(d, verbose = TRUE) {
       is.integer(x$y)
   }
 
-int_checker <- function(d=d, verbose=verbose) {
-  # This function checks each element of the pain drawing
-  # data structure (which is a list) -- each element should
-  # also be a list (of named elements)
-
-  try({
-    message("") # Empty line
-    message(paste0("Element with ID ", d$id, ":"))
-  })
-
-  # ---- top-level list ----
-  if (!is.list(d)) {
-    return(fail("Data is a list: FAIL"))
+  # ---- top-level tibble ----
+  if (!tibble::is_tibble(d)) {
+    return(fail("Data is a tibble: FAIL"))
   }
-  ok("Data is a list: OK")
+  ok("Data is a tibble: OK")
 
   # ---- required columns ----
   required_cols <- c("id", "coord", "w", "h", "ts", "s", "p")
   if (!has_names(d, required_cols)) {
-    return(fail("Missing required elements"))
+    return(fail("Missing required columns"))
   }
-  ok("Required elements present: OK")
+  ok("Required columns present: OK")
 
   # ---- column types ----
   if (!(is.character(d$id) &&
@@ -136,9 +120,9 @@ int_checker <- function(d=d, verbose=verbose) {
         is.character(d$ts) &&
         is.list(d$s) &&
         is.list(d$p))) {
-    return(fail("Element types incorrect"))
+    return(fail("Column types incorrect"))
   }
-  ok("Element types: OK")
+  ok("Column types: OK")
 
   # ---- unique IDs ----
   if (any(duplicated(d$id))) {
@@ -147,28 +131,24 @@ int_checker <- function(d=d, verbose=verbose) {
   ok("IDs unique: OK")
 
   # ---- list column 's' (allow NA) ----
-  if (!is_na_scalar(d$s) && !valid_s_tbl(d$s)) {
-    return(fail("Invalid column in 's'"))
+  if (!purrr::every(d$s, ~ is_na_scalar(.x) || valid_s_tbl(.x))) {
+    return(fail("Invalid elements in 's' column"))
   }
   ok("'s' column valid: OK")
 
   # ---- list column 'p' (allow NA) ----
-  if (!is_na_scalar(d$p) && !valid_p_tbl(d$p)) {
-    return(fail("Invalid column in 'p'"))
+  if (!purrr::every(d$p, ~ is_na_scalar(.x) || valid_p_tbl(.x))) {
+    return(fail("Invalid elements in 'p' column"))
   }
   ok("'p' column valid: OK")
 
   # ---- identical 'i' in list column 'p' and 's' 
-  if (!setequal(unique(d$p$i), d$s$i)) {
+  if (!all(purrr::map2_lgl(d$p, d$s, ~ setequal(unique(.x$i), .y$i)))) {
     return(fail("Discrepancies in column 'i' in columns 'p' and 's'"))
   }
   ok("Column 'i' in list columns 'p' and 's' have same values")
 
   ok("Data structure is valid pain drawing data structure: OK")
   TRUE
-}
-  # ---- end helpers ----
-
-  purrr::every(d, int_checker)
 }
 
