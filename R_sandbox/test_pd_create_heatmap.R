@@ -3,10 +3,10 @@ library(devtools)
 
 load_all()
 
-load("data/pd_demo_data.rda")
+load("data/pdr_demo_data.rda")
 background_image <- png::readPNG("inst/extdata/mird_body_background.png")
 
-demo <- pd_demo_data |>
+demo <- pdr_demo_data |>
 
   # Give width and Height
   mutate(
@@ -28,10 +28,10 @@ demo <- pd_demo_data |>
   )
 
 
-# Test pd_create_heatmap
+# Test pdr_create_heatmap
 
 demo |>
-  pd_create_heatmap(
+  pdr_create_heatmap(
     variables = c("cat_1", "cat_2"),
     n_groups = c(4, 2),
     background_image = background_image
@@ -39,7 +39,7 @@ demo |>
 
 
 demo |>
-  pd_create_heatmap(
+  pdr_create_heatmap(
     variables = c("quant_1", "cat_2"),
     n_groups = c(4, 2),
     background_image = background_image,
@@ -48,7 +48,7 @@ demo |>
 
 
 demo |>
-  pd_create_heatmap(
+  pdr_create_heatmap(
     variables = c("quant_2", "quant_1"),
     n_groups = c(2, 4),
     background_image = background_image,
@@ -61,14 +61,14 @@ demo |>
 # Test one var
 # Not super happy with this :/
 demo |>
-  pd_create_heatmap(
+  pdr_create_heatmap(
     variables = c("cat_1"),
     n_groups = c(3),
     background_image = background_image
   )
 
 demo |>
-  pd_create_heatmap(
+  pdr_create_heatmap(
     variables = c("quant_1"),
     n_groups = c(4),
     background_image = background_image
@@ -81,7 +81,7 @@ demo |>
   mutate(
     " " = " "
   ) |>
-  pd_create_heatmap(
+  pdr_create_heatmap(
     variables = c(" ", "quant_1"),
     n_groups = c(1, 4),
     background_image = background_image
