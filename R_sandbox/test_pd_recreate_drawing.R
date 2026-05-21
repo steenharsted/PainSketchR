@@ -5,14 +5,62 @@ load_all()
 
 # Load sample data
 
-pd <- pdr_import_json(c(
-  "data-raw/test_spray.json",
-  "data-raw/test_spray_bw.json",
-  "data-raw/Anon_pen_spray.json",
-  "data-raw/col_alpha_01_to_10.json"
-))
+# pd <- pdr_import_json(c(
+#   "data-raw/test_spray.json",
+#   "data-raw/test_spray_bw.json",
+#   "data-raw/Anon_pen_spray.json",
+#   "data-raw/col_alpha_01_to_10.json"
+# ))
+
+
+# pd <- pdr_import_json(c(
+#   "data-raw/test_spray.json",
+#   "data-raw/col_alpha_01_to_10.json"
+# ))
+
+
+pd <- tibble(paindrawr_data = pdr_example_data)
+
+# Get ID
+pd <- pd |> 
+  mutate(
+    id = map_chr(.x = paindrawr_data, 
+    .f = \(x) x$id), 
+    .before = paindrawr_data
+  )
+
+pd
 
 background_image <- png::readPNG("inst/extdata/feet_background.png")
+
+
+pd$paindrawr_data
+
+
+
+
+pd |> 
+  unnest(paindrawr_data)
+
+
+# https://www.robwiederstein.org/2022/04/13/lists-into-tibbles-part-03/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # No background image
