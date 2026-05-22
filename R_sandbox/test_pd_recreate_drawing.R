@@ -2,6 +2,7 @@ library(devtools)
 library(tidyverse)
 
 load_all()
+background_image <- png::readPNG("inst/extdata/mird_body_background.png")
 
 # Load sample data
 
@@ -19,49 +20,62 @@ load_all()
 # ))
 
 
-pd <- tibble(paindrawr_data = pdr_example_data)
+pd <- tibble(pdr_data = pdr_example_data)
 
 # Get ID
 pd <- pd |> 
   mutate(
-    id = map_chr(.x = paindrawr_data, 
+    id = map_chr(.x = pdr_data, 
     .f = \(x) x$id), 
-    .before = paindrawr_data
+    .before = pdr_data
   )
 
 pd
 
-background_image <- png::readPNG("inst/extdata/feet_background.png")
-
-
-pd$paindrawr_data
-
-
+pd |> 
+  unnest_wider(pdr_data)
 
 
 pd |> 
-  unnest(paindrawr_data)
+  select(-id) |> 
+  unnest_wider(pdr_data)
 
 
-# https://www.robwiederstein.org/2022/04/13/lists-into-tibbles-part-03/
+pd |> 
+  unnest_wider(pdr_data, names_repair = "universal")
+
+
+pd |> 
+  filter(row_number() == 2) |> 
+  select(-id) |> 
+  pdr_recreate_drawing(
+    background_image = background_image
+  )
+
+
+## Test new function
+pd |> 
+  filter(row_number() < 5) |> 
+  select(-id) |> 
+  pdr_recreate_drawing(
+    background_image = background_image
+  )
+
+## Vizualize with new function and changed default name
+pd |> 
+  filter(row_number() < 5) |> 
+  select(-id) |> 
+  rename(new_name = pdr_data) |> 
+  pdr_recreate_drawing(
+    background_image = background_image, 
+    paindrawr_data = new_name
+  )
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+#####
 
 # No background image
 pd |>

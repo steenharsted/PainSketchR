@@ -78,6 +78,7 @@
 #' @export
 pdr_recreate_drawing <- function(
   .data,
+  paindrawr_data = pdr_data,
   background_image = NULL,
   include_id = FALSE,
   rasterize = TRUE,
@@ -86,8 +87,12 @@ pdr_recreate_drawing <- function(
   dpi = 96,
   type = "path"
 ) {
+  
   # Making sure data has required columns
-  pdr_check_data(.data, verbose = FALSE)
+  #pdr_check_data(.data, verbose = FALSE)
+
+  # Unnest list
+  .data <- .data |> tidyr::unnest_wider({{paindrawr_data}})
 
   # Validate method argument
   method <- match.arg(method, choices = c("memory", "file"))
