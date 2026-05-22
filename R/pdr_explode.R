@@ -51,6 +51,9 @@
 #'
 #' # Each row now contains exactly one stroke
 #' pdr_exploded$p[[1]]
+
+
+
 pdr_explode <- function(pd) {
   if(!pdr_check_data(pd, verbose=FALSE)) {
     stop("`pd`is not valid pain drawing data.")

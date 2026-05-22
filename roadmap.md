@@ -29,7 +29,31 @@
 Old structure: a tibble with list-col's 's' and 'p'
 New structure: a list of lists (one for each pain drawing)
 
-Converte to new satructure (mark with DONE, when converted and working)?
+New names in pain drawing definition:
+* .id
+* .file
+* .version
+* .width
+* .height
+* .units
+* .timestamp
+* .app
+* .strokes
+    - .index
+    - .q ?
+    - .tool
+    - .tool_width
+    - .color
+    - .alpha
+    - .zoom
+    - .zoom_width
+    - .zoom_height
+* .points
+    - .index
+    - .x
+    - .y
+
+Convert to new structure (mark with DONE, when converted and working)?
 * Both SFH + SON
     - helper_functions.R
 * SFH:
