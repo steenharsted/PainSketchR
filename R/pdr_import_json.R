@@ -57,48 +57,40 @@
 
 
 pdr_import_json <- function(files) {
+  # This file imports json output from the redcap module PainDrawR
+
+  # Sanity check on `files`
   if (is.list(files)) {
     files <- files |> purrr::map_chr(\(element) {as.character(element)})
   }
-  # Sanity check -- is files a string
-  if(!is.character(files)) {
+  if(!is.character(files) || length(files)==0) {
     warning("No JSON files specified")
-    return(tibble::tibble())
+    return(list())
   }
-  # Sanity check -- more than one filename?
-  if(length(files)>1) {
-    result <- tibble::tibble()
-    for(f in files) {
-      result <- dplyr::bind_rows(result, pdr_import_json(f))
+  
+  # Iterate files and parse data
+  result <- list()
+  for(f in files) {
+    # Sanity check -- does such a file exist?
+    if(!file.exists(f)) {
+      warning(paste0("Non-exisiting JSON files specified: ",f))
+      result <- result |> purrr::list_assign(list()) # Add empty element
+    } else {
+      # Sanity check -- is content valid json?
+      content <- readLines(f)
+      if(!jsonlite::validate(content)) {
+        warning("File content could not be validated as JSON")
+        result <- result |> purrr::list_assign(list()) # Add empty element
+      } else {
+        # We have valid json content - now parse and add to result
+        tmp <- jsonlite::fromJSON(content)
+        tmp$f <- f # store the file name
+        tmp$p <- tmp$s$p # p is stored as list col in 's' so move up a level..
+        tmp$s <- tmp$s |> dplyr::select(-p) |> tibble::as_tibble() # ..and remove from s
+        tmp$p <- tmp$p |> purrr::imap_dfr(\(element, indx) {tibble::tibble(i=indx, x=element[,1], y=element[,2])})
+        result <- c(result , list(tmp))
+      }
     }
-    return(result)
-  } 
-  # Sanity check -- does such a file exist?
-  if(!file.exists(files)) {
-    warning("Non-exisiting JSON files specified")
-    return(tibble::tibble())
   }
-
-  # Get the file content as a simple string and check whether it is valid json
-  content <- readLines(files)
-  if(!jsonlite::validate(content)) {
-    warning("File content could not be validated as JSON")
-    return(NA)
-  }
-
-  # ...only then, convert string in json format to R data object
-  content <- jsonlite::fromJSON(content)
-
-  # Build the result in three stages:
-  # Make results a tibble with `f` as the file name and all the content of the json data structure, except `s`
-  result <- tibble::tibble(f=files, content |> purrr::discard_at("s")  |> purrr::map_dfr(\(x) {x}))
-  maxy <- result$h # This is to flip the y-axis values in result$p
-  # First add a column onto the result tibble, which contains a list (length=1) of a data frame of `i,x,y`
-  result$p <- content$s$p |> purrr::imap_dfr(\(q,i) {tibble::tibble(i,x=q[,1],y=maxy-q[,2])}) |> list()
-  # Then add a column onto the result, which is a list (legnth=1) of a data frame with stroke info
-  result$s <- content$s |> dplyr::select(-p) |> tibble::tibble() |> list()  
-  # Now transpose the whole thing into a list of lists
-  result <- purrr::transpose(result)
-
   return(result)
 }
