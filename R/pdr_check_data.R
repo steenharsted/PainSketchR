@@ -11,36 +11,36 @@
 #' 
 #' **Second-level structure**
 #' * A list with one named elment per variable
-#'     - Must contain elements: `id`, `coord`, `w`, `h`, `ts`, `s`, `p`
+#'     - Must contain elements: `.id`, `.units`, `.width`, `.height`, `.timestamp`, `.strokes`, `.points`
 #'
 #' **Second-level element types**
-#' * `id`: character (unique identifier)
-#' * `w`, `h`: integer
-#' * `coord`, `ts`: character or NA
-#' * `s`, `p`: tibble or NA
+#' * `.id`: character (unique identifier)
+#' * `.width`, `.height`: integer
+#' * `.units`, `.timestamp`: character or NA
+#' * `.strokes`, `.points`: tibble or NA
 #'
-#' **Elelment constraints**
-#' * `id` values must be unique
+#' **Element constraints**
+#' * `.id` values must be unique
 #'
-#' **`s` tibble or NA (stroke metadata)**
+#' **`.strokes` tibble or NA (stroke metadata)**
 #' If tibble, must be structured as:
-#' * Columns: `i`, `q`, `t`, `bw`, `c`, `a`
+#' * Columns: `.index`, `.q`, `.tool`, `.tool_width`, `.color`, `.alpha`
 #' * Types: integer, integer, character, integer, character, integer
-#' * One row per stroke (`i` must be unique)
-#' * Exactly one unique value of `c` per tibble
+#' * One row per stroke (`.index` must be unique)
+#' * Exactly one unique value of `.color` per tibble
 #'
-#' **`p` tibble or NA (stroke coordinates)**
+#' **`.points` tibble or NA (stroke coordinates)**
 #' If tibble, must be structured as:
-#' * Columns: `i`, `x`, `y`
+#' * Columns: `.index`, `.x`, `.y`
 #' * All integer
-#' * `i` values correspond to those in the matching `s` tibble
+#' * `.index` values correspond to those in the matching `.strokes` tibble
 #' 
-#' #' **Relationship between `s` and `p`**
-#' * The `s` tibble defines strokes (one row per stroke)
-#' * The `p` tibble defines coordinates (multiple rows per stroke)
-#' * The `i` column links them:
-#'   - `s$i`: unique stroke identifiers
-#'   - `p$i`: repeats to associate coordinates with a stroke
+#' #' **Relationship between `.strokes` and `.points`**
+#' * The `.strokes` tibble defines strokes (one row per stroke)
+#' * The `.points` tibble defines coordinates (multiple rows per stroke)
+#' * The `.index` column links them:
+#'   - `.strokes$.index`: unique stroke identifiers
+#'   - `.points$.index`: repeats to associate coordinates with a stroke
 #' 
 #' 
 #' @param d An object to validate.
@@ -84,25 +84,25 @@ pdr_check_data <- function(d, verbose = TRUE) {
   }
 
   # ---- validators for nested tibbles ----
-  valid_s_tbl <- function(x) {
+  valid_strokes_tbl <- function(x) {
     tibble::is_tibble(x) &&
-      has_names(x, c("i", "q", "t", "bw", "c", "a")) &&
-      is.integer(x$i) &&
-      is.integer(x$q) &&
-      is.character(x$t) &&
-      is.integer(x$bw) &&
-      is.character(x$c) &&
-      is.integer(x$a) &&
-      length(unique(x$c)) == 1 &&
-      !any(duplicated(x$i))
+      setequal(names(x), c(".index", ".q", ".tool", ".tool_width", ".color", ".alpha")) &&
+      is.integer(x$.index) &&
+      is.integer(x$.q) &&
+      is.character(x$.tool) &&
+      is.integer(x$.tool_width) &&
+      is.character(x$.color) &&
+      is.integer(x$.alpha) &&
+      length(unique(x$.color)) == 1 &&
+      !any(duplicated(x$.index))
   }
 
-  valid_p_tbl <- function(x) {
+  valid_points_tbl <- function(x) {
     tibble::is_tibble(x) &&
-      has_names(x, c("i", "x", "y")) &&
-      is.integer(x$i) &&
-      is.integer(x$x) &&
-      is.integer(x$y)
+      setequal(names(x), c(".index", ".x", ".y")) &&
+      is.integer(x$.index) &&
+      is.integer(x$.x) &&
+      is.integer(x$.y)
   }
 
 int_checker <- function(d=d, verbose=verbose) {
@@ -110,10 +110,11 @@ int_checker <- function(d=d, verbose=verbose) {
   # data structure (which is a list) -- each element should
   # also be a list (of named elements)
 
-  try({
+  try({    
     message("") # Empty line
-    message(paste0("Element with ID ", d$id, ":"))
+    message(paste0("Element with ID ", d$.id, ":"))
   })
+  
 
   # ---- top-level list ----
   if (!is.list(d)) {
@@ -122,51 +123,51 @@ int_checker <- function(d=d, verbose=verbose) {
   ok("Data is a list: OK")
 
   # ---- required columns ----
-  required_cols <- c("id", "coord", "w", "h", "ts", "s", "p")
+  required_cols <- c(".id", ".units", ".width", ".height", ".timestamp", ".strokes", ".points")
   if (!has_names(d, required_cols)) {
     return(fail("Missing required elements"))
   }
   ok("Required elements present: OK")
 
   # ---- column types ----
-  if (!(is.character(d$id) &&
-        is.integer(d$w) &&
-        is.integer(d$h) &&
-        is.character(d$coord) &&
-        is.character(d$ts) &&
-        is.list(d$s) &&
-        is.list(d$p))) {
+  if (!(is.character(d$.id) &&
+        is.integer(d$.width) &&
+        is.integer(d$.height) &&
+        is.character(d$.units) &&
+        is.character(d$.timestamp) &&
+        is.list(d$.strokes) &&
+        is.list(d$.points))) {
     return(fail("Element types incorrect"))
   }
   ok("Element types: OK")
 
   # ---- unique IDs ----
-  if (any(duplicated(d$id))) {
+  if (any(duplicated(d$.id))) {
     return(fail("IDs must be unique"))
   }
   ok("IDs unique: OK")
 
-  # ---- list column 's' (allow NA) ----
-  if (!is_na_scalar(d$s) && !valid_s_tbl(d$s)) {
-    return(fail("Invalid column in 's'"))
+  # ---- list column '.strokes' (allow NA) ----
+  if (!is_na_scalar(d$.strokes) && !valid_strokes_tbl(d$.strokes)) {
+    return(fail("Invalid column in '.strokes'"))
   }
   ok("'s' column valid: OK")
 
-  # ---- list column 'p' (allow NA) ----
-  if (!is_na_scalar(d$p) && !valid_p_tbl(d$p)) {
-    return(fail("Invalid column in 'p'"))
+  # ---- list column '.points' (allow NA) ----
+  if (!is_na_scalar(d$.points) && !valid_points_tbl(d$.points)) {
+    return(fail("Invalid column in '.points'"))
   }
   ok("'p' column valid: OK")
 
-  # ---- identical 'i' in list column 'p' and 's' 
-  if (!setequal(unique(d$p$i), d$s$i)) {
-    return(fail("Discrepancies in column 'i' in columns 'p' and 's'"))
+  # ---- identical '.index' in list column '.points' and '.strokes' 
+  if (!setequal(unique(d$.points$.index), d$.strokes$.index)) {
+    return(fail("Discrepancies in column '.index' in columns '.points' and '.strokes'"))
   }
-  ok("Column 'i' in list columns 'p' and 's' have same values")
+  ok("Column '.index' in list columns '.poins' and '.strokes' have same values")
 
   ok("Data structure is valid pain drawing data structure: OK")
   TRUE
-}
+  }
   # ---- end helpers ----
 
   purrr::every(d, int_checker)

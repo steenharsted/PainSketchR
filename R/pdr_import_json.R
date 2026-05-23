@@ -84,10 +84,21 @@ pdr_import_json <- function(files) {
       } else {
         # We have valid json content - now parse and add to result
         tmp <- jsonlite::fromJSON(content)
-        tmp$f <- f # store the file name
-        tmp$p <- tmp$s$p # p is stored as list col in 's' so move up a level..
-        tmp$s <- tmp$s |> dplyr::select(-p) |> tibble::as_tibble() # ..and remove from s
-        tmp$p <- tmp$p |> purrr::imap_dfr(\(element, indx) {tibble::tibble(i=indx, x=element[,1], y=element[,2])})
+        tmp$.file <- f # store the file name
+        tmp$.points <- tmp$s$p # p is stored as list col in 's' so move up a level..
+        tmp$.strokes <- tmp$s |> dplyr::select(-p) |> tibble::as_tibble() # ..and remove from s
+        tmp$.points <- tmp$.points |> purrr::imap_dfr(\(element, indx) {tibble::tibble(i=indx, x=element[,1], y=element[,2])})
+        tmp$.id = tmp$id
+        tmp$.file = tmp$file
+        tmp$.version = tmp$v
+        tmp$.width = tmp$w
+        tmp$.height = tmp$h
+        tmp$.units = tmp$coord
+        tmp$.timestamp = tmp$ts
+        tmp$.app = tmp$app
+        tmp <- tmp[startsWith(names(tmp), ".")]
+        tmp$.points <- tmp$.points |> dplyr::rename(.index=i, .x=x, .y=y)
+        tmp$.strokes <- tmp$.strokes |> dplyr::rename(.index=i, .q=q, .tool=t, .tool_width=bw, .color=c, .alpha=a)
         result <- c(result , list(tmp))
       }
     }

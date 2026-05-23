@@ -1,25 +1,26 @@
 ## code to prepare the demo `DATASET` goes here
 
 # Generate some demo data of anatomical regions from full body outline/template
-pdr_d <- tibble::tibble(id=as.integer(), s=list(), p=list())
+###pdr_d <- tibble::tibble(.id=as.integer(), .strokes=list(), .points=list())
+pdr_xa <- list()
 for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
   d <- read.csv(c, sep=";", header = FALSE)
-  pdr_d <- rbind(pdr_d, tibble::tibble(
-    id=fs::path_ext_remove(fs::path_file(c)), 
-    w=as.integer(450),
-    h=as.integer(500),
-    coord="px",
-    ts=as.character(Sys.time()),
-    app="PainDraweR package",
-    s=list(tibble::tibble(i=as.integer(1), q=as.integer(1), t="pen", bw=as.integer(1), c="#FF0000", a=as.integer(256))), 
-    p=list(tibble::tibble(i=as.integer(1), x=d[,1], y=d[,2]))))
+  pdr_xa[[length(pdr_xa) + 1]] <- list(
+    .id= as.character(fs::path_ext_remove(fs::path_file(c))), 
+    .file = as.character(fs::path_file(c)),
+    .width=as.integer(450),
+    .height=as.integer(500),
+    .units="px",
+    .timestamp=as.character(Sys.time()),
+    .app="PainDraweR package",
+    .strokes=tibble::tibble(.index=as.integer(1), .q=as.integer(1), .tool="pen", .tool_width=as.integer(1), .color="#FF0000", .alpha=as.integer(256)), 
+    .points=tibble::tibble(.index=as.integer(1), .x=d[,1], .y=d[,2])
+  )
 } 
-# The following was added by SON to change this to the new pdr data format format 
-pdr_d <- pdr_d |> purrr::transpose()
 
 # This is a bit quirky ... but necessary to ensure the variable is named correctly in rda:
 var_name <- "pdr_example_anatomy"
-assign(var_name, pdr_d)
+assign(var_name, pdr_xa)
 do.call(save, list(var_name, file="data/pdr_example_anatomy.rda"))
 
 # Generate png stencils for each anatomical region (to allow for finding intersections in spray pain drawings)
@@ -38,32 +39,35 @@ pdr_example_data <- read.csv("data-raw/demo_data.csv") |>
       as.integer(xy) |> matrix(ncol=2, byrow=TRUE) |> as.data.frame() |> purrr::set_names(c("x","y")) |> dplyr::mutate(i=i)  
     })
   })) |> 
-  tidyr::unnest(paindrawing_LBP) |> dplyr::select(-X) |> dplyr::relocate(i, .after=id) |>
-  dplyr::group_by(id) |>
+  tidyr::unnest(paindrawing_LBP) |> dplyr::select(-X) |> 
+  dplyr::rename(.id=id, .x=x, .y=y, .index=i) |>
+  dplyr::relocate(.index, .after=.id) |>
+  dplyr::group_by(.id) |>
   dplyr::group_modify(\(d, indx) {
     d <- tibble::tibble(
-      s = list(tibble::tibble(i=unique(d$i))),
-      p = list(tibble::tibble(i=d$i, x=d$x, y=d$y))
+      .strokes = list(tibble::tibble(.index=unique(d$.index))),
+      .points = list(tibble::tibble(.index=d$.index, .x=d$.x, .y=d$.y))
     )
   }) |>
   dplyr::ungroup() 
 
 pdr_example_data <- pdr_example_data |>
-  dplyr::mutate(f="data/pdr_example_data.csv") |>
-  dplyr::mutate(v=as.integer(2)) |>
-  dplyr::mutate(w=as.integer(450), h=as.integer(500)) |>
-  dplyr::mutate(coord="px") |>
-  dplyr::mutate(ts = as.character(Sys.time())) |>
-  dplyr::mutate(app = "paindrawr package") 
+  dplyr::mutate(.file="data/pdr_example_data.csv") |>
+  dplyr::mutate(.version=as.integer(2)) |>
+  dplyr::mutate(.width=as.integer(450)) |>
+  dplyr::mutate(.height=as.integer(500)) |>
+  dplyr::mutate(.units="px") |>
+  dplyr::mutate(.timestamp = as.character(Sys.time())) |>
+  dplyr::mutate(.app = "paindrawr package") 
   
-pdr_example_data$s <- pdr_example_data$s |> purrr::map(\(tb) {
+pdr_example_data$.strokes <- pdr_example_data$.strokes |> purrr::map(\(tb) {
   if(tibble::is_tibble(tb)) {
     tb |> dplyr::mutate(
-      q=i,
-      t="pen",
-      bw=as.integer(1),
-      c="#FF0000",
-      a=as.integer(128)
+      .q=.index,
+      .tool="pen",
+      .tool_width=as.integer(1),
+      .color="#FF0000",
+      .alpha=as.integer(128)
     )
   } else {
     tb
@@ -71,8 +75,8 @@ pdr_example_data$s <- pdr_example_data$s |> purrr::map(\(tb) {
 })
 
 pdr_example_data <- pdr_example_data |>
-  dplyr::relocate(s, .after=last_col()) |>
-  dplyr::relocate(p, .after=last_col()) |>
+  dplyr::relocate(.strokes, .after=last_col()) |>
+  dplyr::relocate(.points, .after=last_col()) |>
   purrr::transpose()
 
 save(pdr_example_data, file="data/pdr_example_data.rda")
