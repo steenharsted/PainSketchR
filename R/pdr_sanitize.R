@@ -1,6 +1,6 @@
 #' Clean and normalize pain drawing stroke geometries
 #'
-#' Processes stroke coordinate data (`p` column) by removing 
+#' Processes stroke coordinate data (`.points` column) by removing 
 #' self-intersections, optionally buffering strokes with 
 #' no area, simplifying polygons, and applying additional 
 #' geometric transformations.
@@ -13,22 +13,23 @@
 #' The following operations are applied in order:
 #'
 #' 1. **Sequential duplicates** of coordinate points are removed.
-#'    This is always enforced.
+#'    This is always enforced and should only be applied to
+#'    'pen' drawings (as opposed to spray drawings). 
 #' 
 #' 2. **Blank drawings** (i.e. no drawing data) are converted to NA
 #' 
-#' 3. **No-area-stroke** Whether to remove or buffer strokes with no area.
+#' 3. **No-area-stroke** Remove or buffer strokes with no area.
 #'
-#' 4. **Buffer delta** Size of no-area-strokes buffering.
+#' 4. **Buffer delta** Set size of no-area-strokes buffering.
 #' 
-#' 5. **Polygon simplification** Whether to remove self-intersections.
+#' 5. **Polygon simplification** Remove self-intersections, or not.
 #'
-#' 6. **Convex hull transformation** Whether to convert all strokes into their
+#' 6. **Convex hull transformation** Convert all strokes into their
 #'    convex hull.
 #'
-#' 7. **Polygon closure** Whether to close stroke polygons.
+#' 7. **Polygon closure** Close stroke polygons.
 #' 
-#' 8. **Overlap handling** If and how to handle overlapping strokes
+#' 8. **Overlap handling** Handle overlapping strokes
 #'
 #'
 #'

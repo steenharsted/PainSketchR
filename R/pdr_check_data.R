@@ -105,16 +105,17 @@ pdr_check_data <- function(d, verbose = TRUE) {
       is.integer(x$.y)
   }
 
-int_checker <- function(d=d, verbose=verbose) {
+int_checker <- function(d) {
   # This function checks each element of the pain drawing
   # data structure (which is a list) -- each element should
   # also be a list (of named elements)
 
-  try({    
-    message("") # Empty line
-    message(paste0("Element with ID ", d$.id, ":"))
-  })
-  
+  if(verbose) {
+    try({    
+      message("") # Empty line
+      message(paste0("Element with ID ", d$.id, ":"))
+    })
+  }
 
   # ---- top-level list ----
   if (!is.list(d)) {
