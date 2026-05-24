@@ -119,7 +119,7 @@ int_checker <- function(d) {
 
   # ---- top-level list ----
   if (!is.list(d)) {
-    return(fail("Data is a list: FAIL"))
+    return(fail("Data is a list: FAIL -- NOTE data should not simply be a list of columns '.id', '.units', '.width', '.height', '.timestamp', '.strokes', '.points', but a list of such lists."))
   }
   ok("Data is a list: OK")
 
