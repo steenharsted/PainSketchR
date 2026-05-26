@@ -6,16 +6,16 @@ load_all()
 load("data/pdr_example_data.rda")
 background_image <- png::readPNG("inst/extdata/mird_body_background.png")
 
-demo <- pdr_example_data |>
-
+demo <-
+  tibble(pdr_data = pdr_example_data) |>
   filter(row_number() != 1) |>
   mutate(
     cat_1 = sample(c("Mouse", "Cat", "Dog"), n(), replace = TRUE),
     cat_2 = sample(c("Cocaine", "Heroin"), n(), replace = TRUE),
     quant_1 = map_dbl(
-      .x = p,
+      .x = pdr_data,
       .f = function(tbl) {
-        nrow(tbl)
+        nrow(tbl$.points)
       }
     ),
     quant_2 = sample(1:10, n(), replace = TRUE)
@@ -87,4 +87,51 @@ demo |>
     variables = c(" ", "quant_1"),
     n_groups = c(1, 4),
     background_image = background_image
+  )
+
+
+##### Sample data with spray
+
+pd <-
+  tibble(
+    pdr_data = pdr_import_json(c(
+      "data-raw/test_spray.json",
+      "data-raw/test_spray_bw.json",
+      "data-raw/Anon_pen_spray.json",
+      "data-raw/col_alpha_01_to_10.json"
+    ))
+  ) |>
+  mutate(
+    cat_1 = sample(c("Mouse", "Cat", "Dog"), n(), replace = TRUE),
+    cat_2 = sample(c("Cocaine", "Heroin"), n(), replace = TRUE),
+    quant_1 = map_dbl(
+      .x = pdr_data,
+      .f = function(tbl) {
+        nrow(tbl$.points)
+      }
+    ),
+    quant_2 = sample(1:10, n(), replace = TRUE)
+  )
+
+background_image <- png::readPNG("inst/extdata/feet_background.png")
+
+
+pd |>
+  pdr_create_heatmap(
+    variables = c("cat_1"),
+    n_groups = c(2),
+    background_image = background_image
+  )
+
+
+pd |>
+  mutate(
+    " " = " ",
+    "  " = " "
+  ) |>
+  pdr_create_heatmap(
+    variables = c(" ", "  "),
+    n_groups = c(1, 1),
+    background_image = background_image,
+    tool = "spray"
   )

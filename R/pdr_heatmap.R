@@ -104,7 +104,7 @@
 #' @export
 pdr_create_heatmap <- function(
   .data,
-  id_col = "id",
+  paindrawr_data = pdr_data,
   variables = NULL,
   n_groups = c(2, 2),
   equal_n = TRUE,
@@ -125,12 +125,14 @@ pdr_create_heatmap <- function(
   message("Validating inputs...")
 
   # Making sure data has required columns
-  pdr_check_data(.data)
+  pdr_check_data(.data$pdr_data, verbose = FALSE)
+
+  # Unnest list
+  .data <- .data |> tidyr::unnest_wider({{ paindrawr_data }})
 
   # Validating input specific to pdr_create_heatmap
   validate_heatmap_inputs(
     .data = .data,
-    id_col = id_col,
     variables = variables,
     n_groups = n_groups,
     grid_size = grid_size,
@@ -158,8 +160,8 @@ pdr_create_heatmap <- function(
   # ============================================================================
   message("\nExtracting canvas dimensions...")
 
-  image_width <- .data$w |> unique()
-  image_height <- .data$h |> unique()
+  image_width <- .data$.width |> unique()
+  image_height <- .data$.height |> unique()
 
   if (length(image_width) != 1 || length(image_height) != 1) {
     stop(
@@ -203,7 +205,6 @@ pdr_create_heatmap <- function(
 
   data_grouped <- stratify_data(
     .data = .data,
-    id_col = id_col,
     variables = variables,
     n_groups = n_groups,
     label_format = label_format
@@ -231,21 +232,21 @@ pdr_create_heatmap <- function(
   group_vars <- paste0(".VAR", seq_along(variables), "_grp")
 
   pdr_s <- data_grouped |>
-    dplyr::select(dplyr::all_of(c(id_col, "s", group_vars))) |>
-    tidyr::unnest(cols = s)
+    dplyr::select(dplyr::all_of(c(".id", ".strokes", group_vars))) |>
+    tidyr::unnest(cols = .strokes)
 
   pdr_p <- data_grouped |>
-    dplyr::select(dplyr::all_of(c(id_col, "p"))) |>
-    tidyr::unnest(cols = p)
+    dplyr::select(dplyr::all_of(c(".id", ".points"))) |>
+    tidyr::unnest(cols = .points)
 
   coords_with_groups <- dplyr::full_join(
     pdr_s,
     pdr_p,
-    by = dplyr::join_by(!!rlang::sym(id_col), i)
+    by = dplyr::join_by(.id, .index)
   )
 
   # Check for multiple tools
-  tools_present <- coords_with_groups$t |> unique()
+  tools_present <- coords_with_groups$.tool |> unique()
 
   if (length(tools_present) > 1) {
     warning(
@@ -264,12 +265,12 @@ pdr_create_heatmap <- function(
   if ("spray" %in% tools_present) {
     message("\nRecreating spray effect...")
     coords_with_groups_spray <- coords_with_groups |>
-      dplyr::filter(t == "spray")
+      dplyr::filter(.tool == "spray")
     coords_with_groups_spray <- recreate_spray(coords_with_groups_spray)
 
     # Recombine expanded spray data
     coords_with_groups <- coords_with_groups |>
-      dplyr::filter(t != "spray") |>
+      dplyr::filter(.tool != "spray") |>
       dplyr::full_join(coords_with_groups_spray)
 
     rm(coords_with_groups_spray)
@@ -283,8 +284,7 @@ pdr_create_heatmap <- function(
   density_data <- calculate_pain_density(
     .data = coords_with_groups,
     group_vars = group_vars,
-    grid_size = grid_size,
-    id_col = id_col
+    grid_size = grid_size
   )
 
   # ============================================================================

@@ -6,7 +6,6 @@
 #' @noRd
 validate_heatmap_inputs <- function(
   .data,
-  id_col,
   variables,
   n_groups,
   grid_size,
@@ -79,7 +78,7 @@ validate_heatmap_inputs <- function(
 
 #' Stratify Data by Creating Group Variables
 #' @noRd
-stratify_data <- function(.data, id_col, variables, n_groups, label_format) {
+stratify_data <- function(.data, variables, n_groups, label_format) {
   result <- .data
 
   for (i in seq_along(variables)) {
@@ -197,15 +196,15 @@ recreate_spray <- function(.data) {
     # Create spray points
     dplyr::mutate(
       spray_id = dplyr::row_number(),
-      count = pd
+      count = .point_density
     ) |>
     tidyr::uncount(count) |>
     dplyr::mutate(
       # Add random offset within spray radius
       angle = stats::runif(dplyr::n(), 0, 2 * pi),
-      distance = stats::runif(dplyr::n(), 0, pr),
-      x = x + distance * cos(angle),
-      y = y + distance * sin(angle)
+      distance = stats::runif(dplyr::n(), 0, .spray_radius),
+      .x = .x + distance * cos(angle),
+      .y = .y + distance * sin(angle)
     ) |>
     dplyr::select(-spray_id, -angle, -distance)
 }
@@ -213,25 +212,25 @@ recreate_spray <- function(.data) {
 
 #' Calculate Pain Density for Each Grid Cell and Group
 #' @noRd
-calculate_pain_density <- function(.data, group_vars, grid_size, id_col) {
+calculate_pain_density <- function(.data, group_vars, grid_size) {
   # Bin coordinates into grid
   data_binned <- .data |>
     dplyr::mutate(
-      x_bin = round(x / grid_size) * grid_size,
-      y_bin = round(y / grid_size) * grid_size
+      x_bin = round(.x / grid_size) * grid_size,
+      y_bin = round(.y / grid_size) * grid_size
     )
 
   # Calculate total IDs per group
   group_totals <- data_binned |>
     dplyr::summarize(
-      n_group = dplyr::n_distinct(!!rlang::sym(id_col)),
+      n_group = dplyr::n_distinct(.id),
       .by = dplyr::all_of(group_vars)
     )
 
   # Calculate density per location per group
   density <- data_binned |>
     dplyr::mutate(
-      n_id_at_location = dplyr::n_distinct(!!rlang::sym(id_col)),
+      n_id_at_location = dplyr::n_distinct(.id),
       .by = c(dplyr::all_of(group_vars), x_bin, y_bin)
     ) |>
     dplyr::left_join(group_totals, by = group_vars) |>
@@ -284,7 +283,7 @@ create_heatmap_plot <- function(
   }
 
   # Build base plot
-  p <- ggplot2::ggplot(density_data, ggplot2::aes(x = x, y = y))
+  p <- ggplot2::ggplot(density_data, ggplot2::aes(x = .x, y = .y))
 
   # Add background image if provided
   if (!is.null(background_image)) {
@@ -441,8 +440,8 @@ create_heatmap_plot <- function(
   } else {
     p <- p +
       ggplot2::theme(
-        strip.text.y.left = element_text(angle = 0, vjust = 0.5),
-        strip.text.x.top = element_text(hjust = 0.5)
+        strip.text.y.left = ggplot2::element_text(angle = 0, vjust = 0.5),
+        strip.text.x.top = ggplot2::element_text(hjust = 0.5)
       )
   }
 
@@ -644,21 +643,26 @@ pdr_poly_clip <- function(A, B, operation = "intersection") {
 }
 
 ## pdr_poly_manage_overlaps and loop_pairwise work together to
-## merge overlapping strokes 
-pdr_poly_manage_overlaps <- function(p, method="union") {
+## merge overlapping strokes
+pdr_poly_manage_overlaps <- function(p, method = "union") {
   # This function takes the column p from a pain drawing data structure and for each pain drawing (row)
   # it handles any overlapping polygons
 
-  if (!is.list(p)) {stop("The data 'p' is not a list")}  
-  if (!purrr::every(p, ~ !identical(.x, NA) || tibble::is_tibble(.x))) {stop("The data 'p' is not a list of tibbles")}  
+  if (!is.list(p)) {
+    stop("The data 'p' is not a list")
+  }
+  if (!purrr::every(p, ~ !identical(.x, NA) || tibble::is_tibble(.x))) {
+    stop("The data 'p' is not a list of tibbles")
+  }
 
   p <- p |> # p is a list of tibbles (of x,y,i)
     purrr::map(\(df, i_df) {
-      if(!tibble::is_tibble(df)) { # Should we accept data frames as well?
+      if (!tibble::is_tibble(df)) {
+        # Should we accept data frames as well?
         NA
       } else {
-        # We have coordinates in the data frame, but how many strokes        
-        if (length(unique(df$i))<2) {
+        # We have coordinates in the data frame, but how many strokes
+        if (length(unique(df$i)) < 2) {
           # There is only a single stroke in data frame - thus no overlaps
           df # ..so just stick with current data frame
         } else {
@@ -667,14 +671,16 @@ pdr_poly_manage_overlaps <- function(p, method="union") {
         }
       }
     })
-  
+
   p
 }
 
-loop_pairwise <- function(df, method="intersection") {
+loop_pairwise <- function(df, method = "intersection") {
   i_strokes <- as.integer(unique(df$i)) # Hold the actual identifiers of the discrete strokes
   n_strokes <- length(i_strokes) # How many of them there are (this may change in the while loop)
-  if (n_strokes < 2) {return(df)} # Only one stroke - no overlaps!
+  if (n_strokes < 2) {
+    return(df)
+  } # Only one stroke - no overlaps!
   p1 <- 1 # pointer 1
   p2 <- 2 # pointer 2
 
@@ -683,51 +689,80 @@ loop_pairwise <- function(df, method="intersection") {
   # is half of the nxn matrix. We can represent these stroke combinations with a single
   # vector of n elements if we use two pointers to iterate the vector - we will simply id
   # the strokes by their index in the list-of-strokes (los) list
-  
-  while (p1 < n_strokes) { # Loop all polygons as the first polygon in pairwise comparison
-    while (p2 <= n_strokes) { # ..for each, loop remaining polygons as the second polygon in pairwise comparison
-      
-      a <- df |> dplyr::filter(i==i_strokes[p1]) # coordinates of first polygon
-      b <- df |> dplyr::filter(i==i_strokes[p2]) # coordinates of second polygon
+
+  while (p1 < n_strokes) {
+    # Loop all polygons as the first polygon in pairwise comparison
+    while (p2 <= n_strokes) {
+      # ..for each, loop remaining polygons as the second polygon in pairwise comparison
+
+      a <- df |> dplyr::filter(i == i_strokes[p1]) # coordinates of first polygon
+      b <- df |> dplyr::filter(i == i_strokes[p2]) # coordinates of second polygon
 
       # The following will return a df of x and y polygon coordinates (one for each intersection)
-      if (method=="intersection") {
-        intersection <- pdr_poly_clip(a, b, op = "intersection") 
-        they_overlap <- nrow(intersection)>1 # TRUE or FALSE -- intersection is false if no area to overlap (e.g. overlapping vertices)
-      } else if (method=="union") {
-        intersection <- pdr_poly_clip(a, b, op = "union") 
-        they_overlap <- length(unique(intersection$i))==1 # TRUE or FALSE -- If no overlap: length=2 
+      if (method == "intersection") {
+        intersection <- pdr_poly_clip(a, b, op = "intersection")
+        they_overlap <- nrow(intersection) > 1 # TRUE or FALSE -- intersection is false if no area to overlap (e.g. overlapping vertices)
+      } else if (method == "union") {
+        intersection <- pdr_poly_clip(a, b, op = "union")
+        they_overlap <- length(unique(intersection$i)) == 1 # TRUE or FALSE -- If no overlap: length=2
       }
-      
+
       if (they_overlap) {
-        if (method=="intersection" | method=="union") {
+        if (method == "intersection" | method == "union") {
           # Replace p1 by the union of p1 and p2, delete p2, reset length of strokes and reset p2=p1+1
           # and keep only the first polygon (the rest are holes)
-          merge_result <- pdr_poly_clip(a, b, op = "union") |> dplyr::filter(i==1) 
+          merge_result <- pdr_poly_clip(a, b, op = "union") |>
+            dplyr::filter(i == 1)
           df <- df |>
             dplyr::group_by(i) |>
             dplyr::group_modify(\(grp, indx) {
-              if (grp$i != i_strokes[p1] & grp$i != i_strokes[p2]) { grp }
-              if (grp$i == i_strokes[p1]) { tibble::tibble(i=i_strokes[p1], x=merge_result$x, y=merge_result$y) } 
-              if (grp$i == i_strokes[p2]) { tibble::tibble(x=as.integer(), x=as.integer(), y=as.integer()) } 
+              if (grp$i != i_strokes[p1] & grp$i != i_strokes[p2]) {
+                grp
+              }
+              if (grp$i == i_strokes[p1]) {
+                tibble::tibble(
+                  i = i_strokes[p1],
+                  x = merge_result$x,
+                  y = merge_result$y
+                )
+              }
+              if (grp$i == i_strokes[p2]) {
+                tibble::tibble(
+                  x = as.integer(),
+                  x = as.integer(),
+                  y = as.integer()
+                )
+              }
             }) |>
             dplyr::ungroup()
-            #dplyr::filter(i != i_strokes[p1] & i != i_strokes[p2]) |> # Remove p1 and p2 from pd1 points data frame
-            #dplyr::bind_rows(tibble::tibble(i=i_strokes[p1], x=merge_result$x, y=merge_result$y)) # Add the merge result as p1 in the pd1 points data frame
-          print(paste0("Merged stroke ", i_strokes[p1] ," and ", i_strokes[p2]," with ",nrow(a), " and ",nrow(b), " points respectively into a new strokes with ",df|>dplyr::filter(i==i_strokes[p1])|>nrow()," points"))
-          i_strokes <- i_strokes[-p2] # Remove p2 from vector of stroke indices we are iterating          
-          n_strokes <- n_strokes-1
-          p2 <- p1+1
+          #dplyr::filter(i != i_strokes[p1] & i != i_strokes[p2]) |> # Remove p1 and p2 from pd1 points data frame
+          #dplyr::bind_rows(tibble::tibble(i=i_strokes[p1], x=merge_result$x, y=merge_result$y)) # Add the merge result as p1 in the pd1 points data frame
+          print(paste0(
+            "Merged stroke ",
+            i_strokes[p1],
+            " and ",
+            i_strokes[p2],
+            " with ",
+            nrow(a),
+            " and ",
+            nrow(b),
+            " points respectively into a new strokes with ",
+            df |> dplyr::filter(i == i_strokes[p1]) |> nrow(),
+            " points"
+          ))
+          i_strokes <- i_strokes[-p2] # Remove p2 from vector of stroke indices we are iterating
+          n_strokes <- n_strokes - 1
+          p2 <- p1 + 1
         } else {
           # The method is not 'merge', but something else (e.g. split) -- not yet implemented
         }
-      } else { 
+      } else {
         # if the do not overlap just move to the next stroke polygon
-        p2 <- p2+1
+        p2 <- p2 + 1
       }
     } # end of inner loop (p2)
-    p1 <- p1+1 # Advance p1
-    p2 <- p1+1 # Reset p2
-  } # end of out loop (p1)    
+    p1 <- p1 + 1 # Advance p1
+    p2 <- p1 + 1 # Reset p2
+  } # end of out loop (p1)
   return(df)
 }
