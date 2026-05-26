@@ -2,16 +2,15 @@
 % Please edit documentation in R/pdr_heatmap.R
 \name{pdr_create_heatmap}
 \alias{pdr_create_heatmap}
-\title{Create Heatmap Visualization of Pain Drawing Density by Groups}
+\title{across one or two stratification variables.}
 \usage{
 pdr_create_heatmap(
   .data,
-  id_col = "id",
+  paindrawr_data = pdr_data,
   variables = NULL,
   n_groups = c(2, 2),
   equal_n = TRUE,
   max_n = 1000,
-  tool = "pen",
   background_image = NULL,
   grid_size = 10,
   point_size = 0.25,
@@ -23,114 +22,138 @@ pdr_create_heatmap(
 )
 }
 \arguments{
-\item{.data}{A data frame containing drawing data with required columns:
-\code{id} (unique identifier),
-\code{p} (list column with coordinates),
-\code{s} (list column with stroke information),
-\code{w} (canvas width),
-\code{h} (canvas height),
-and the grouping variables specified in \code{variables}.}
+\item{.data}{A tibble with a single list-column of pain drawing data, as
+produced by \code{\link[=pdr_import_json]{pdr_import_json()}}. Each row holds a named list containing
+the drawing data for one recording. The name of that list-column is
+specified via \code{paindrawr_data}. All drawings must share the same canvas
+dimensions (\code{.width} and \code{.height}). Any additional columns (e.g.
+grouping variables) are preserved and available via \code{variables}.}
 
-\item{id_col}{Character. Name of the ID column. Default is "id".}
+\item{paindrawr_data}{The name of the list-column in \code{.data} that contains
+the pain drawing data. Defaults to \code{pdr_data}. The column is unpacked with
+\code{\link[tidyr:unnest_wider]{tidyr::unnest_wider()}} before processing; the resulting columns are
+expected to include \code{.id}, \code{.width}, \code{.height}, \code{.strokes}, \code{.points},
+\code{.tool}, \code{.tool_width}, \code{.color}, \code{.alpha}, \code{.spray_radius}, and
+\code{.point_density}.}
 
 \item{variables}{Character vector of length 1 or 2 specifying the grouping
-variable names. For numeric variables, they will be binned into quantile
-groups. For categorical variables, existing levels will be used.}
+variable names present in \code{.data}. Numeric variables are binned into
+quantile groups; categorical variables use their existing levels.}
 
 \item{n_groups}{Integer vector matching the length of \code{variables}. Specifies
-the number of groups to create for each variable. Default is c(2, 2).}
+the number of groups to create for each variable. Default is \code{c(2, 2)}.
+For categorical variables, this must match the number of unique levels;
+if it does not, the actual number of levels is used with a message.}
 
-\item{equal_n}{Logical. If TRUE, balances sample sizes across groups by
-sampling. Default is TRUE.}
+\item{equal_n}{Logical. If \code{TRUE}, balances sample sizes across groups by
+sampling. Default is \code{TRUE}.}
 
 \item{max_n}{Integer. Maximum number of observations per group when
-\code{equal_n = TRUE}. Default is 1000.}
+\code{equal_n = TRUE}. Default is \code{1000}.}
 
-\item{tool}{Character. Which drawing tool to visualize: "pen" or "spray".
-Default is "pen".}
+\item{background_image}{Optional background image displayed behind the
+heatmap. Accepts either:
+\itemize{
+\item A file path to a PNG file (character string), or
+\item A numeric array as returned by \code{\link[png:readPNG]{png::readPNG()}}.
+}
 
-\item{background_image}{Optional. Background image for the plot. Can be:
-(1) a file path to a PNG image, or (2) a numeric array from png::readPNG().
-Default is NULL.}
+Defaults to \code{NULL} (no background).}
 
 \item{grid_size}{Integer. Coordinate binning resolution in pixels. Smaller
-values create finer grids but slower computation. Default is 10.}
+values create finer grids but increase computation time. Default is \code{10}.
+Recommended range is 5–50 pixels; a warning is issued outside this range.}
 
-\item{point_size}{Numeric. Size of points in the heatmap. Default is 0.25.}
+\item{point_size}{Numeric. Size of points in the heatmap. Default is \code{0.25}.}
 
-\item{min_alpha}{Numeric. Minimum alpha value for points. Default is 0.1.}
+\item{min_alpha}{Numeric. Minimum alpha value for points. Default is \code{0.1}.}
 
-\item{color_scale}{Character or numeric. How to scale colors: "max" scales
-across all facets using the maximum density value, "facet" scales within
-each facet independently, or a numeric value to set a specific maximum.
-Default is "max".}
+\item{color_scale}{Character or numeric. How to scale colours across facets:
+\itemize{
+\item \code{"max"} (default) — scales all facets to the global maximum density.
+\item \code{"facet"} — each facet is scaled independently.
+\item A numeric value — sets a specific upper limit for the colour scale.
+}}
 
-\item{label_format}{Character. Format for quantile labels: "pct" for
-percentages, "num" for numeric ranges, or "both" for combined markdown
-labels. Default is "pct".}
+\item{label_format}{Character. Format for quantile group labels:
+\itemize{
+\item \code{"pct"} (default) — percentage ranges.
+\item \code{"num"} — numeric ranges.
+\item \code{"both"} — combined markdown labels (requires \code{strips_in_markdown = TRUE}).
+}}
 
-\item{show_n}{Logical. If TRUE, displays sample sizes as text in facet
-strips. Default is TRUE.}
+\item{show_n}{Logical. If \code{TRUE}, displays sample sizes as text in facet
+strips. Default is \code{TRUE}.}
 
-\item{strips_in_markdown}{Logical. If TRUE, renders strip text using
-\code{ggtext::element_markdown()}, enabling markdown and HTML formatting
-in facet labels. Required when \code{label_format = "both"}. Default is TRUE.}
+\item{strips_in_markdown}{Logical. If \code{TRUE}, renders strip text using
+\code{\link[ggtext:element_markdown]{ggtext::element_markdown()}}, enabling markdown and HTML formatting in
+facet labels. Required when \code{label_format = "both"}. Default is \code{TRUE}.}
 }
 \value{
-Returns a list with:
-\item{plot}{ggplot2 object}
-\item{data}{data frame with density calculations}
-If save_plot is TRUE, saves PNG file(s) and returns a message.
+A named list with two elements:
+\item{plot}{A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object with the faceted heatmap.}
+\item{data}{A tibble with the density calculations underlying the plot,
+containing columns \code{.id}, \code{.index}, \code{.q}, \code{.tool}, \code{.tool_width},
+\code{.color}, \code{.alpha}, \code{.spray_radius}, \code{.point_density}, grouping columns
+(\code{.VAR1_grp}, optionally \code{.VAR2_grp}), \code{.x}, \code{.y}, \code{x_bin}, \code{y_bin},
+\code{n_id_at_location}, \code{n_group}, and \code{pct}.}
 }
 \description{
-This function creates faceted density heatmaps showing how pain location
-patterns vary across one or two stratification variables. It supports both
-pen and spray tool types (but not simultaneously) and can display sample
-sizes per group.
+across one or two stratification variables.
 }
 \details{
-The function processes data by:
-\itemize{
-\item Creating stratification groups (quantile binning for numeric variables)
-\item Optionally balancing sample sizes across groups
-\item Unnesting coordinate data from nested columns
-\item Binning coordinates into grid cells
-\item Calculating pain density (percentage of participants per location)
-\item Creating faceted heatmap with viridis color scale
+The function processes data in the following steps:
+\enumerate{
+\item Validates inputs and unpacks the \code{paindrawr_data} list-column with
+\code{\link[tidyr:unnest_wider]{tidyr::unnest_wider()}}.
+\item Extracts canvas dimensions from \code{.width} and \code{.height}; all drawings
+must share identical dimensions.
+\item Creates stratification groups (quantile binning for numeric
+variables, existing levels for categorical variables).
+\item Optionally balances sample sizes across groups.
+\item Unnests \code{.strokes} and \code{.points} and joins them on \code{.id} and
+\code{.index}.
+\item Recreates spray effects for any rows where \code{.tool == "spray"}.
+\item Bins coordinates into grid cells and calculates pain density as the
+percentage of participants with a mark at each location.
+\item Renders a faceted heatmap with a viridis colour scale.
 }
-
-For spray tool data, the function recreates spray effects similar to
-pdr_recreate_drawing(). Grid size determines visualization resolution;
-smaller values (e.g., 5) produce finer detail but are slower.
 }
 \section{Warnings}{
 
 The function will warn when:
 \itemize{
-\item Creating more than 16 facets (may be slow)
-\item Grid size is outside recommended range (5-50 pixels)
-\item Removing NA values from grouping variables
+\item More than 16 facets are created (may be slow).
+\item \code{grid_size} is outside the recommended range of 5–50 pixels.
+\item NA values are removed from grouping variables.
+\item Both pen and spray tools are detected in the same dataset.
 }
 }
 
 \examples{
 \dontrun{
 # Two-way stratification
-pdr_create_heatmap(
-  drawing_data,
-  variables = c("age_group", "pain_duration"),
-  n_groups = c(3, 2)
-)
+pd |>
+  pdr_create_heatmap(
+    variables = c("age_group", "pain_duration"),
+    n_groups = c(3, 2)
+  )
 
 # Single variable with custom settings
-result <- pdr_create_heatmap(
-  drawing_data,
-  variables = "pain_intensity",
-  n_groups = 4,
-  tool = "spray",
-  grid_size = 5,
-  save_plot = FALSE
-)
+result <- pd |>
+  pdr_create_heatmap(
+    variables = "pain_intensity",
+    n_groups = 4,
+    grid_size = 5,
+    background_image = "inst/background.png"
+  )
+
+# Use a custom list-column name
+pd |>
+  pdr_create_heatmap(
+    paindrawr_data = my_col,
+    variables = "group"
+  )
 }
 
 }

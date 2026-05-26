@@ -1,98 +1,117 @@
-#' Create Heatmap Visualization of Pain Drawing Density by Groups
+# Creates faceted density heatmaps showing how pain location patterns vary
+#' across one or two stratification variables.
 #'
-#' This function creates faceted density heatmaps showing how pain location
-#' patterns vary across one or two stratification variables. It supports both
-#' pen and spray tool types (but not simultaneously) and can display sample
-#' sizes per group.
-#'
-#' @param .data A data frame containing drawing data with required columns:
-#'   `id` (unique identifier),
-#'   `p` (list column with coordinates),
-#'   `s` (list column with stroke information),
-#'   `w` (canvas width),
-#'   `h` (canvas height),
-#'   and the grouping variables specified in `variables`.
-#' @param id_col Character. Name of the ID column. Default is "id".
+#' @param .data A tibble with a single list-column of pain drawing data, as
+#'   produced by [pdr_import_json()]. Each row holds a named list containing
+#'   the drawing data for one recording. The name of that list-column is
+#'   specified via `paindrawr_data`. All drawings must share the same canvas
+#'   dimensions (`.width` and `.height`). Any additional columns (e.g.
+#'   grouping variables) are preserved and available via `variables`.
+#' @param paindrawr_data The name of the list-column in `.data` that contains
+#'   the pain drawing data. Defaults to `pdr_data`. The column is unpacked with
+#'   [tidyr::unnest_wider()] before processing; the resulting columns are
+#'   expected to include `.id`, `.width`, `.height`, `.strokes`, `.points`,
+#'   `.tool`, `.tool_width`, `.color`, `.alpha`, `.spray_radius`, and
+#'   `.point_density`.
 #' @param variables Character vector of length 1 or 2 specifying the grouping
-#'   variable names. For numeric variables, they will be binned into quantile
-#'   groups. For categorical variables, existing levels will be used.
+#'   variable names present in `.data`. Numeric variables are binned into
+#'   quantile groups; categorical variables use their existing levels.
 #' @param n_groups Integer vector matching the length of `variables`. Specifies
-#'   the number of groups to create for each variable. Default is c(2, 2).
-#' @param equal_n Logical. If TRUE, balances sample sizes across groups by
-#'   sampling. Default is TRUE.
+#'   the number of groups to create for each variable. Default is `c(2, 2)`.
+#'   For categorical variables, this must match the number of unique levels;
+#'   if it does not, the actual number of levels is used with a message.
+#' @param equal_n Logical. If `TRUE`, balances sample sizes across groups by
+#'   sampling. Default is `TRUE`.
 #' @param max_n Integer. Maximum number of observations per group when
-#'   `equal_n = TRUE`. Default is 1000.
-#' @param tool Character. Which drawing tool to visualize: "pen" or "spray".
-#'   Default is "pen".
-#' @param background_image Optional. Background image for the plot. Can be:
-#'   (1) a file path to a PNG image, or (2) a numeric array from png::readPNG().
-#'   Default is NULL.
-#' @param grid_size Integer. Coordinate binning resolution in pixels. Smaller
-#'   values create finer grids but slower computation. Default is 10.
-#' @param point_size Numeric. Size of points in the heatmap. Default is 0.25.
-#' @param min_alpha Numeric. Minimum alpha value for points. Default is 0.1.
-#' @param color_scale Character or numeric. How to scale colors: "max" scales
-#'   across all facets using the maximum density value, "facet" scales within
-#'   each facet independently, or a numeric value to set a specific maximum.
-#'   Default is "max".
-#' @param label_format Character. Format for quantile labels: "pct" for
-#'   percentages, "num" for numeric ranges, or "both" for combined markdown
-#'   labels. Default is "pct".
-#' @param show_n Logical. If TRUE, displays sample sizes as text in facet
-#'   strips. Default is TRUE.
-#' @param strips_in_markdown Logical. If TRUE, renders strip text using
-#'   \code{ggtext::element_markdown()}, enabling markdown and HTML formatting
-#'   in facet labels. Required when \code{label_format = "both"}. Default is TRUE.
+#'   `equal_n = TRUE`. Default is `1000`.
+#' @param background_image Optional background image displayed behind the
+#'   heatmap. Accepts either:
+#'   * A file path to a PNG file (character string), or
+#'   * A numeric array as returned by [png::readPNG()].
 #'
-#' @return Returns a list with:
-#'   \item{plot}{ggplot2 object}
-#'   \item{data}{data frame with density calculations}
-#'   If save_plot is TRUE, saves PNG file(s) and returns a message.
+#'   Defaults to `NULL` (no background).
+#' @param grid_size Integer. Coordinate binning resolution in pixels. Smaller
+#'   values create finer grids but increase computation time. Default is `10`.
+#'   Recommended range is 5–50 pixels; a warning is issued outside this range.
+#' @param point_size Numeric. Size of points in the heatmap. Default is `0.25`.
+#' @param min_alpha Numeric. Minimum alpha value for points. Default is `0.1`.
+#' @param color_scale Character or numeric. How to scale colours across facets:
+#'   * `"max"` (default) — scales all facets to the global maximum density.
+#'   * `"facet"` — each facet is scaled independently.
+#'   * A numeric value — sets a specific upper limit for the colour scale.
+#' @param label_format Character. Format for quantile group labels:
+#'   * `"pct"` (default) — percentage ranges.
+#'   * `"num"` — numeric ranges.
+#'   * `"both"` — combined markdown labels (requires `strips_in_markdown = TRUE`).
+#' @param show_n Logical. If `TRUE`, displays sample sizes as text in facet
+#'   strips. Default is `TRUE`.
+#' @param strips_in_markdown Logical. If `TRUE`, renders strip text using
+#'   [ggtext::element_markdown()], enabling markdown and HTML formatting in
+#'   facet labels. Required when `label_format = "both"`. Default is `TRUE`.
+#'
+#' @return A named list with two elements:
+#'   \item{plot}{A [ggplot2::ggplot()] object with the faceted heatmap.}
+#'   \item{data}{A tibble with the density calculations underlying the plot,
+#'     containing columns `.id`, `.index`, `.q`, `.tool`, `.tool_width`,
+#'     `.color`, `.alpha`, `.spray_radius`, `.point_density`, grouping columns
+#'     (`.VAR1_grp`, optionally `.VAR2_grp`), `.x`, `.y`, `x_bin`, `y_bin`,
+#'     `n_id_at_location`, `n_group`, and `pct`.}
 #'
 #' @details
-#' The function processes data by:
-#' \itemize{
-#'   \item Creating stratification groups (quantile binning for numeric variables)
-#'   \item Optionally balancing sample sizes across groups
-#'   \item Unnesting coordinate data from nested columns
-#'   \item Binning coordinates into grid cells
-#'   \item Calculating pain density (percentage of participants per location)
-#'   \item Creating faceted heatmap with viridis color scale
+#' The function processes data in the following steps:
+#' \enumerate{
+#'   \item Validates inputs and unpacks the `paindrawr_data` list-column with
+#'     [tidyr::unnest_wider()].
+#'   \item Extracts canvas dimensions from `.width` and `.height`; all drawings
+#'     must share identical dimensions.
+#'   \item Creates stratification groups (quantile binning for numeric
+#'     variables, existing levels for categorical variables).
+#'   \item Optionally balances sample sizes across groups.
+#'   \item Unnests `.strokes` and `.points` and joins them on `.id` and
+#'     `.index`.
+#'   \item Recreates spray effects for any rows where `.tool == "spray"`.
+#'   \item Bins coordinates into grid cells and calculates pain density as the
+#'     percentage of participants with a mark at each location.
+#'   \item Renders a faceted heatmap with a viridis colour scale.
 #' }
-#'
-#' For spray tool data, the function recreates spray effects similar to
-#' pdr_recreate_drawing(). Grid size determines visualization resolution;
-#' smaller values (e.g., 5) produce finer detail but are slower.
 #'
 #' @section Warnings:
 #' The function will warn when:
 #' \itemize{
-#'   \item Creating more than 16 facets (may be slow)
-#'   \item Grid size is outside recommended range (5-50 pixels)
-#'   \item Removing NA values from grouping variables
+#'   \item More than 16 facets are created (may be slow).
+#'   \item `grid_size` is outside the recommended range of 5–50 pixels.
+#'   \item NA values are removed from grouping variables.
+#'   \item Both pen and spray tools are detected in the same dataset.
 #' }
 #'
 #' @examples
 #' \dontrun{
 #' # Two-way stratification
-#' pdr_create_heatmap(
-#'   drawing_data,
-#'   variables = c("age_group", "pain_duration"),
-#'   n_groups = c(3, 2)
-#' )
+#' pd |>
+#'   pdr_create_heatmap(
+#'     variables = c("age_group", "pain_duration"),
+#'     n_groups = c(3, 2)
+#'   )
 #'
 #' # Single variable with custom settings
-#' result <- pdr_create_heatmap(
-#'   drawing_data,
-#'   variables = "pain_intensity",
-#'   n_groups = 4,
-#'   tool = "spray",
-#'   grid_size = 5,
-#'   save_plot = FALSE
-#' )
+#' result <- pd |>
+#'   pdr_create_heatmap(
+#'     variables = "pain_intensity",
+#'     n_groups = 4,
+#'     grid_size = 5,
+#'     background_image = "inst/background.png"
+#'   )
+#'
+#' # Use a custom list-column name
+#' pd |>
+#'   pdr_create_heatmap(
+#'     paindrawr_data = my_col,
+#'     variables = "group"
+#'   )
 #' }
 #'
-#' @importFrom dplyr select mutate filter full_join join_by n_distinct slice_sample summarize all_of count left_join distinct pull n
+#' @importFrom dplyr select mutate filter full_join join_by n_distinct slice_sample summarize all_of count left_join distinct pull n count left_join distinct pull
+#' @importFrom tidyr unnest_wider
 #' @importFrom tidyr unnest uncount
 #' @importFrom rlang sym
 #' @importFrom png readPNG
@@ -109,7 +128,6 @@ pdr_create_heatmap <- function(
   n_groups = c(2, 2),
   equal_n = TRUE,
   max_n = 1000,
-  tool = "pen",
   background_image = NULL,
   grid_size = 10,
   point_size = 0.25,
