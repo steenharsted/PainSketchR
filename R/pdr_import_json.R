@@ -55,30 +55,32 @@
 #' pdr_import_json(pdr_demo_filepath_json_file_1) |>
 #'   pdr_recreate_drawing()
 
-
 pdr_import_json <- function(files) {
   # This file imports json output from the redcap module PainDrawR
 
   # Sanity check on `files`
   if (is.list(files)) {
-    files <- files |> purrr::map_chr(\(element) {as.character(element)})
+    files <- files |>
+      purrr::map_chr(\(element) {
+        as.character(element)
+      })
   }
-  if(!is.character(files) || length(files)==0) {
+  if (!is.character(files) || length(files) == 0) {
     warning("No JSON files specified")
     return(list())
   }
-  
+
   # Iterate files and parse data
   result <- list()
-  for(f in files) {
+  for (f in files) {
     # Sanity check -- does such a file exist?
-    if(!file.exists(f)) {
-      warning(paste0("Non-exisiting JSON files specified: ",f))
+    if (!file.exists(f)) {
+      warning(paste0("Non-exisiting JSON files specified: ", f))
       result <- result |> purrr::list_assign(list()) # Add empty element
     } else {
       # Sanity check -- is content valid json?
       content <- readLines(f)
-      if(!jsonlite::validate(content)) {
+      if (!jsonlite::validate(content)) {
         warning("File content could not be validated as JSON")
         result <- result |> purrr::list_assign(list()) # Add empty element
       } else {
@@ -87,7 +89,10 @@ pdr_import_json <- function(files) {
         tmp$.file <- f # store the file name
         tmp$.points <- tmp$s$p # p is stored as list col in 's' so move up a level..
         tmp$.strokes <- tmp$s |> dplyr::select(-p) |> tibble::as_tibble() # ..and remove from s
-        tmp$.points <- tmp$.points |> purrr::imap_dfr(\(element, indx) {tibble::tibble(i=indx, x=element[,1], y=element[,2])})
+        tmp$.points <- tmp$.points |>
+          purrr::imap_dfr(\(element, indx) {
+            tibble::tibble(i = indx, x = element[, 1], y = element[, 2])
+          })
         tmp$.id = tmp$id
         tmp$.file = tmp$file
         tmp$.version = tmp$v
@@ -97,9 +102,22 @@ pdr_import_json <- function(files) {
         tmp$.timestamp = tmp$ts
         tmp$.app = tmp$app
         tmp <- tmp[startsWith(names(tmp), ".")]
-        tmp$.points <- tmp$.points |> dplyr::rename(.index=i, .x=x, .y=y)
-        tmp$.strokes <- tmp$.strokes |> dplyr::rename(.index=i, .q=q, .tool=t, .tool_width=bw, .color=c, .alpha=a)
-        result <- c(result , list(tmp))
+        tmp$.points <- tmp$.points |>
+          dplyr::rename(.index = i, .x = x, .y = y) |>
+          # Invert Y (We want 0,0 in lower left corner)
+          dplyr::mutate(.y = tmp$.height - .y)
+        tmp$.strokes <- tmp$.strokes |>
+          dplyr::rename(
+            .index = i,
+            .q = q,
+            .tool = t,
+            .tool_width = bw,
+            .color = c,
+            .alpha = a,
+            .spray_radius = pr,
+            .point_density = pd
+          )
+        result <- c(result, list(tmp))
       }
     }
   }

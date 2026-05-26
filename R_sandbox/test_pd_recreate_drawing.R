@@ -6,80 +6,64 @@ background_image <- png::readPNG("inst/extdata/mird_body_background.png")
 
 # Load sample data
 
-# pd <- pdr_import_json(c(
-#   "data-raw/test_spray.json",
-#   "data-raw/test_spray_bw.json",
-#   "data-raw/Anon_pen_spray.json",
-#   "data-raw/col_alpha_01_to_10.json"
-# ))
-
-
-# pd <- pdr_import_json(c(
-#   "data-raw/test_spray.json",
-#   "data-raw/col_alpha_01_to_10.json"
-# ))
-
-
 pd <- tibble(pdr_data = pdr_example_data)
 
 # Get ID
-pd <- pd |> 
+pd <- pd |>
   mutate(
-    id = map_chr(.x = pdr_data, 
-    .f = \(x) x$id), 
+    id = map_chr(.x = pdr_data, .f = \(x) x$.id),
     .before = pdr_data
   )
 
 pd
 
-pd |> 
+pd |>
   unnest_wider(pdr_data)
 
-
-pd |> 
-  select(-id) |> 
-  unnest_wider(pdr_data)
-
-
-pd |> 
-  unnest_wider(pdr_data, names_repair = "universal")
-
-
-pd |> 
-  filter(row_number() == 2) |> 
-  select(-id) |> 
+pd |>
+  filter(row_number() == 2) |>
   pdr_recreate_drawing(
     background_image = background_image
   )
 
 
 ## Test new function
-pd |> 
-  filter(row_number() < 5) |> 
-  select(-id) |> 
+pd |>
+  filter(row_number() < 5) |>
   pdr_recreate_drawing(
     background_image = background_image
   )
 
 ## Vizualize with new function and changed default name
-pd |> 
-  filter(row_number() < 5) |> 
-  select(-id) |> 
-  rename(new_name = pdr_data) |> 
+pd |>
+  filter(row_number() < 5) |>
+  rename(new_name = pdr_data) |>
   pdr_recreate_drawing(
-    background_image = background_image, 
+    background_image = background_image,
     paindrawr_data = new_name
   )
 
 
+##### Sample data with spray
 
+pd <-
+  tibble(
+    pdr_data = pdr_import_json(c(
+      "data-raw/test_spray.json",
+      "data-raw/test_spray_bw.json",
+      "data-raw/Anon_pen_spray.json",
+      "data-raw/col_alpha_01_to_10.json"
+    ))
+  )
 
-
-#####
+# pd <- pdr_import_json(c(
+#   "data-raw/test_spray.json",
+#   "data-raw/col_alpha_01_to_10.json"
+# ))
 
 # No background image
 pd |>
-  dplyr::filter(id == "test_spray") |>
+  dplyr::filter(row_number() == 1) |>
   pdr_recreate_drawing()
 
 # Background image

@@ -87,24 +87,23 @@ pdr_recreate_drawing <- function(
   dpi = 96,
   type = "path"
 ) {
-  
   # Making sure data has required columns
   #pdr_check_data(.data, verbose = FALSE)
 
   # Unnest list
-  .data <- .data |> tidyr::unnest_wider({{paindrawr_data}})
+  .data <- .data |> tidyr::unnest_wider({{ paindrawr_data }})
 
   # Validate method argument
   method <- match.arg(method, choices = c("memory", "file"))
 
   # Test that we only 1 height and width value, respectively
   if (
-    (.data$w |> unique() |> length() > 1) ||
-      (.data$h |> unique() |> length() > 1)
+    (.data$.width |> unique() |> length() > 1) ||
+      (.data$.height |> unique() |> length() > 1)
   ) {
     cli::cli_abort(
       "All drawings must share the same canvas dimensions, but multiple
-      values of {.field w} or {.field h} were found. Process one canvas
+      values of {.field .width} or {.field .height} were found. Process one canvas
       size at a time."
     )
   }
@@ -144,34 +143,34 @@ pdr_recreate_drawing <- function(
   }
 
   # Extract height and width
-  image_width <- .data$w |> unique()
-  image_height <- .data$h |> unique()
+  image_width <- .data$.width |> unique()
+  image_height <- .data$.height |> unique()
 
   # Unnest and Join the s and p columns
   pdr_s <- .data |>
-    dplyr::select(id, s) |>
-    tidyr::unnest(cols = s)
+    dplyr::select(.id, .strokes) |>
+    tidyr::unnest(cols = .strokes)
 
   pdr_p <- .data |>
-    dplyr::select(id, p) |>
-    tidyr::unnest(cols = p)
+    dplyr::select(.id, .points) |>
+    tidyr::unnest(cols = .points)
 
-  .data <- dplyr::full_join(pdr_s, pdr_p, by = dplyr::join_by(id, i))
+  .data <- dplyr::full_join(pdr_s, pdr_p, by = dplyr::join_by(.id, .index))
 
   # map bw to size in mm using scale_bw funtion
   .data <- .data |>
     dplyr::mutate(
-      size_mm = pdr_scale_bw(bw)
+      size_mm = pdr_scale_bw(.tool_width)
     )
 
   ## Spray and Pen needs to be plotted differently
   ## We achieve this by making a coordinate set for Spray and Pen, respectively
 
   pdr_pen <- .data |>
-    dplyr::filter(t == "pen")
+    dplyr::filter(.tool == "pen")
 
   pdr_spray <- .data |>
-    dplyr::filter(t == "spray")
+    dplyr::filter(.tool == "spray")
 
   ### Recreate jitter in spray Data
   ### But only if spray data exists
@@ -180,21 +179,21 @@ pdr_recreate_drawing <- function(
     pdr_spray <- pdr_spray |>
 
       # Create extra rows according to spray density (pd)
-      tidyr::uncount(weights = .data$pd) |>
+      tidyr::uncount(weights = .data$.point_density) |>
 
       # Generate random angles and radii for uniform distribution within a circle
       # pr holds information about the spray radius
       dplyr::mutate(
         angle = runif(dplyr::n(), 0, 2 * pi),
-        radius = sqrt(runif(dplyr::n(), 0, 1)) * pr
+        radius = sqrt(runif(dplyr::n(), 0, 1)) * .spray_radius
       ) |>
 
       # Calculate offsets and new x, y positions
       dplyr::mutate(
         offsetX = radius * cos(angle),
         offsetY = radius * sin(angle),
-        x = x + offsetX,
-        y = y + offsetY
+        x = .x + offsetX,
+        y = .y + offsetY
       )
   }
 
@@ -203,10 +202,10 @@ pdr_recreate_drawing <- function(
   ### Base plot
   pdr_base <- pdr_pen |>
     ggplot2::ggplot(ggplot2::aes(
-      x = x,
-      y = y,
-      color = c,
-      alpha = a / 255
+      x = .x,
+      y = .y,
+      color = .color,
+      alpha = .alpha / 255
     ))
 
   ### If background image is provided, we plot it now
@@ -236,7 +235,7 @@ pdr_recreate_drawing <- function(
       ggplot2::scale_linewidth_identity() +
       ggplot2::geom_polygon(
         ggplot2::aes(
-          group = paste0(id, "_", i),
+          group = paste0(.id, "_", .index),
           linewidth = size_mm + 1
         ),
         linetype = 1,
@@ -258,7 +257,7 @@ pdr_recreate_drawing <- function(
       ggplot2::scale_linewidth_identity() +
       ggplot2::geom_path(
         ggplot2::aes(
-          group = paste0(id, "_", i),
+          group = paste0(.id, "_", .index),
           linewidth = size_mm + 1
         ),
         linetype = 1
@@ -273,7 +272,7 @@ pdr_recreate_drawing <- function(
     )
 
   plot_out <- plot_out +
-    ggplot2::facet_wrap(facets = ~id)
+    ggplot2::facet_wrap(facets = ~.id)
 
   if (!include_id) {
     plot_out <- plot_out +
