@@ -113,7 +113,6 @@
 #' @importFrom dplyr select mutate filter full_join join_by n_distinct slice_sample summarize all_of count left_join distinct pull n count left_join distinct pull
 #' @importFrom tidyr unnest_wider
 #' @importFrom tidyr unnest uncount
-#' @importFrom rlang sym
 #' @importFrom png readPNG
 #' @importFrom scales percent
 #' @importFrom ggplot2 ggplot aes coord_fixed theme_minimal scale_colour_viridis_c geom_jitter facet_wrap facet_grid annotation_raster labs theme element_rect element_blank element_text geom_text guide_colorbar guides vars
