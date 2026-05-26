@@ -6,92 +6,71 @@
 \usage{
 pdr_sanitize(
   pd,
-  noarea_action = "buffer",
-  buffer_delta = 5,
+  blank2na = TRUE,
+  noarea = "buffer",
+  buffer_delta = as.integer(5),
+  simplify = TRUE,
   chull = FALSE,
-  overlaps = "nothing",
-  close_polygon = FALSE
+  overlaps = "union",
+  close_polygon = TRUE
 )
 }
 \arguments{
-\item{noarea_action}{Character string specifying how to handle strokes with
+\item{pd}{A pain drawing data structure (see \code{\link[=pdr_check_data]{pdr_check_data()}}).}
+
+\item{noarea}{Character string specifying how to handle strokes with
 fewer than 3 points. One of:
 \itemize{
 \item \code{"drop"}
-\item \code{"buffer"}
+\item \code{"buffer"} (default)
 }}
 
 \item{buffer_delta}{Integer buffer radius (in coordinate units) used when
 \code{noarea_action = "buffer"}.}
 
+\item{simplify}{Clean strokes/polygons of self-intersections and duplicate vertices}
+
 \item{chull}{Logical. If \code{TRUE}, replace each stroke with its convex hull.}
 
-\item{overlaps}{Character string controlling how overlapping polygons are handled.
-See \code{\link[=pdr_poly_manage_overlaps]{pdr_poly_manage_overlaps()}} for available options.}
+\item{overlaps}{Character string controlling how overlapping polygons are handled:
+\itemize{
+\item \code{"nothing"} leaves overlaps untouched
+\item \code{"union"} merges strokes that connect or overlap
+\item \code{"intersection"} merges strokes that overlap
+}}
 
 \item{close_polygon}{Logical. If \code{TRUE}, ensures that the first and last
 coordinate of each stroke are identical.}
-
-\item{p}{A pain drawing data structure or a \code{p} list-column.}
 }
 \value{
-If \code{p} is a pain drawing data structure, returns the same structure with a
-modified \code{p} column.
-
-If \code{p} is a list-column, returns a cleaned list-column of the same length.
+Return as pain drawing data structure of the same length as input \code{pd}.
 }
 \description{
-Processes stroke coordinate data (\code{p} column) by removing
+Processes stroke coordinate data (\code{.points} column) by removing
 self-intersections, optionally buffering strokes with
 no area, simplifying polygons, and applying additional
 geometric transformations.
 }
 \details{
-The function accepts either:
-\itemize{
-\item a full pain drawing data structure (see \code{\link[=pdr_check_data]{pdr_check_data()}})
-\itemize{
-\item In this case the \code{p} column is modified and the full data structure is returned.
-}
-\item a \code{p} list-column from such a structure
-\itemize{
-\item In this case a replacement \code{p} column is return, useful for \code{mutate()} calls
-}
-}
+The function accepts a valid pain drawing data structure
+as input (see \code{\link[=pdr_check_data]{pdr_check_data()}}) as well as a number of
+parameters specified below:
 
 The following operations are applied in order:
 \enumerate{
-\item \strong{No-area-stroke handling} (points or lines with < 3 vertices)
-Controlled by \code{noarea_action}:
-\itemize{
-\item \code{"drop"}: remove such strokes
-\item \code{"buffer"}: expand them into polygons using a buffer of size \code{buffer_delta}
-}
-\item \strong{Polygon simplification}
-\itemize{
-\item Removes self-intersections
-\item Removes duplicated vertices
-}
-\item \strong{Convex hull transformation} (optional)
-\itemize{
-\item If \code{chull = TRUE}, each stroke is replaced by its convex hull
-}
-\item \strong{Overlap handling} (optional)
-\itemize{
-\item Controlled by \code{overlaps},
-}
-\item \strong{Polygon closure} (optional)
-\itemize{
-\item If \code{close_polygon = TRUE}, ensures each stroke forms a closed ring
+\item \strong{Sequential duplicates} of coordinate points are removed.
+This is always enforced and should only be applied to
+'pen' drawings (as opposed to spray drawings).
+\item \strong{Blank drawings} (i.e. no drawing data) are converted to NA
+\item \strong{No-area-stroke} Remove or buffer strokes with no area.
+\item \strong{Buffer delta} Set size of no-area-strokes buffering.
+\item \strong{Polygon simplification} Remove self-intersections, or not.
+\item \strong{Convex hull transformation} Convert all strokes into their
+convex hull.
+\item \strong{Polygon closure} Close stroke polygons.
+\item \strong{Overlap handling} Handle overlapping strokes
 }
 }
-}
-\section{Warning}{
-
-Using \code{overlaps != "nothing"} may invalidate the correspondence between the
-\code{p} and \code{s} columns (stroke indices). Consider writing results to a new column.
-}
-
 \examples{
 # Clean only the p column
 pdr_demo_data$p <- pdr_sanitize(pdr_demo_data$p)

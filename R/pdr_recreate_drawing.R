@@ -1,4 +1,6 @@
-#' Validate and process background_imageRenders stroke and spray data from a pain drawing tibble into a ggplot,
+#' Recreate a pain drawing as a ggplot
+#'
+#' Renders stroke and spray data from a pain drawing tibble into a ggplot,
 #' optionally composited with a background image. When `rasterize = TRUE`
 #' (default), the plot is rasterized and returned as a pixel-accurate raster
 #' layer — preserving exact canvas proportions. When
@@ -7,16 +9,24 @@
 #' Multiple drawings are arranged with [ggplot2::facet_wrap()]. A warning is
 #' issued when more than 9 drawings are passed, as rendering may be slow.
 #'
-#' @param .data A pain drawing tibble as produced by [pdr_import_json()]. Must
-#'   contain columns `id`, `s`, `p`, `w`, and `h`. All drawings must share the
-#'   same canvas dimensions (`w` and `h`).
+#' @param .data A tibble with a single list-column of pain drawing data, as
+#'   produced by [pdr_import_json()]. Each row holds a named list containing
+#'   the drawing data for one recording. The name of that list-column is
+#'   specified via `paindrawr_data`. All drawings must share the same canvas
+#'   dimensions (`.width` and `.height`).
+#' @param paindrawr_data The name of the list-column in `.data` that contains
+#'   the pain drawing data. Defaults to `pdr_data`. The column is unpacked with
+#'   [tidyr::unnest_wider()] before processing; the resulting columns are
+#'   expected to include `.id`, `.width`, `.height`, `.strokes`, `.points`,
+#'   `.tool`, `.tool_width`, `.color`, `.alpha`, `.spray_radius`, and
+#'   `.point_density`.
 #' @param background_image Optional background image displayed behind the
 #'   strokes. Accepts either:
 #'   * A file path to a PNG file (character string), or
 #'   * A numeric array as returned by [png::readPNG()].
 #'
 #'   Defaults to `NULL` (no background).
-#' @param include_id Logical. If `TRUE`, the `id` value is shown as a facet
+#' @param include_id Logical. If `TRUE`, the `.id` value is shown as a facet
 #'   strip label above each panel. Default is `FALSE`.
 #' @param rasterize Logical. If `TRUE` (default), the plot is rasterized and
 #'   returned as a new ggplot with [ggplot2::annotation_raster()]. The output
@@ -66,10 +76,13 @@
 #'
 #' # Show id labels in facet strips
 #' pd |> pdr_recreate_drawing(include_id = TRUE)
+#'
+#' # Use a custom list-column name
+#' pd |> pdr_recreate_drawing(paindrawr_data = my_col)
 #' }
 #'
 #' @importFrom dplyr select mutate filter full_join join_by n
-#' @importFrom tidyr unnest uncount
+#' @importFrom tidyr unnest unnest_wider uncount
 #' @importFrom png readPNG
 #' @importFrom ragg agg_capture
 #' @importFrom ggplot2 ggplot aes coord_fixed theme_void theme element_blank scale_color_identity scale_size_identity scale_alpha_identity scale_linewidth_identity geom_path geom_point facet_wrap annotation_raster ggsave
@@ -192,8 +205,8 @@ pdr_recreate_drawing <- function(
       dplyr::mutate(
         offsetX = radius * cos(angle),
         offsetY = radius * sin(angle),
-        x = .x + offsetX,
-        y = .y + offsetY
+        .x = .x + offsetX,
+        .y = .y + offsetY
       )
   }
 

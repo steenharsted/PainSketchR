@@ -2,14 +2,11 @@
 % Please edit documentation in R/pdr_recreate_drawing.R
 \name{pdr_recreate_drawing}
 \alias{pdr_recreate_drawing}
-\title{Validate and process background_imageRenders stroke and spray data from a pain drawing tibble into a ggplot,
-optionally composited with a background image. When \code{rasterize = TRUE}
-(default), the plot is rasterized and returned as a pixel-accurate raster
-layer — preserving exact canvas proportions. When
-\code{rasterize = FALSE}, the raw ggplot with vector strokes is returned instead.}
+\title{Recreate a pain drawing as a ggplot}
 \usage{
 pdr_recreate_drawing(
   .data,
+  paindrawr_data = pdr_data,
   background_image = NULL,
   include_id = FALSE,
   rasterize = TRUE,
@@ -20,9 +17,18 @@ pdr_recreate_drawing(
 )
 }
 \arguments{
-\item{.data}{A pain drawing tibble as produced by \code{\link[=pdr_import_json]{pdr_import_json()}}. Must
-contain columns \code{id}, \code{s}, \code{p}, \code{w}, and \code{h}. All drawings must share the
-same canvas dimensions (\code{w} and \code{h}).}
+\item{.data}{A tibble with a single list-column of pain drawing data, as
+produced by \code{\link[=pdr_import_json]{pdr_import_json()}}. Each row holds a named list containing
+the drawing data for one recording. The name of that list-column is
+specified via \code{paindrawr_data}. All drawings must share the same canvas
+dimensions (\code{.width} and \code{.height}).}
+
+\item{paindrawr_data}{The name of the list-column in \code{.data} that contains
+the pain drawing data. Defaults to \code{pdr_data}. The column is unpacked with
+\code{\link[tidyr:unnest_wider]{tidyr::unnest_wider()}} before processing; the resulting columns are
+expected to include \code{.id}, \code{.width}, \code{.height}, \code{.strokes}, \code{.points},
+\code{.tool}, \code{.tool_width}, \code{.color}, \code{.alpha}, \code{.spray_radius}, and
+\code{.point_density}.}
 
 \item{background_image}{Optional background image displayed behind the
 strokes. Accepts either:
@@ -33,7 +39,7 @@ strokes. Accepts either:
 
 Defaults to \code{NULL} (no background).}
 
-\item{include_id}{Logical. If \code{TRUE}, the \code{id} value is shown as a facet
+\item{include_id}{Logical. If \code{TRUE}, the \code{.id} value is shown as a facet
 strip label above each panel. Default is \code{FALSE}.}
 
 \item{rasterize}{Logical. If \code{TRUE} (default), the plot is rasterized and
@@ -73,6 +79,13 @@ aspect ratio. When \code{rasterize = FALSE}, the plot contains vector stroke
 layers and supports further ggplot2 additions.
 }
 \description{
+Renders stroke and spray data from a pain drawing tibble into a ggplot,
+optionally composited with a background image. When \code{rasterize = TRUE}
+(default), the plot is rasterized and returned as a pixel-accurate raster
+layer — preserving exact canvas proportions. When
+\code{rasterize = FALSE}, the raw ggplot with vector strokes is returned instead.
+}
+\details{
 Multiple drawings are arranged with \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}}. A warning is
 issued when more than 9 drawings are passed, as rendering may be slow.
 }
@@ -91,6 +104,9 @@ pd |> pdr_recreate_drawing(rasterize = FALSE)
 
 # Show id labels in facet strips
 pd |> pdr_recreate_drawing(include_id = TRUE)
+
+# Use a custom list-column name
+pd |> pdr_recreate_drawing(paindrawr_data = my_col)
 }
 
 }

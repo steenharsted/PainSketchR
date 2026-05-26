@@ -56,6 +56,8 @@ pd <-
     ))
   )
 
+background_image <- png::readPNG("inst/extdata/feet_background.png")
+
 # pd <- pdr_import_json(c(
 #   "data-raw/test_spray.json",
 #   "data-raw/col_alpha_01_to_10.json"
@@ -68,14 +70,14 @@ pd |>
 
 # Background image
 pd |>
-  dplyr::filter(id == "test_spray") |>
+  dplyr::filter(row_number() == 2) |>
   pdr_recreate_drawing(
     background_image = background_image
   )
 
 # Background image with id
 pd |>
-  dplyr::filter(id == "test_spray") |>
+  dplyr::filter(row_number() == 3) |>
   pdr_recreate_drawing(
     background_image = background_image,
     include_id = TRUE
@@ -84,7 +86,6 @@ pd |>
 
 # Background image no rasterize
 pd |>
-  dplyr::filter(id == "test_spray") |>
   pdr_recreate_drawing(
     background_image = "inst/extdata/feet_background.png",
     rasterize = TRUE
