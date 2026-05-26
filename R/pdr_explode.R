@@ -56,6 +56,7 @@
 
 pdr_explode <- function(pd) {
   if(!pdr_check_data(pd, verbose=FALSE)) {
+    pdr_check_data(pd, verbose=TRUE) # for the output..
     stop("`pd`is not valid pain drawing data.")
   }
 

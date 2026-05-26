@@ -19,8 +19,6 @@ If \code{verbose = TRUE}, diagnostic messages are emitted.
 If \code{verbose = TRUE}, diagnostic messages are emitted.
 }
 \description{
-A pain drawing data structure must comply with certain criteria -- see Details below. This function returns TRUE or FALSE and optionally emits diagnostic messages.
-
 A pain drawing data structure must comply with certain criteria -- see Details below.
 This function returns TRUE or FALSE and optionally emits diagnostic messages.
 }
@@ -30,49 +28,55 @@ A valid pain drawing data structure must satisfy all of the following:
 
 \strong{Top-level structure}
 \itemize{
-\item A tibble with one row per pain drawing
-\item Must contain columns: \code{id}, \code{coord}, \code{w}, \code{h}, \code{ts}, \code{s}, \code{p}
+\item An unnamed list with one element per pain drawing
 }
 
-\strong{Column types}
+\strong{Second-level structure}
 \itemize{
-\item \code{id}: character (unique identifier)
-\item \code{w}, \code{h}: integer
-\item \code{coord}, \code{ts}: character
-\item \code{s}, \code{p}: list columns
+\item A list with one named elment per variable
+\itemize{
+\item Must contain elements: \code{.id}, \code{.units}, \code{.width}, \code{.height}, \code{.timestamp}, \code{.strokes}, \code{.points}
+}
 }
 
-\strong{Column constraints}
+\strong{Second-level element types}
 \itemize{
-\item \code{id} values must be unique
+\item \code{.id}: character (unique identifier)
+\item \code{.width}, \code{.height}: integer
+\item \code{.units}, \code{.timestamp}: character or NA
+\item \code{.strokes}, \code{.points}: tibble or NA
 }
 
-\strong{\code{s} column (stroke metadata)}
-Each element must be either \code{NA} or a tibble with:
+\strong{Element constraints}
 \itemize{
-\item Columns: \code{i}, \code{q}, \code{t}, \code{bw}, \code{c}, \code{a}
+\item \code{.id} values must be unique
+}
+
+\strong{\code{.strokes} tibble or NA (stroke metadata)}
+If tibble, must be structured as:
+\itemize{
+\item Columns: \code{.index}, \code{.q}, \code{.tool}, \code{.tool_width}, \code{.color}, \code{.alpha}
 \item Types: integer, integer, character, integer, character, integer
-\item One row per stroke (\code{i} must be unique)
-\item Exactly one unique value of \code{c} per tibble
+\item One row per stroke (\code{.index} must be unique)
+\item Exactly one unique value of \code{.color} per tibble
 }
 
-\strong{\code{p} column (stroke coordinates)}
-Each element must be either \code{NA} or a tibble with:
+\strong{\code{.points} tibble or NA (stroke coordinates)}
+If tibble, must be structured as:
 \itemize{
-\item Columns: \code{i}, \code{x}, \code{y}
+\item Columns: \code{.index}, \code{.x}, \code{.y}
 \item All integer
-\item \code{i} values correspond to those in the matching \code{s} tibble
+\item \code{.index} values correspond to those in the matching \code{.strokes} tibble
 }
 
-#' \strong{Relationship between \code{s} and \code{p}}
+#' \strong{Relationship between \code{.strokes} and \code{.points}}
 \itemize{
-\item Each row represents one pain drawing
-\item The \code{s} tibble defines strokes (one row per stroke)
-\item The \code{p} tibble defines coordinates (multiple rows per stroke)
-\item The \code{i} column links them:
+\item The \code{.strokes} tibble defines strokes (one row per stroke)
+\item The \code{.points} tibble defines coordinates (multiple rows per stroke)
+\item The \code{.index} column links them:
 \itemize{
-\item \code{s$i}: unique stroke identifiers
-\item \code{p$i}: repeats to associate coordinates with a stroke
+\item \code{.strokes$.index}: unique stroke identifiers
+\item \code{.points$.index}: repeats to associate coordinates with a stroke
 }
 }
 

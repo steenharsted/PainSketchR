@@ -77,37 +77,30 @@ pdr_modify <- function(pdr, operations, delta=5) {
   remove_duplicates <- function(lcol) {
     # This function removes sequential duplicates of
     # coordinates. 
-    # It runs recursively, so 'lcol' is either:
-    # a) a list of pain drawings (an unnamed list)
-    # b) a single pain drawing (an named list, with  '.id', '.points', etc)
-    
-    # This is were the self-referencing recursion happens:
-    # Recursion if lcol is a single pain drawing with a '.points' element:
-    if(is.list(lcol) && ".points" %in% names(lcol)) {
-      # If no coordinates - return with .points and .strokes as NA
-      if(is_blank_drawing(lcol)) {
-        return(make_blank_na(lcol))
-      }
-      # ..otherwise remove sequential duplicates and return
-      lcol$.points <- lcol$.points |>
-      dplyr::group_by(.index) |>
-      dplyr::group_modify(\(grp, indx) {
-        grp <- grp |>
-          dplyr::filter_out(
-            dplyr::when_all(
-              .x == dplyr::lag(.x),
-              .y == dplyr::lag(.y)
-            )
-          )
-      })    
-      return(lcol)
-    # Recursion if lcol is a list of pain drawings, then self:
-    } else {
-      lcol <- lcol |>
-        purrr::map(\(e) {e=remove_duplicates(e)})
-      return(lcol)
-    } 
-    
+
+    # lcol is a list-col of multiple pain drawings 
+    # ldata is an element from lcol - a list of data elements
+
+    lcol |> 
+      purrr::map(\(ldata) {
+        if(is_blank_drawing(ldata)) {
+          make_blank_na(ldata)
+        } else {
+          ldata$.points <- ldata$.points |>
+            dplyr::group_by(.index) |>
+            dplyr::group_modify(\(grp, indx) {
+              grp <- grp |>
+              dplyr::filter_out(
+                dplyr::when_all(
+                  .x == dplyr::lag(.x),
+                  .y == dplyr::lag(.y)
+                )
+              ) # end filter_out
+            }) |> # end group_modify
+            dplyr::ungroup()
+          ldata
+        } # end if
+      }) # end map 
   } 
     
   drop_noarea <- function(lcol) {
@@ -181,7 +174,6 @@ pdr_modify <- function(pdr, operations, delta=5) {
       return(lcol) 
     } 
   }
-    
     
   remove_selfintersections <- function(lcol) {
   # This function relies on the polyclip simplify function

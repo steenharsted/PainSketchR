@@ -28,8 +28,35 @@ do.call(save, list(var_name, file="data/pdr_example_anatomy.rda"))
 
 # Generate a demo data set of pain drawings
 # This is based on real-world data collection (mird)
+# and some constructed drawings to illustrate special cases
 # With an added observation where paindrawing is NA
-pdr_example_data <- read.csv("data-raw/demo_data.csv") |> 
+special_cases <- tibble::tibble(
+    id="no_area",
+    paindrawing_LBP="(,100,100,),(,150,150,175,175,)") |>
+  dplyr::bind_rows(tibble::tibble(
+    id="duplicates",
+    paindrawing_LBP="(,100,100,100,100,100,100,100,130,130,130,130,100,100,100,)"
+  )) |>
+  dplyr::bind_rows(tibble::tibble(
+    id="selfintersection",
+    paindrawing_LBP="(,120,115,100,100,100,130,130,130,130,100,110,115,)"
+  )) |>
+  dplyr::bind_rows(tibble::tibble(
+    id="convex_hull",
+    paindrawing_LBP="(,115,115,100,100,100,130,130,130,130,100,115,115,)"
+  )) |>
+  dplyr::bind_rows(tibble::tibble(
+    id="close_polygon",
+    paindrawing_LBP="(,100,100,100,130,130,130,130,100,)"
+  )) |>
+  dplyr::bind_rows(tibble::tibble(
+    id="merge_overlaps",
+    paindrawing_LBP="(,100,100,100,130,130,130,130,100,100,100,),(,115,115,115,145,145,145,145,115,115,115,),(,110,110,110,120,120,120,120,110,110,110,),(,150,150,150,170,170,170,170,150,150,150,)"
+  ))
+
+pdr_example_data <- dplyr::bind_rows(
+  special_cases, 
+  read.csv("data-raw/demo_data.csv", ) |> dplyr::select(-X)) |> 
   dplyr::mutate(paindrawing_LBP = stringr::str_replace_all(paindrawing_LBP, ",\\),\\(,", ";")) |> 
   dplyr::mutate(paindrawing_LBP = stringr::str_replace_all(paindrawing_LBP, "\\(,", "")) |>
   dplyr::mutate(paindrawing_LBP = stringr::str_replace_all(paindrawing_LBP, ",\\)", "")) |>
@@ -39,7 +66,7 @@ pdr_example_data <- read.csv("data-raw/demo_data.csv") |>
       as.integer(xy) |> matrix(ncol=2, byrow=TRUE) |> as.data.frame() |> purrr::set_names(c("x","y")) |> dplyr::mutate(i=i)  
     })
   })) |> 
-  tidyr::unnest(paindrawing_LBP) |> dplyr::select(-X) |> 
+  tidyr::unnest(paindrawing_LBP) |> 
   dplyr::rename(.id=id, .x=x, .y=y, .index=i) |>
   dplyr::relocate(.index, .after=.id) |>
   dplyr::group_by(.id) |>

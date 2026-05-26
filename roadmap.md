@@ -72,7 +72,7 @@ Convert to new structure (mark with DONE, when converted and working)?
     - pdr_poly_anatomy_overlap.R **DEFUNCT -- TO BE REMOVED**
     - pdr_poly_areas.R
     - pdr_poly_manage_overlaps.R **DEFUNCT -- NOW IN HELPER FUNCS**
-    - pdr_sanitize.R
+    - **DONE** pdr_sanitize.R -- replaced by pdr_modify.R
     - pdr_spray_trim.R **SHOULD BE RGBA_TRIM**
 
 
