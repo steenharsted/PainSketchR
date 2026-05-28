@@ -50,28 +50,25 @@
 #'
 #' @export
 pdr_add_rgba_single <- function(
-  .data,
+  paindrawr_data = pdr_data,
   method = "memory",
   clean_up = TRUE,
-  dpi = 96,
-  col_id = "id",
-  col_s = "s",
-  col_p = "p",
-  col_w = "w",
-  col_h = "h"
+  dpi = 96
 ) {
-  if (nrow(.data) != 1L) {
-    cli::cli_abort(
-      "{.fn pdr_add_rgba_single} expects a single-row tibble, but received {nrow(.data)} rows.
-      Use {.fn pdr_add_rgba} to process multiple rows."
-    )
-  }
 
+  # Check data
+  pdr_check_data(paindrawr_data, verbose = FALSE)
+
+  #
   method <- match.arg(method, choices = c("memory", "file"))
 
   # Extract height and width from the single row
-  image_width <- .data[[col_w]][[1]]
-  image_height <- .data[[col_h]][[1]]
+  image_width <- purrr::map_dbl(.x = paindrawr_data, .f = \(list) list$.width )
+  image_height <- purrr::map_dbl(.x = paindrawr_data, .f = \(list) list$.heigth )
+
+  return(list(image_width, image_height))
+
+ 
 
   # Unnest and join the s (strokes) and p (points) list-columns
   pdr_s <- .data |>

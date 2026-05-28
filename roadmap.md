@@ -59,8 +59,8 @@ Convert to new structure (mark with DONE, when converted and working)?
 * SFH:
     - pdr_add_rgba.R
     - pdr_alpha.R
-    - pdr_heatmap.R
-    - pdr_recreate_drawing.R
+    - **DONE** pdr_heatmap.R
+    - **DONE** pdr_recreate_drawing.R
     - pdr_spray_areas.R **SHOULD BE SPRAY_RGBA**
 * SON
     - **DONE** DATASET.R 
