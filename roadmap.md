@@ -65,7 +65,7 @@ Convert to new structure (mark with DONE, when converted and working)?
 * SON
     - **DONE** DATASET.R 
     - **DONE** pdr_check_data.R
-    - pdr_explode.R
+    - **DONE** pdr_explode.R
     - pdr_implode.R
     - **DONE** pdr_import_json.R
     - pdr_import_mird.R --- this function expects a string - not a filename
