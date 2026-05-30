@@ -8,6 +8,7 @@ for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
   pdr_xa[[length(pdr_xa) + 1]] <- list(
     .id= as.character(fs::path_ext_remove(fs::path_file(c))), 
     .file = as.character(fs::path_file(c)),
+    .version = as.integer(1),
     .width=as.integer(450),
     .height=as.integer(500),
     .units="px",

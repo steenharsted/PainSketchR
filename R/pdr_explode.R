@@ -4,7 +4,7 @@
 #' (as defined by the `.strokes` and `.points` list-columns in input data) 
 #' becomes a new separate pain drawing.
 #' 
-#' The output of this function is (likely) not of same length as input.
+#' **NOTE** The output of this function is (likely) not of same length as input.
 #'
 #' @details
 #' For each input element (pain drawing):

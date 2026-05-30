@@ -81,26 +81,25 @@ pdr_modify <- function(pdr, operations, delta=5) {
     # lcol is a list-col of multiple pain drawings 
     # ldata is an element from lcol - a list of data elements
 
-    lcol |> 
-      purrr::map(\(ldata) {
-        if(is_blank_drawing(ldata)) {
-          make_blank_na(ldata)
-        } else {
-          ldata$.points <- ldata$.points |>
-            dplyr::group_by(.index) |>
-            dplyr::group_modify(\(grp, indx) {
-              grp <- grp |>
-              dplyr::filter_out(
-                dplyr::when_all(
-                  .x == dplyr::lag(.x),
-                  .y == dplyr::lag(.y)
-                )
-              ) # end filter_out
-            }) |> # end group_modify
-            dplyr::ungroup()
-          ldata
-        } # end if
-      }) # end map 
+    
+    if(is_blank_drawing(ldata)) {
+      make_blank_na(ldata)
+    } else {
+      ldata$.points <- ldata$.points |>
+        dplyr::group_by(.index) |>
+        dplyr::group_modify(\(grp, indx) {
+          grp <- grp |>
+          dplyr::filter_out(
+            dplyr::when_all(
+              .x == dplyr::lag(.x),
+              .y == dplyr::lag(.y)
+            )
+          ) # end filter_out
+        }) |> # end group_modify
+        dplyr::ungroup()
+      ldata
+    } # end if
+
   } 
     
   drop_noarea <- function(lcol) {
@@ -314,7 +313,7 @@ pdr_modify <- function(pdr, operations, delta=5) {
   }
 
   if("merge_overlaps" %in% operations) {
-    pdr <- merge_overlaps(pdr)
+    pdr <- pdr |> purrr::map(\(x) {merge_overlaps(pdr)})
   }
   return(pdr)
 }

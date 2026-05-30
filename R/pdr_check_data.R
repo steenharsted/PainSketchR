@@ -11,12 +11,12 @@
 #' 
 #' **Second-level structure**
 #' * A list with one named elment per variable
-#'     - Must contain elements: `.id`, `.units`, `.width`, `.height`, `.timestamp`, `.strokes`, `.points`
+#'     - Must contain elements: `.id`, `.file`, `.version`, `.units`, `.width`, `.height`, `.timestamp`, `.app`, `.strokes`, `.points`
 #'
 #' **Second-level element types**
 #' * `.id`: character (unique identifier)
-#' * `.width`, `.height`: integer
-#' * `.units`, `.timestamp`: character or NA
+#' * `.version`, `.width`, `.height`: integer
+#' * `.file`, `.units`, `.timestamp`, `.app`: character or NA
 #' * `.strokes`, `.points`: tibble or NA
 #'
 #' **Element constraints**
@@ -124,7 +124,7 @@ int_checker <- function(d) {
   ok("Data is a list: OK")
 
   # ---- required columns ----
-  required_cols <- c(".id", ".units", ".width", ".height", ".timestamp", ".strokes", ".points")
+  required_cols <- c(".id", ".file", ".version", ".units", ".width", ".height", ".timestamp", ".app", ".strokes", ".points")
   if (!has_names(d, required_cols)) {
     return(fail("Missing required elements"))
   }
@@ -132,10 +132,13 @@ int_checker <- function(d) {
 
   # ---- column types ----
   if (!(is.character(d$.id) &&
+        is.character(d$.file) &&
+        is.integer(d$.version) &&
         is.integer(d$.width) &&
         is.integer(d$.height) &&
         is.character(d$.units) &&
         is.character(d$.timestamp) &&
+        is.character(d$.app) &&
         is.list(d$.strokes) &&
         is.list(d$.points))) {
     return(fail("Element types incorrect"))
