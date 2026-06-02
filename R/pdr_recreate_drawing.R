@@ -59,7 +59,6 @@
 #'
 #' @seealso [pdr_import_json()] to read pain drawing JSON files,
 #'   [pdr_add_rgba()] to store raster arrays as a column in the tibble,
-#'   [pdr_add_rgba_single()] for the single-row raster primitive.
 #'
 #' @examples
 #' \dontrun{

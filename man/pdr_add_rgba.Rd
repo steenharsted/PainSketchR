@@ -2,66 +2,87 @@
 % Please edit documentation in R/pdr_add_rgba.R
 \name{pdr_add_rgba}
 \alias{pdr_add_rgba}
-\title{Add RGBA raster arrays to a pain drawing tibble}
+\title{Add an RGBA raster array to a pain drawing}
 \usage{
 pdr_add_rgba(
-  .data,
+  paindrawr_data,
   method = "memory",
   clean_up = TRUE,
   dpi = 96,
-  col_id = "id",
-  col_s = "s",
-  col_p = "p",
-  col_w = "w",
-  col_h = "h"
+  rgba_only = FALSE
 )
 }
 \arguments{
-\item{.data}{A pain drawing tibble as produced by \code{\link[=pdr_import_json]{pdr_import_json()}}. Must
-contain columns \code{id}, \code{s}, \code{p}, \code{w}, and \code{h} (or the names supplied via
-\verb{col_*} arguments).}
+\item{paindrawr_data}{A pain drawing in one of two forms:
+\itemize{
+\item A single named list as produced by \code{\link[=pdr_import_json]{pdr_import_json()}} or extracted
+from a list-column (e.g. \code{pd$pdr_data[[1]]}).
+\item A list-of-named-lists containing multiple drawings (e.g.
+\code{pdr_example_data}).
+}}
 
-\item{method}{Character. Controls the rasterization back-end. Either
-\code{"memory"} (default, via \code{\link[ragg:agg_capture]{ragg::agg_capture()}}) or \code{"file"} (via
-\code{\link[ggplot2:ggsave]{ggplot2::ggsave()}} and \code{\link[png:readPNG]{png::readPNG()}}). Passed through to
-\code{\link[=pdr_add_rgba_single]{pdr_add_rgba_single()}}.}
+\item{method}{Character. Controls the rasterization back-end. Either:
+\itemize{
+\item \code{"memory"} (default) — renders in-memory via \code{\link[ragg:agg_capture]{ragg::agg_capture()}},
+no temp file is written to disk.
+\item \code{"file"} — saves to a temporary PNG via \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}} and reads
+it back with \code{\link[png:readPNG]{png::readPNG()}}. Use this if the \code{"memory"} path is slow.
+}}
 
-\item{clean_up}{Logical. If \code{TRUE} (default), temporary PNG files are
-deleted after each raster is read into memory. Only relevant when
-\code{method = "file"}. Passed through to \code{\link[=pdr_add_rgba_single]{pdr_add_rgba_single()}}.}
+\item{clean_up}{Logical. If \code{TRUE} (default), the temporary PNG file is
+deleted on exit. Only relevant when \code{method = "file"}. Set to \code{FALSE} to
+retain the file for debugging.}
 
-\item{dpi}{Resolution used during rasterization. Defaults to \code{96}, matching
-the CSS pixel density of the web canvas where drawings are collected.
-All rows are rendered at the same \code{dpi}.}
+\item{dpi}{Resolution used during rasterization. Defaults to \code{96}. Increase for print-quality output (e.g. \code{300}), noting this
+does not affect the canvas dimensions, only output pixel density.}
 
-\item{col_id, col_s, col_p, col_w, col_h}{Column name strings for the drawing
-ID, strokes list-column, points list-column, canvas width, and canvas
-height respectively. Defaults match the output of \code{\link[=pdr_import_json]{pdr_import_json()}}:
-\code{"id"}, \code{"s"}, \code{"p"}, \code{"w"}, \code{"h"}. Passed through to
-\code{\link[=pdr_add_rgba_single]{pdr_add_rgba_single()}}.}
+\item{rgba_only}{Logical. If \code{FALSE} (default), returns the input
+drawing(s) with a \verb{$.rgba} element appended to each. If \code{TRUE}, returns
+only the RGBA array (single drawing) or a list of RGBA arrays (multiple
+drawings). Use \code{TRUE} when assigning into a tibble list-column:
+\code{mutate(.rgba = pdr_add_rgba(pdr_data, rgba_only = TRUE))}.}
 }
 \value{
-A list of numeric arrays, one per row, each of dimensions
-\verb{height × width × 4} (RGBA channels, values in [0, 1]).
+\itemize{
+\item \code{rgba_only = FALSE} (default): the input drawing (named list) with
+\verb{$.rgba} appended, or a list of such augmented drawings when multiple
+drawings are supplied.
+\item \code{rgba_only = TRUE}: a numeric array of dimensions
+\verb{height × width × 4} (RGBA channels, values in [0, 1]), or a list of
+such arrays when multiple drawings are supplied. Transparent pixels are
+set to black (\code{RGB = 0}).
+}
 }
 \description{
-Renders each row of a pain drawing tibble into an RGBA numeric array and
-returns a list suitable for use as a new column via \code{\link[dplyr:mutate]{dplyr::mutate()}}.
+Renders the strokes and spray points from one or more pain drawings into
+RGBA numeric arrays. By default, the array is attached as a \verb{$.rgba} element
+to each drawing and the augmented drawing(s) are returned. Set
+\code{rgba_only = TRUE} to return the bare array(s) instead, which is useful
+when assigning into a tibble list-column directly.
 }
 \examples{
 \dontrun{
-pd <- pdr_import_json(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
-
-# Add RGBA arrays as a new column
-pd <- pd |> dplyr::mutate(rgba = pdr_add_rgba(pd))
-
-# Display the first drawing
+# Single drawing — returns drawing with $.rgba appended
+drawing_with_rgba <- pdr_example_data[[1]] |> pdr_add_rgba()
 grid::grid.newpage()
-grid::grid.raster(pd$rgba[[1]])
+grid::grid.raster(drawing_with_rgba$.rgba)
+
+# Multiple drawings at once
+drawings_with_rgba <- pdr_example_data |> pdr_add_rgba()
+
+# Tibble workflow 
+
+## Data
+pd <- tibble(pdr_data = pdr_example_data)
+
+## add .rgba to the input list-column
+pd |> dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data))
+
+## add rgba arrays in a separate list-column
+pd |> 
+  dplyr::mutate(
+    rgba_arrays = pdr_add_rgba(pdr_data, rgba_only = TRUE)
+    )
 }
 
-}
-\seealso{
-\code{\link[=pdr_add_rgba_single]{pdr_add_rgba_single()}} for the single-row primitive,
-\code{\link[=pdr_import_json]{pdr_import_json()}} for reading pain drawing JSON files.
 }

@@ -2,32 +2,36 @@
 % Please edit documentation in R/pdr_implode.R
 \name{pdr_implode}
 \alias{pdr_implode}
-\title{Implode several pain drawwings into one.}
+\title{Implode multiple pain drawwings into one.}
 \usage{
-pdr_implode(pd)
+pdr_implode(pdr)
 }
 \arguments{
-\item{pd}{must be a valid pain drawing data structure. Furthermore, each row in \code{pd}
-should consist of a pain drawing with just a single stroke/polygon -- if not, the pain
-drawing will be exploded into multiple paindrawings before imploding.}
+\item{pdr}{must be a valid pain drawing data structure.
+Furthermore, each element in \code{pdr} should have the same
+\code{.units}. If elements of \code{pdr} has different canvas widths
+or heights, they will all be reset to the maximum canvas
+dimensions.}
 }
 \value{
-A new pain drawing data structure where the column \code{p} has been imploded into one
-set of coordinates, of multiple strokes. THe \code{s} columns retains all information from the
-original strokes (in multiple pain drawings), but all other columns are replaced so the
-result contains a single row: \code{w} and \code{h} are replaced by the maximum value observed,
-id is placed with 'imploded', \code{coord} and \code{app} are retained or replace with 'multiple' if
-muliple values are observed, \code{ts} is replaced by the maximum (latest) value observed. All
-other columns (if present) are deleted.
+A new pain drawing data structure with a single
+element with all strokes from the input pain drawings
+retained. Note, that stroke indeces are reset and in
+\code{.strokes} and \code{.points}. The \code{.id} element is also reset.
 }
 \description{
-This function takes as input a pain drawing data structure, where each row (pain drawing)
-represents e.g. an anatomical region. The function merges these into a single pain drawing
-(row) with multiple strokes/polygons.
+This function takes as input a pain drawing data structure,
+with multiple elements, i.e. pain drawings. The strokes
+of these are imploded (or collated) into a single pain drawing
+with all strokes (including NA) retained in the original
+order.
 }
 \details{
-The function is useful for merging anatomcial regions (represented in pd as pain drawings)
-which are connected or overlap.
+The function is useful, for instance, for imploding anatomcial
+regions into larger anatomical regions which can then be
+merged (via \code{pdr_modify()}) into a sinigle larger region.
+
+#' \strong{NOTE} The output of this function is (likely) not of same length as input.
 }
 \examples{
 pdr_implode(pd_demo_anatomy)

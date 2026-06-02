@@ -113,5 +113,4 @@ pd |> pdr_recreate_drawing(paindrawr_data = my_col)
 \seealso{
 \code{\link[=pdr_import_json]{pdr_import_json()}} to read pain drawing JSON files,
 \code{\link[=pdr_add_rgba]{pdr_add_rgba()}} to store raster arrays as a column in the tibble,
-\code{\link[=pdr_add_rgba_single]{pdr_add_rgba_single()}} for the single-row raster primitive.
 }
