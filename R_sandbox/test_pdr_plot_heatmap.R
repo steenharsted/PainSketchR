@@ -22,10 +22,10 @@ demo <-
   )
 
 
-# Test pdr_create_heatmap
+# Test pdr_plot_heatmap
 
 demo |>
-  pdr_create_heatmap(
+  pdr_plot_heatmap(
     variables = c("cat_1", "cat_2"),
     n_groups = c(4, 2),
     background_image = background_image
@@ -33,7 +33,7 @@ demo |>
 
 
 demo |>
-  pdr_create_heatmap(
+  pdr_plot_heatmap(
     variables = c("quant_1", "cat_2"),
     n_groups = c(4, 2),
     background_image = background_image
@@ -41,7 +41,7 @@ demo |>
 
 
 demo |>
-  pdr_create_heatmap(
+  pdr_plot_heatmap(
     variables = c("quant_1", "cat_2"),
     n_groups = c(4, 2),
     background_image = background_image,
@@ -50,7 +50,7 @@ demo |>
 
 
 demo |>
-  pdr_create_heatmap(
+  pdr_plot_heatmap(
     variables = c("quant_2", "quant_1"),
     n_groups = c(2, 4),
     background_image = background_image,
@@ -63,14 +63,14 @@ demo |>
 # Test one var
 # Not super happy with this :/
 demo |>
-  pdr_create_heatmap(
+  pdr_plot_heatmap(
     variables = c("cat_1"),
     n_groups = c(3),
     background_image = background_image
   )
 
 demo |>
-  pdr_create_heatmap(
+  pdr_plot_heatmap(
     variables = c("quant_1"),
     n_groups = c(4),
     background_image = background_image
@@ -83,7 +83,7 @@ demo |>
   mutate(
     " " = " "
   ) |>
-  pdr_create_heatmap(
+  pdr_plot_heatmap(
     variables = c(" ", "quant_1"),
     n_groups = c(1, 4),
     background_image = background_image
@@ -117,7 +117,7 @@ background_image <- png::readPNG("inst/extdata/feet_background.png")
 
 
 pd |>
-  pdr_create_heatmap(
+  pdr_plot_heatmap(
     variables = c("cat_1"),
     n_groups = c(2),
     background_image = background_image
@@ -129,7 +129,7 @@ pd |>
     " " = " ",
     "  " = " "
   ) |>
-  pdr_create_heatmap(
+  pdr_plot_heatmap(
     variables = c(" ", "  "),
     n_groups = c(1, 1),
     background_image = background_image,

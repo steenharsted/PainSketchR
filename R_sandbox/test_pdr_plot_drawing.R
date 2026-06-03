@@ -22,7 +22,7 @@ pd |>
 
 pd |>
   filter(row_number() == 2) |>
-  pdr_recreate_drawing(
+  pdr_plot_drawing(
     background_image = background_image
   )
 
@@ -30,7 +30,7 @@ pd |>
 ## Test new function
 pd |>
   filter(row_number() < 5) |>
-  pdr_recreate_drawing(
+  pdr_plot_drawing(
     background_image = background_image
   )
 
@@ -38,7 +38,7 @@ pd |>
 pd |>
   filter(row_number() < 5) |>
   rename(new_name = pdr_data) |>
-  pdr_recreate_drawing(
+  pdr_plot_drawing(
     background_image = background_image,
     paindrawr_data = new_name
   )
@@ -66,19 +66,19 @@ background_image <- png::readPNG("inst/extdata/feet_background.png")
 # No background image
 pd |>
   dplyr::filter(row_number() == 1) |>
-  pdr_recreate_drawing()
+  pdr_plot_drawing()
 
 # Background image
 pd |>
   dplyr::filter(row_number() == 2) |>
-  pdr_recreate_drawing(
+  pdr_plot_drawing(
     background_image = background_image
   )
 
 # Background image with id
 pd |>
   dplyr::filter(row_number() == 3) |>
-  pdr_recreate_drawing(
+  pdr_plot_drawing(
     background_image = background_image,
     include_id = TRUE
   )
@@ -86,34 +86,34 @@ pd |>
 
 # Background image no rasterize
 pd |>
-  pdr_recreate_drawing(
+  pdr_plot_drawing(
     background_image = "inst/extdata/feet_background.png",
     rasterize = TRUE
   )
 
 # Multiple drawings
 pd |>
-  pdr_recreate_drawing(
+  pdr_plot_drawing(
     background_image = background_image
   )
 
 
 pd |>
-  pdr_recreate_drawing(
+  pdr_plot_drawing(
     background_image = background_image,
     rasterize = FALSE
   )
 
 
 pd |>
-  pdr_recreate_drawing(
+  pdr_plot_drawing(
     background_image = background_image,
     clean_up = FALSE,
     dpi = 300
   )
 
 pd |>
-  pdr_recreate_drawing(
+  pdr_plot_drawing(
     background_image = background_image,
     clean_up = FALSE,
     dpi = 96
@@ -124,7 +124,7 @@ pd |>
 # To inspect the files set clean_up to FALSE and look in tempdir()
 
 pd |>
-  pdr_recreate_drawing(
+  pdr_plot_drawing(
     background_image = background_image,
     clean_up = FALSE,
     include_id = TRUE

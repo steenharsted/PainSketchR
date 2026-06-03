@@ -65,19 +65,19 @@
 #' pd <- pdr_import_json(c("data-raw/two_geoms.json", "data-raw/four_geoms.json"))
 #'
 #' # Default: in-memory rasterization with background
-#' pd |> pdr_recreate_drawing(background_image = "inst/background.png")
+#' pd |> pdr_plot_drawing(background_image = "inst/background.png")
 #'
 #' # File-based rasterization
-#' pd |> pdr_recreate_drawing(method = "file")
+#' pd |> pdr_plot_drawing(method = "file")
 #'
 #' # Vector output — can add further ggplot layers
-#' pd |> pdr_recreate_drawing(rasterize = FALSE)
+#' pd |> pdr_plot_drawing(rasterize = FALSE)
 #'
 #' # Show id labels in facet strips
-#' pd |> pdr_recreate_drawing(include_id = TRUE)
+#' pd |> pdr_plot_drawing(include_id = TRUE)
 #'
 #' # Use a custom list-column name
-#' pd |> pdr_recreate_drawing(paindrawr_data = my_col)
+#' pd |> pdr_plot_drawing(paindrawr_data = my_col)
 #' }
 #'
 #' @importFrom dplyr select mutate filter full_join join_by n
@@ -88,7 +88,7 @@
 #' @importFrom cli cli_warn cli_abort
 #'
 #' @export
-pdr_recreate_drawing <- function(
+pdr_plot_drawing <- function(
   .data,
   paindrawr_data = pdr_data,
   background_image = NULL,

@@ -88,14 +88,14 @@
 #' \dontrun{
 #' # Two-way stratification
 #' pd |>
-#'   pdr_create_heatmap(
+#'   pdr_plot_heatmap(
 #'     variables = c("age_group", "pain_duration"),
 #'     n_groups = c(3, 2)
 #'   )
 #'
 #' # Single variable with custom settings
 #' result <- pd |>
-#'   pdr_create_heatmap(
+#'   pdr_plot_heatmap(
 #'     variables = "pain_intensity",
 #'     n_groups = 4,
 #'     grid_size = 5,
@@ -104,7 +104,7 @@
 #'
 #' # Use a custom list-column name
 #' pd |>
-#'   pdr_create_heatmap(
+#'   pdr_plot_heatmap(
 #'     paindrawr_data = my_col,
 #'     variables = "group"
 #'   )
@@ -120,7 +120,7 @@
 #' @importFrom vctrs vec_ptype_abbr
 #'
 #' @export
-pdr_create_heatmap <- function(
+pdr_plot_heatmap <- function(
   .data,
   paindrawr_data = pdr_data,
   variables = NULL,
@@ -147,7 +147,7 @@ pdr_create_heatmap <- function(
   # Unnest list
   .data <- .data |> tidyr::unnest_wider({{ paindrawr_data }})
 
-  # Validating input specific to pdr_create_heatmap
+  # Validating input specific to pdr_plot_heatmap
   validate_heatmap_inputs(
     .data = .data,
     variables = variables,
