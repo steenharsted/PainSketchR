@@ -18,9 +18,6 @@ pd <- pd |>
 pd
 
 pd |>
-  unnest_wider(pdr_data)
-
-pd |>
   filter(row_number() == 2) |>
   pdr_plot_drawing(
     background_image = background_image
