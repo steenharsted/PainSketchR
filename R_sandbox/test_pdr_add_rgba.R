@@ -27,7 +27,7 @@ pdr_add_rgba(
 )
 
 # single pdr named list in single pdr named list out with .rgba added
-pdr_example_data[[1]]  |> pdr_get_rgba()
+pdr_example_data[[1]]  |> pdr_add_rgba()
 
 ## Intended use
 pd <-  pd |> mutate(new_pdr_data = pdr_add_rgba(paindrawr_data = pdr_data))

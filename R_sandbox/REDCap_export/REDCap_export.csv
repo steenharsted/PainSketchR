@@ -1,9 +1,0 @@
-record_id,redcap_event_name,navn,email,stamdata_complete,ps_datetime,ps_draw,ps_copy,alder,k_n,painsketch_form_complete,ps_drawing_2,ps_png_copy_2,painsketch_form_2_complete,headache_type,filepath_background,drawing_filled,painsketch_form_3_complete
-1,baseline_arm_1,"Test Person",,2,"2026-02-26 09:52",painsketch_data.json,painsketch_drawing.png,25,1,2,painsketch_data.json,painsketch_drawing.png,2,,,,0
-1,follow_up_arm_1,,,,"2026-02-26 09:53",painsketch_data.json,painsketch_drawing.png,,1,0,painsketch_data.json,painsketch_drawing.png,0,,,,
-2,baseline_arm_1,,,0,,,,,,0,painsketch_data.json,painsketch_drawing.png,0,,,,0
-3,baseline_arm_1,,,0,"2026-03-06 09:06",painsketch_data.json,painsketch_drawing.png,,,2,painsketch_data.json,painsketch_drawing.png,2,2,painsketch_data.json,painsketch_drawing.png,2
-3,follow_up_arm_1,,,,,painsketch_data.json,painsketch_drawing.png,,1,2,,,0,,,,
-4,baseline_arm_1,,,0,,,,,,0,,,0,2,painsketch_data.json,painsketch_drawing.png,2
-5,baseline_arm_1,,,0,,,,,,0,,,0,1,painsketch_data.json,painsketch_drawing.png,2
-6,baseline_arm_1,,,0,,,,,,0,,,0,1,painsketch_data.json,painsketch_drawing.png,2

@@ -94,11 +94,11 @@ pdr_import_json <- function(files) {
             tibble::tibble(i = indx, x = element[, 1], y = element[, 2])
           })
         tmp$.id = tmp$id
-        tmp$.file = tmp$file
+        #tmp$.file = tmp$file
         tmp$.version = tmp$v
         tmp$.width = tmp$w
         tmp$.height = tmp$h
-        tmp$.units = tmp$coord
+        tmp$.units = tmp$units
         tmp$.timestamp = tmp$ts
         tmp$.app = tmp$app
         tmp <- tmp[startsWith(names(tmp), ".")]
@@ -108,14 +108,13 @@ pdr_import_json <- function(files) {
           dplyr::mutate(.y = tmp$.height - .y)
         tmp$.strokes <- tmp$.strokes |>
           dplyr::rename(
-            .index = i,
-            .q = q,
-            .tool = t,
-            .tool_width = bw,
-            .color = c,
-            .alpha = a,
-            .spray_radius = pr,
-            .point_density = pd
+            .index = strokeId,
+            .tool = tool,
+            .tool_width = lineWidth,
+            .color = color,
+            .alpha = alpha,
+            .spray_radius = sprayRadius,
+            .point_density = sprayDensity
           )
         result <- c(result, list(tmp))
       }
