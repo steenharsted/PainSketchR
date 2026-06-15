@@ -19,17 +19,14 @@
 pdr_modify <- function(pdr, operations, delta=5) {
   # This function will:
   # a) perform sanity checks on input parameters
-  # b) perform each of the operations specified in sequence
+  # b) perform each of the operations specified 
   # 
   # Note that the operations are defined in separate functions
-  # each of which works recursively.
+  # and are performed in a fixed sequence
 
 
-
-  { ########## Sanity checks >> ##########
-    accepted_operations <- c("remove_duplicates", "drop_noarea", 
-      "buffer_noarea", "remove_selfintersections", "reduce_to_chull",
-    "close_polygons", "merge_overlaps")
+  { ########## Sanity checks ##########
+    accepted_operations <- c("drop_noarea", "buffer_noarea", "sanitize", "reduce_to_chull", "merge_overlaps")
 
     # This function takes a valid pain drawing data set as input
     if (!pdr_check_data(pdr, verbose = FALSE)) {
@@ -37,12 +34,14 @@ pdr_modify <- function(pdr, operations, delta=5) {
       stop("Stopped: The function `pdr_modify()` expects valid pain data as parameter 'pdr'. Use `pdr_check_data()` for more details.")
     }
     # Require 'operations' to be a character vector of fixed options
-    if(any(identical(NA, operations)) || any(operations == "")) {return(pdr)}
     if(!is.character(operations)) {
       stop("Stopped: The function `pdr_modify()` expects a character vector as parameter 'operations'.")
-    }  
+    } 
+    if(any(identical(NA, operations)) || any(operations == "")) {
+      warning("Unknown operations specified in function `pdr_modify()`.")
+      return(pdr)}     
     if(any(!{operations %in% accepted_operations})) {
-      warning(paste0("Unknown operations specified in function `pdr_modify()`."))
+      warning("Unknown operations specified in function `pdr_modify()`.")
     }
     if(all(c("drop_noarea", "buffer_noarea") %in% operations)) {
       warning(paste0("Both 'drop_noarea' and 'buffer_noarea' specified in 'operations' of
@@ -51,9 +50,9 @@ pdr_modify <- function(pdr, operations, delta=5) {
     }
 
 
-  } ########## << Sanity checks ##########
+  } ########## End sanity checks ##########
 
-  { ########## Helper functions >> ##########
+  { ########## Helper functions ##########
   is_blank_drawing <- function(entry) {
     if(identical(NA, entry$.points)) { return(TRUE)}
     if(nrow(entry$.points)==0) {return(TRUE)} 
@@ -71,226 +70,137 @@ pdr_modify <- function(pdr, operations, delta=5) {
     
     return(entry)
   }  
-  } ########## << Helper functions ########## 
+  } ########## End helper functions ########## 
 
-  { ########## Operations functions >> ##########
-  remove_duplicates <- function(lcol) {
-    # This function removes sequential duplicates of
-    # coordinates. 
-
-    # lcol is a list-col of multiple pain drawings 
-    # ldata is an element from lcol - a list of data elements
+  { ########## Operations functions ##########
 
     
-    if(is_blank_drawing(ldata)) {
-      make_blank_na(ldata)
-    } else {
-      ldata$.points <- ldata$.points |>
-        dplyr::group_by(.index) |>
-        dplyr::group_modify(\(grp, indx) {
-          grp <- grp |>
-          dplyr::filter_out(
-            dplyr::when_all(
-              .x == dplyr::lag(.x),
-              .y == dplyr::lag(.y)
-            )
-          ) # end filter_out
-        }) |> # end group_modify
-        dplyr::ungroup()
-      ldata
-    } # end if
-
-  } 
-    
-  drop_noarea <- function(lcol) {
+  drop_noarea <- function(pdr) {
     # This functions removes those strokes in pain drawings
     # which have no geometric area, i.e. points and two-vertex
-    # line segments
+    # line segments ... not it is possible for other geometries
+    # to also have no area
 
-    # This is were the self-referencing recursion happens:
-    # Recursion if lcol is a single pain drawing with a '.points' element:
-    if(is.list(lcol) && ".points" %in% names(lcol)) {
-      # If no coordinates - just return
-      if(is_blank_drawing(lcol)) {
-        return(lcol)
-      }
-      # ..otherwise find and keep only strokes consisting of 2+ points
-      lcol$.points <- lcol$.points |>
-        dplyr::group_by(.index) |> 
-        dplyr::filter(dplyr::n()>2) |> 
-        dplyr::ungroup()
-      # ..and realign index in .strokes
-      lcol$.strokes <- lcol$.strokes |>
-        dplyr::filter(.index %in% lcol$.points$.index)
-      return(lcol) 
-    # Recursion if lcol is a list of pain drawings:
-    } else {
-      lcol <- lcol |>
-        purrr::map(\(e) {e=drop_noarea(e)})
-      return(lcol) 
-    }  
+    pdr <- pdr |>
+      purrr::map(\(e) {
+        if(is_blank_drawing(e)) {
+          e # As no strokes just keep as is
+        } else {
+          # ..else remove points and two-segment-lines
+          e$.points <- e.points |>
+            dplyr::group_by(.index) |> 
+            dplyr::filter(dplyr::n()>2) |> 
+            dplyr::ungroup()
+          # ..update the strokes tibble
+          e$.strokes <- e$.strokes |>
+            dplyr::filter(.index %in% e$.points$.index)
+          e # ...keep this element
+        }
+      })
+    return(pdr)
   }  
     
-  buffer_noarea <- function(lcol, delta) {
+  buffer_noarea <- function(pdr, delta) {
     # This functions buffers those strokes in pain drawings
     # which have no geometric area, i.e. points and two-vertex
     # line segments -- delta is the buffer size
 
-    # This is were the self-referencing recursion happens:
-    # Recursion if lcol is a single pain drawing with a '.points' element:
-    if(is.list(lcol) && ".points" %in% names(lcol)) {
-      # If no coordinates - just return
-      if(is_blank_drawing(lcol)) {
-        return(lcol)
-      }
-      # ..otherwise find and buffer strokes consisting of 1 or 2 points
-      lcol$.points <- lcol$.points |>
-      dplyr::group_by(.index) |> 
-      dplyr::group_modify(\(grp, indx) {
-        if(nrow(grp)<3) { 
-          # ..stroke is a point or a line
-          if(nrow(grp) == 1) {
-            # If it's a point -- add another point and shift
-            # it 1 pixel to make it a line .. then move on
-            grp <- rbind(grp, grp)
-            grp[2,'.x'] <- grp[2,'.x']+1
-          } 
-          # ..stroke is (now) a line
-          polyclip::polylineoffset(list(x=grp$.x, y=grp$.y), delta=delta, endtype="round") |> 
-            purrr::map_dfr(\(q) {
-              tibble::tibble(.x=as.integer(round(q$x)),
-                             .y=as.integer(round(q$y))) 
-            })
+    pdr <- pdr |>
+      purrr::map(\(e) {
+        if(is_blank_drawing(e)) {
+          e # As no strokes just keep as is
         } else {
-          grp  # exit map-in-map iteration
-        }
-      })
-      return(lcol) 
-    # Recursion if lcol is a list of pain drawings:
-    } else {
-      lcol <- lcol |>
-        purrr::map(\(e) {e=buffer_noarea(e, delta)})
-      return(lcol) 
-    } 
+          # ..otherwise find and buffer strokes without area
+          e$.points <- e$.points |>
+            dplyr::group_by(.index) |> 
+            dplyr::group_modify(\(grp, indx) {
+              if(nrow(grp)>2) {
+                grp # is a 3+ vertex polygon, so just keep it
+              } else { 
+                # grp is a point or a 2-point line
+                # if it is a point, make it a 2-point line
+                if(nrow(grp) == 1) {
+                  grp <- rbind(grp, grp)
+                  grp[2,'.x'] <- grp[2,'.x']+as.integer(1)
+                } 
+                # Now offset the two-point line and make tibble
+                wrap_pc_offset(list(x=grp$.x, y=grp$.y), d=delta, e="round") |>
+                  tibble::as_tibble() |>
+                  dplyr::rename(.x=x, .y=y)
+              } # end if 
+            }) # end group_modify
+        } # end if
+      }) # end map
+        
+    return(pdr)    
   }
     
-  remove_selfintersections <- function(lcol) {
-  # This function relies on the polyclip simplify function
-  # to remove self intersections from polygons
+  reduce_to_chull <- function(pdr) {
+    # This function reduces each polygon to their convex hull
 
-  # This is were the self-referencing recursion happens:
-  # Recursion if lcol is a single pain drawing with a '.points' element:
-    if(is.list(lcol) && ".points" %in% names(lcol)) {
-      # If no coordinates - just return
-      if(is_blank_drawing(lcol)) {
-        return(lcol)
+    pdr <- pdr |>
+    purrr::map(\(e) {
+      if(is_blank_drawing(e)) {
+        e # As no strokes just keep as is
+      } else {
+        # ..else remove points and two-segment-lines
+        e$.points <- e.points |>
+          dplyr::group_by(.index) |>
+          dplyr::group_modify(\(grp, indx) {
+            grp <- dplyr::slice(chull(grp$.x, grp$.y)) 
+          }) |>
+          dplyr::ungroup()
+        e # ...keep this element
       }
-      # ..otherwise simplify via polyclip
-      lcol$.points <- lcol$.points |>
-        dplyr::group_by(.index) |>
-        dplyr::group_modify(\(grp, indx) {
-          polyclip::polysimplify(list(x=grp$.x, y=grp$.y), filltype="nonzero") |> # nonzero
-          purrr::map_dfr(\(q) {
-            tibble::tibble(x=as.integer(round(q$x)), 
-                          y=as.integer(round(q$y)))})      
-        }) |>
-        dplyr::ungroup()
-      return(lcol)
-    # Recursion if lcol is a list of pain drawings:
-    } else  {
-      lcol <- lcol |>
-        purrr::map(\(e) {e=remove_selfintersections(e)})
-      return(lcol)
-    }     
-  }
-    
-  reduce_to_chull <- function(lcol) {
-  # This function reduces each polygopn to their convex hull
-
-  # This is were the self-referencing recursion happens:
-  # Recursion if lcol is a single pain drawing with a '.points' element:
-    if(is.list(lcol) && ".points" %in% names(lcol)) {
-      # If no coordinates - just return
-      if(is_blank_drawing(lcol)) {
-        return(lcol)
-      }
-      # ..otherwise reduce to convex hull
-      lcol$.points <- lcol$.points |>
-        dplyr::group_by(.index) |>
-        dplyr::group_modify(\(grp, indx) {
-          grp <- dplyr::slice(chull(grp$.x, grp$.y)) 
-        }) |>
-        dplyr::ungroup()
-      return(lcol)
-    # Recursion if lcol is a list of pain drawings:
-    } else  {
-      lcol <- lcol |>
-        purrr::map(\(e) {e=reduce_to_chull(e)})
-      return(lcol)
-    }     
-  }
-    
-  close_polygons <- function(lcol) {
-  # This function reduces each polygopn to their convex hull
-
-  # This is were the self-referencing recursion happens:
-  # Recursion if lcol is a single pain drawing with a '.points' element:
-    if(is.list(lcol) && ".points" %in% names(lcol)) {
-      # If no coordinates - just return
-      if(is_blank_drawing(lcol)) {
-        return(lcol)
-      }
-      # ..otherwise close polygons (if open)
-      lcol$.points <- lcol$.points |>
-        dplyr::group_by(.index) |>
-        dplyr::group_modify(\(grp, indx) {
-          if(!identical(grp[nrow(grp),], grp[1,])) {
-            grp[nrow(grp)+1,] <- grp[1,]
-          }
-          grp
-        }) |>
-        dplyr::ungroup()
-      return(lcol)
-    # Recursion if lcol is a list of pain drawings:
-    } else  {
-      lcol <- lcol |>
-        purrr::map(\(e) {e=close_polygons(e)})
-      return(lcol)
-    }     
-  }  
+    })
+    return(pdr) 
+  } 
   
-  merge_overlaps <- function(lcol) {
-  # This function merges any overlapping polygons in each drawing
+  sanitize <- function(pdr) {
+    # This functions is essentially a wrapper for the 
+    # polyclip simplify function -- removes self-intersections
+    # and sequential coordinate duplicates -- this includes
+    # un-closing the polygon if it is closed
 
-  # This is were the self-referencing recursion happens:
-  # Recursion if lcol is a single pain drawing with a '.points' element:
-    if(is.list(lcol) && ".points" %in% names(lcol)) {
-      # If no coordinates - just return
-      if(is_blank_drawing(lcol)) {
-        return(lcol)
-      }
-      # If exactly one polygon - just return
-      if(length(unique(lcol$.strokes$.index))==1) {
-        return(lcol)
-      }
-      # ..otherwise mange overlaps with custom helper function
-      lcol$.points <- lcol$.points |>
-        pdr_poly_manage_overlaps()
-      ############################################################ WHAT TO DO ABOUT .strokes ??
-      return(lcol)
-    # Recursion if lcol is a list of pain drawings:
-    } else  {
-      lcol <- lcol |>
-        purrr::map(\(e) {e=merge_overlaps(e)})
-      return(lcol)
-    }     
+    pdr <- pdr |> # A list-col from pdr data (tibble)
+      purrr::map(\(e) { # A list element (i.e length==1 from a single line of pdr data)
+        e$.points <- e$.points |> # All coordinates for that drawing
+          dplyr::group_by(.index) |>  # Now grouped by stroke index
+          dplyr::group_modify(\(grp, indx) { # 
+            if(nrow(grp)<3) { # Stroke is point or line segment
+              grp # Don't change anything
+            } else {
+              polyclip::polysimplify(
+                A = list(
+                      list(x=grp$.x,
+                           y=grp$.y)
+                    ), eps=1) |> 
+                purrr::pluck(1) |>
+              tibble::as_tibble() |> 
+              dplyr::mutate_all(as.integer)
+            }
+          }) |>
+          dplyr::ungroup()
+        e # return
+      })
+    return(pdr)
+  }
+    
+  merge_overlaps <- function(pdr) {
+    # This function merges any overlapping polygons in each drawing
+    # It iterates the elements of pdr ... i.e one function
+    # call per pain drawing
+
+    pdr <- pdr |> purrr::map(\(e) {
+      e$.points <- pdr_help_merge_overlapping_polygons(e$.points)
+      e$.strokes <- pdr_help_reduce_stroke_data(e$.strokes, unique(e$.points$.index))
+      e
+    }) # endmap
+
+    return(pdr)    
   }  
     
   } ########## << Operations functions ########## 
-
-  if("remove_duplicates" %in% operations) {
-    pdr <- remove_duplicates(pdr)
-  }
 
   if("drop_noarea" %in% operations) {
     pdr <- drop_noarea(pdr)
@@ -300,20 +210,20 @@ pdr_modify <- function(pdr, operations, delta=5) {
     pdr <- buffer_noarea(pdr, delta)
   }
 
-  if("remove_selfintersections" %in% operations) {
-    pdr <- remove_selfintersections(pdr)
+  if("sanitize" %in% operations) {
+    pdr <- sanitize(pdr)
   }
 
   if("reduce_to_chull" %in% operations) {
     pdr <- reduce_to_chull(pdr)
   }
 
-  if("close_polygons" %in% operations) {
-    pdr <- close_polygons(pdr)
-  }
-
   if("merge_overlaps" %in% operations) {
-    pdr <- pdr |> purrr::map(\(x) {merge_overlaps(pdr)})
+    # ..must be sanitized before attempting overlap merging
+    if (!{"sanitize" %in% operations}) {
+      pdr <- sanitize(pdr) # If we didn't already...
+    }
+    pdr <- merge_overlaps(pdr)
   }
   return(pdr)
 }

@@ -53,6 +53,10 @@ special_cases <- tibble::tibble(
   dplyr::bind_rows(tibble::tibble(
     id="merge_overlaps",
     paindrawing_LBP="(,100,100,100,130,130,130,130,100,100,100,),(,115,115,115,145,145,145,145,115,115,115,),(,110,110,110,120,120,120,120,110,110,110,),(,150,150,150,170,170,170,170,150,150,150,)"
+  )) |>
+  dplyr::bind_rows(tibble::tibble(
+    id="intersection",
+    paindrawing_LBP="(,100,100,100,130,130,130,130,100,),(,100,130,100,160,130,160,130,130,),(,100,170,100,200,130,200,130,170,)"
   ))
 
 pdr_example_data <- dplyr::bind_rows(

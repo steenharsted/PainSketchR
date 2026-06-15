@@ -610,159 +610,267 @@ psr_example <- function(path = NULL) {
   }
 }
 
-pdr_poly_clip <- function(A, B, operation = "intersection") {
-  # This function is a simple wrapper for polyclip::polyclip
-  # A and B should be dataframes which contain two columns x and y
-  result <- polyclip::polyclip(
-    A = list(x = A$x, y = A$y),
-    B = list(x = B$x, y = B$y),
-    op = operation
-  )
-
-  if (purrr::is_empty(result)) {
-    result <- tibble::tibble(
-      i = as.integer(),
-      x = as.integer(),
-      y = as.integer()
-    )
+is_list_list <- function(x) {
+  if(is.list(x) && purrr::every(x, \(e) {is.list(e)})) {
+    return(TRUE)
   } else {
-    result <- result |>
-      purrr::map_dfr(
-        \(q) {
-          q
-        },
-        .id = "i"
-      ) |>
-      dplyr::mutate(
-        i = as.integer(i),
-        x = as.integer(round(x)),
-        y = as.integer(round(y))
-      )
+    return(FALSE)
   }
-  result
 }
 
-## pdr_poly_manage_overlaps and loop_pairwise work together to
-## merge overlapping strokes
-pdr_poly_manage_overlaps <- function(p, method = "union") {
-  # This function takes the column p from a pain drawing data structure and for each pain drawing (row)
-  # it handles any overlapping polygons
-
-  if (!is.list(p)) {
-    stop("The data 'p' is not a list")
+is_list_xy <- function(x) {
+  if(is.list(x) && length(x) == 2 && {purrr::every(x, \(e) {is.integer(e) || is.numeric(e)})}) {
+      return(TRUE) 
+  } else {
+    return(FALSE)
   }
-  if (!purrr::every(p, ~ !identical(.x, NA) || tibble::is_tibble(.x))) {
-    stop("The data 'p' is not a list of tibbles")
-  }
+}
 
-  p <- p |> # p is a list of tibbles (of x,y,i)
-    purrr::map(\(df, i_df) {
-      if (!tibble::is_tibble(df)) {
-        # Should we accept data frames as well?
-        NA
-      } else {
-        # We have coordinates in the data frame, but how many strokes
-        if (length(unique(df$i)) < 2) {
-          # There is only a single stroke in data frame - thus no overlaps
-          df # ..so just stick with current data frame
-        } else {
-          # There are multiple strokes in data frame - check for overlaps in external function
-          loop_pairwise(df, method) # Handle the overlaps pairwise
-        }
+wrap_pc_union <- function(A, B, op="union") {
+  polyclip::polyclip(A, B, op) |> 
+    purrr::map_depth(.depth=2, \(e) {as.integer(round(e))})    
+}
+
+wrap_pc_simplify <- function(A) {
+  A |> polyclip::polysimplify(A) |>
+    purrr::map_depth(.depth=2, \(e) {as.integer(round(e))})
+}
+
+wrap_pc_offset <- function(A, d=5,e="round") {
+  A |> polyclip::polylineoffset(A, delta=d, endtype = e) |>
+    purrr::map_depth(.depth=2, \(e) {as.integer(round(e))}) 
+}
+
+polygons_are_similar <- function(A, B) {
+  # This function expects A and B to be in the format 
+  # required by polyclip::polyclip() - list(list(x,y))
+  
+  if(is_list_list(A) && is_list_list(B)) {
+    # Iterate self-recursively 
+    return(purrr::map2_lgl(A, B, \(a,b) {polygons_are_similar(a,b)}))
+  } else if(is_list_xy(A) && is_list_xy(B)) {
+    
+    # Test whether the two polygons A and B are 'essentially'
+    # identical, ie same vertexes, but not necessarily the 
+    # same starting vertex and possibly reverse order
+
+    # This function is called by attempt_unions, which is
+    # called by pdr_help_merge_overlapping_polygons -- we 
+    # can thus assume polygons are sanitized (open and 
+    # no duplicated vertexes)
+
+    # If strictly identical, just return TRUE
+    if(identical(A,B)) { return(TRUE) }
+
+    # If obviously not similar, just return FALSE
+    if(length(A) != length(B) ||
+      length(A$x) != length(A$y) ||
+      length(B$x) != length(B$y) ||
+      !setequal(A$x, B$x) || !setequal(A$y, B$y)
+      ) {return(FALSE)}
+
+    # ...otherwise, we may have polygons which are similar
+    # but in different direction (cw/ccw) and/or starting points.
+    # Build a 'double' vector of one polygon (A+A) and check 
+    # whether the other (B) is a contiguous subarray of it. 
+    # Ax, Ay, Bx, and By are all same length
+
+    Ax <- c(A$x, A$x)
+    Ay <- c(A$y, A$y)
+    Bx <- B$x
+    By <- B$y
+    # We now iterate a 'window' of fixed length len from the
+    # first element to the last element of the (single) A 
+    # vector and check for similarity to B
+    for(i in seq_len(length(A$x))) {
+      idx <- i:(i + length(A$x) -1)
+      if(
+        identical(Ax[idx], Bx) && identical(Ay[idx], By) ) {
+          return(TRUE)
       }
-    })
-
-  p
+      if(
+        identical(Ax[idx], rev(Bx)) && identical(Ay[idx], rev(By)) ) {
+          return(TRUE)
+      }
+    }
+    # It seems they are not similar:
+    return(FALSE)
+  }
 }
 
-loop_pairwise <- function(df, method = "intersection") {
-  i_strokes <- as.integer(unique(df$i)) # Hold the actual identifiers of the discrete strokes
-  n_strokes <- length(i_strokes) # How many of them there are (this may change in the while loop)
-  if (n_strokes < 2) {
-    return(df)
-  } # Only one stroke - no overlaps!
+
+attempt_union <- function(A, B) {
+  # This function expects A and B to be in the format 
+  # required by polyclip::polyclip()
+  result <- wrap_pc_union(A, B, op = "union")
+  # The polyclip function might (?) change the coordinates data
+  # by moving the start vertex, by changing the direction
+  # (clockwise/counterclockwise) and by un-closing the 
+  # polygon. Also it may return a list of 1 or more
+  # polygons -- we need to handle this complexity and 
+  # return a result of a list of length 2 $x and $y
+  
+  ##### Something went wrong #####
+  if(length(result)==0) {
+    return(list(list(x=NA,y=NA), status=NA))
+  } 
+  
+  ##### We have a single polygon result #####
+  if(length(result)==1) {
+    warning("2-into-1 union")
+    result <- wrap_pc_simplify(result)
+    result$status = "union_ok"
+    return(result)
+  } 
+  
+  ##### We have two polygons in result #####
+  ##### and they are similar to input  #####
+  if (length(result)==2) {
+    if(polygons_are_similar(A, result[[1]]) && polygons_are_similar(B, result[[2]]) ||
+       polygons_are_similar(A, result[[2]]) && polygons_are_similar(B, result[[1]])) {
+      # It seems the two inputs are similar to the two outputs
+      warning("2-into-2 no union")
+      result$status = "no_union"
+      return(result)
+    }
+  } 
+  
+  ##### We have 2 or more polygons in result #####
+  ##### and they are not similar to input    #####
+  
+
+  warning("2-into-2 complex union")
+  result <- result[1] # Just pick element #1
+  result$status = "union_ok"
+  return(result)
+
+}
+
+pdr_help_merge_overlapping_polygons <- function(.points) {
+  # .points is a tibble with columns .index, .x, and .y 
+  # As we are going to merge polygons, the .index values will no
+  # longer be important -- should probably be recoded as 1:n
+  # We therefor recast .points as a list of lists of x and y
+  # with one element per .index
+
+  ##########################################
+  ## -- if less than 2 points quit now -- ##
+  ##########################################
+  if(identical(NA, .points)) {return(NA)}
+  if(length(unique(.points$.index))<2) {return(.points)} 
+  
+  ## As this function is called from pdr_modify, we can assume
+  ## that all polygon data has been sanitized
+      
+
+  # Reshape points data to fit the required format for polyclip 
+  pointsxy <- .points |>
+    tidyr::nest(.by=.index) |>
+    dplyr::pull(data) |>
+    purrr::map(\(e) {list(x=e$.x, y=e$.y)}) 
+
+  # Number of strokes -- NOTE:This will change in the while loop if there are overlaps
+  n_strokes <- length(pointsxy) 
+  # Hold the actual indexes of each strokes
+  i_strokes <- 1:n_strokes
+  
   p1 <- 1 # pointer 1
   p2 <- 2 # pointer 2
 
-  # These loops will iterate each combination of pairs of strokes for overlap - merging as we go
+  # Helper functions
+  # The loop-in-loop will iterate each combination of pairs of strokes for overlap - merging as we go
   # The order of the strokes is not important, thus the runtime will be O(½n²-½n) which
   # is half of the nxn matrix. We can represent these stroke combinations with a single
   # vector of n elements if we use two pointers to iterate the vector - we will simply id
-  # the strokes by their index in the list-of-strokes (los) list
+  # the strokes by their index in the list-of-strokes list
 
+  #     index
+  #     -----
+  # p1 -> 1
+  #       2 <- p2
+  #       3
+  #       4 
+  #       5
+  #       6
+
+  # If the two polygons at indexes p1 and p2 overlap, they are merged to replace the p1
+  # polygon, the p2 polygon is deleted and the p2 pointer is reset to p1+1. 
+  # When p2 reaches the end of indexes, p1 is advanced and p2  .. until it reaches reach the end.
+
+  # Note that we rely on 'intersection' to identify overlaps (as opposed to 'union') -- this
+  # is necessary for merging anatomy polygons in background templates.
+
+  # In the following, I use aan (anatomy area names) to help debug
+  #aan <- pdr_example_anatomy |> purrr::map_chr(\(x) {x$.id}) # anatomy area names
+  #aan <- c("Back_left_buttock","Back_left_calf","Back_left_foot","Back_right_buttock","Back_left_thigh") # 13 10
+  #aan <- c("Back_left_buttock","Back_left_calf","Back_left_foot","Back_left_thigh","Back_right_buttock") # 10 13
   while (p1 < n_strokes) {
-    # Loop all polygons as the first polygon in pairwise comparison
     while (p2 <= n_strokes) {
-      # ..for each, loop remaining polygons as the second polygon in pairwise comparison
+      union_result <- attempt_union(pointsxy[[p1]], pointsxy[[p2]])
+      status <- union_result$status
+      union_result$status <- NULL
 
-      a <- df |> dplyr::filter(i == i_strokes[p1]) # coordinates of first polygon
-      b <- df |> dplyr::filter(i == i_strokes[p2]) # coordinates of second polygon
-
-      # The following will return a df of x and y polygon coordinates (one for each intersection)
-      if (method == "intersection") {
-        intersection <- pdr_poly_clip(a, b, op = "intersection")
-        they_overlap <- nrow(intersection) > 1 # TRUE or FALSE -- intersection is false if no area to overlap (e.g. overlapping vertices)
-      } else if (method == "union") {
-        intersection <- pdr_poly_clip(a, b, op = "union")
-        they_overlap <- length(unique(intersection$i)) == 1 # TRUE or FALSE -- If no overlap: length=2
-      }
-
-      if (they_overlap) {
-        if (method == "intersection" | method == "union") {
-          # Replace p1 by the union of p1 and p2, delete p2, reset length of strokes and reset p2=p1+1
-          # and keep only the first polygon (the rest are holes)
-          merge_result <- pdr_poly_clip(a, b, op = "union") |>
-            dplyr::filter(i == 1)
-          df <- df |>
-            dplyr::group_by(i) |>
-            dplyr::group_modify(\(grp, indx) {
-              if (grp$i != i_strokes[p1] & grp$i != i_strokes[p2]) {
-                grp
-              }
-              if (grp$i == i_strokes[p1]) {
-                tibble::tibble(
-                  i = i_strokes[p1],
-                  x = merge_result$x,
-                  y = merge_result$y
-                )
-              }
-              if (grp$i == i_strokes[p2]) {
-                tibble::tibble(
-                  x = as.integer(),
-                  x = as.integer(),
-                  y = as.integer()
-                )
-              }
-            }) |>
-            dplyr::ungroup()
-          #dplyr::filter(i != i_strokes[p1] & i != i_strokes[p2]) |> # Remove p1 and p2 from pd1 points data frame
-          #dplyr::bind_rows(tibble::tibble(i=i_strokes[p1], x=merge_result$x, y=merge_result$y)) # Add the merge result as p1 in the pd1 points data frame
-          print(paste0(
-            "Merged stroke ",
-            i_strokes[p1],
-            " and ",
-            i_strokes[p2],
-            " with ",
-            nrow(a),
-            " and ",
-            nrow(b),
-            " points respectively into a new strokes with ",
-            df |> dplyr::filter(i == i_strokes[p1]) |> nrow(),
-            " points"
-          ))
-          i_strokes <- i_strokes[-p2] # Remove p2 from vector of stroke indices we are iterating
-          n_strokes <- n_strokes - 1
-          p2 <- p1 + 1
-        } else {
-          # The method is not 'merge', but something else (e.g. split) -- not yet implemented
-        }
+      if(status == "union_ok") {
+        # Replace p1 data with union_result
+        pointsxy[p1] <- union_result
+        # Delete p2 data
+        pointsxy[p2] <- NULL
+        # Reset p2 pointer (p1+1)
+        p2 <- p1 +1
+        # Reset number of strokes (-1)
+        n_strokes <- n_strokes -1
       } else {
-        # if the do not overlap just move to the next stroke polygon
-        p2 <- p2 + 1
+        p2 <- p2 +1
       }
-    } # end of inner loop (p2)
-    p1 <- p1 + 1 # Advance p1
-    p2 <- p1 + 1 # Reset p2
-  } # end of out loop (p1)
-  return(df)
+    } # endwhile
+    p1 <- p1 +1
+    p2 <- p1 +1
+  } # endwhile
+
+  # Now re-cast .points in the usual format
+  pointsxy <- pointsxy |>
+    purrr::imap(\(e, i) {tibble::tibble(
+      .index=as.integer(round(i)), 
+      .x=as.integer(round(e$x)), 
+      .y=as.integer(round(e$y)))}) |> 
+    purrr::list_rbind()
+
+  return(pointsxy)
+}
+
+pdr_help_reduce_stroke_data <- function(.strokes, .index) {
+  # When reducing a set of pain drawings strokes, e.g. when
+  # merging overlapping strokes, we need to reduce the 
+  # strokes meta data also -- not just point data .
+
+  # Principle: For each stroke variable (e.g. 'color'),
+  # we will retain the data _if_ there is only one unique
+  # value. For instance, if all strokes have tool "pen", we
+  # will retain that value. However, if some strokes have
+  # tool "pen" and some have "spray", we will set tool as
+  # NA
+
+  # We will need to retain a specific number of observations
+  # however -- supplied as .index
+
+  # The input parameter .strokes is a tibble of strokes data.
+  # The .index is a list of the unique .index values left in
+  # the .points tibble _after_ reduction by e.g merging.
+
+  .index <- unique(.index) # just in case...
+
+  # So throw away original index values, summarize all other
+  # variables to either a) the one unique value observed in
+  # all rows og b) NA..
+  .strokes <- .strokes |>
+    dplyr::select(-.index) |>
+    dplyr::summarise_all(
+      ~ ifelse(length(unique(.x))==1, .x, NA)
+    ) 
+  
+  # ..the merge this with input parameter .index (.strokes
+  # will be repeated as necessary)
+  return(
+    dplyr::bind_cols(tibble::tibble(.index), .strokes)
+  )
 }

@@ -21,12 +21,24 @@ pd_poly_plot <- function(pd, background=system.file("extdata", "mird_body_backgr
   # We could add some more paramters to this function (e.g alpha, how to facet, etc)
   # ...or just leave it up to the user to create their own ggplots from pain drawing data structure
 
-  p <- pd |> dplyr::select(id,p) |> tidyr::unnest(cols=c(p)) |>
-    ggplot2::ggplot(ggplot2::aes(x=x,y=y,group=as.factor(i), color=as.factor(i))) + 
+  if(is.list(pd)) {
+    pd <- tibble::tibble(.points=pd)
+  }
+  pd <- pd |> 
+    purrr::imap(\(x,i) {x$.points |> dplyr::mutate(ii=i)}) |>
+    purrr::list_rbind() |>
+    dplyr::group_by(.index, ii) |>
+    dplyr::mutate(id = dplyr::cur_group_id()) |>
+    dplyr::ungroup() |>
+    dplyr::select(-.index, -ii) |>
+    dplyr::rename(x=.x, y=.y)
+
+  p <- pd |>
+    ggplot2::ggplot(ggplot2::aes(x=x,y=y,group=as.factor(id), color=as.factor(id))) + 
     ggplot2::xlim(0,xdim) + ggplot2::ylim(0,ydim) + # NOTE THIS IS FLIPPED ON THE Y AXIS ... AS IS MIRD!
     ggplot2::annotation_raster(png::readPNG(background), 0,xdim,0,ydim) +
     ggplot2::geom_polygon(alpha=0.5)  
-    #ggplot2::geom_label(ggplot2::aes(x=min(x)+(max(x)-min(x))/2, y=min(y)+(max(y)-min(y))/2, label=i)) 
+    #ggplot2::geom_label(ggplot2::aes(x=min(x)+(max(x)-min(x))/2, y=min(y)+(max(y)-min(y))/2, label=id)) 
   if(facet) {p <- p + ggplot2::facet_wrap(~id)}
 
   p
