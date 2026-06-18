@@ -641,6 +641,10 @@ wrap_pc_offset <- function(A, d=5,e="round") {
     purrr::map_depth(.depth=2, \(e) {as.integer(round(e))}) 
 }
 
+is_polygon <- function(A) {
+  return(length(wrap_pc_simplify(A))>0) 
+}
+
 polygons_are_similar <- function(A, B) {
   # This function expects A and B to be in the format 
   # required by polyclip::polyclip() - list(list(x,y))
@@ -717,7 +721,6 @@ attempt_union <- function(A, B) {
   
   ##### We have a single polygon result #####
   if(length(result)==1) {
-    warning("2-into-1 union")
     result <- wrap_pc_simplify(result)
     result$status = "union_ok"
     return(result)
@@ -729,7 +732,6 @@ attempt_union <- function(A, B) {
     if(polygons_are_similar(A, result[[1]]) && polygons_are_similar(B, result[[2]]) ||
        polygons_are_similar(A, result[[2]]) && polygons_are_similar(B, result[[1]])) {
       # It seems the two inputs are similar to the two outputs
-      warning("2-into-2 no union")
       result$status = "no_union"
       return(result)
     }
@@ -739,7 +741,6 @@ attempt_union <- function(A, B) {
   ##### and they are not similar to input    #####
   
 
-  warning("2-into-2 complex union")
   result <- result[1] # Just pick element #1
   result$status = "union_ok"
   return(result)
@@ -810,7 +811,7 @@ pdr_help_merge_overlapping_polygons <- function(.points) {
       status <- union_result$status
       union_result$status <- NULL
 
-      if(status == "union_ok") {
+      if(!identical(NA,status) && status == "union_ok") {
         # Replace p1 data with union_result
         pointsxy[p1] <- union_result
         # Delete p2 data

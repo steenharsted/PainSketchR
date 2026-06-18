@@ -107,9 +107,17 @@ pdr_example_data$.strokes <- pdr_example_data$.strokes |> purrr::map(\(tb) {
 })
 
 pdr_example_data <- pdr_example_data |>
+  dplyr::mutate(.id = ifelse(
+    .id == "0bca01979c68ee7cda553fa8ddd0345b", 
+    "chull_v_sanitize", .id
+  ))
+
+pdr_example_data <- pdr_example_data |>
   dplyr::relocate(.strokes, .after=last_col()) |>
   dplyr::relocate(.points, .after=last_col()) |>
   purrr::transpose()
+
+
 
 save(pdr_example_data, file="data/pdr_example_data.rda")
   
