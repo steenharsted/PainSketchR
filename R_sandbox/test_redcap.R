@@ -36,6 +36,8 @@ paindraw_data <- paindraw_data |>
       as.double()
   )
 
+### !!!! NOTICE THAT INFORMATION IS ALSO IN FILENAME !!! ###
+
 paindraw_data |> left_join(data)
 
 
@@ -127,7 +129,10 @@ data_with_paindrawings <- data_with_paindrawings |>
 
 # TEST THAT RGBAs look correct
 grid::grid.newpage()
-data_with_paindrawings$dorsal[[4]]$.rgba |> grid::grid.raster()
+data_with_paindrawings$dorsal[[2]]$.rgba |> grid::grid.raster()
+
+grid::grid.newpage()
+data_with_paindrawings$dorsal[[3]]$.rgba |> grid::grid.raster()
 
 
 # Extract alpha
