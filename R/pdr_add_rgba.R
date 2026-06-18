@@ -45,17 +45,17 @@
 #'
 #' # Multiple drawings at once
 #' drawings_with_rgba <- pdr_example_data |> pdr_add_rgba()
-#' 
-#' # Tibble workflow 
-#' 
+#'
+#' # Tibble workflow
+#'
 #' ## Data
 #' pd <- tibble(pdr_data = pdr_example_data)
-#' 
+#'
 #' ## add .rgba to the input list-column
 #' pd |> dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data))
 #'
 #' ## add rgba arrays in a separate list-column
-#' pd |> 
+#' pd |>
 #'   dplyr::mutate(
 #'     rgba_arrays = pdr_add_rgba(pdr_data, rgba_only = TRUE)
 #'     )
@@ -66,7 +66,7 @@
 #' @importFrom tibble tibble
 #' @importFrom png readPNG
 #' @importFrom ragg agg_capture
-#' @importFrom ggplot2 ggplot aes coord_fixed theme_void scale_color_identity 
+#' @importFrom ggplot2 ggplot aes coord_fixed theme_void scale_color_identity
 #' @importFrom ggplot2 scale_size_identity scale_alpha_identity scale_linewidth_identity
 #' @importFrom ggplot2 geom_path geom_point ggsave
 #' @importFrom purrr map
@@ -77,24 +77,31 @@ pdr_add_rgba <- function(
   paindrawr_data,
   method = "memory",
   clean_up = TRUE,
-  dpi = 96, 
+  dpi = 96,
   rgba_only = FALSE
 ) {
+  input_data <- paindrawr_data # preserved before normalisation for re-attaching .rgba
 
-  input_data <- paindrawr_data  # preserved before normalisation for re-attaching .rgba
-
-  # Wrap in list() if it's a single drawing (named list), not a list-of-named-lists 
+  # Wrap in list() if it's a single drawing (named list), not a list-of-named-lists
   if (!is.list(paindrawr_data[[1]])) {
     paindrawr_data <- list(paindrawr_data)
   }
 
-  # If multiple drawings, return a list 
+  # If multiple drawings, return a list
   if (length(paindrawr_data) > 1) {
     return(
       purrr::map(
         paindrawr_data,
-        \(x) pdr_add_rgba(paindrawr_data = x, method = method, clean_up = clean_up, dpi = dpi, rgba_only = rgba_only)
-      ) 
+        \(x) {
+          pdr_add_rgba(
+            paindrawr_data = x,
+            method = method,
+            clean_up = clean_up,
+            dpi = dpi,
+            rgba_only = rgba_only
+          )
+        }
+      )
     )
   }
 
@@ -106,14 +113,12 @@ pdr_add_rgba <- function(
 
   .data <- tibble::tibble(
     .list_col = paindrawr_data
-  ) |> 
+  ) |>
     tidyr::unnest_wider(col = .list_col)
-
- 
 
   # Extract height and width from the single row
   image_width <- .data |> dplyr::pull(.width) |> unique()
-  image_height <-.data |> dplyr::pull(.height) |> unique()
+  image_height <- .data |> dplyr::pull(.height) |> unique()
 
   # Unnest and join the s (strokes) and p (points) list-columns
   pdr_s <- .data |>
@@ -142,7 +147,7 @@ pdr_add_rgba <- function(
       # Uniform distribution within a circle of radius pr
       dplyr::mutate(
         angle = runif(dplyr::n(), 0, 2 * pi),
-        radius = sqrt(runif(dplyr::n(), 0, 1)) * .point_radius
+        radius = sqrt(runif(dplyr::n(), 0, 1)) * .spray_radius
       ) |>
       dplyr::mutate(
         .x = .x + radius * cos(angle),
@@ -156,7 +161,7 @@ pdr_add_rgba <- function(
       x = .x,
       y = .y,
       color = .color,
-      alpha = .alpha / 255
+      alpha = .alpha
     )) +
     ggplot2::coord_fixed(
       xlim = c(0, image_width),
@@ -229,12 +234,10 @@ pdr_add_rgba <- function(
   # Make transparent pixels black (rather than transparent white)
   rgba_arr[,, 1:3][rgba_arr[,, 4] == 0] <- 0
 
-  if(rgba_only){
+  if (rgba_only) {
     return(rgba_arr)
-}else{
-    
-  input_data$.rgba <- rgba_arr
-  return(input_data)
+  } else {
+    input_data$.rgba <- rgba_arr
+    return(input_data)
   }
 }
-
