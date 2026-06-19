@@ -716,11 +716,13 @@ attempt_union <- function(A, B) {
   
   ##### Something went wrong #####
   if(length(result)==0) {
+    warning("Something went wrong")
     return(list(list(x=NA,y=NA), status=NA))
   } 
   
   ##### We have a single polygon result #####
   if(length(result)==1) {
+    warning("Two polygons reduced to one")
     result <- wrap_pc_simplify(result)
     result$status = "union_ok"
     return(result)
@@ -729,11 +731,15 @@ attempt_union <- function(A, B) {
   ##### We have two polygons in result #####
   ##### and they are similar to input  #####
   if (length(result)==2) {
+    warning("Two polygons remain -- not reduced")
     if(polygons_are_similar(A, result[[1]]) && polygons_are_similar(B, result[[2]]) ||
        polygons_are_similar(A, result[[2]]) && polygons_are_similar(B, result[[1]])) {
-      # It seems the two inputs are similar to the two outputs
+      # It seems the two inputs are similar to the two outputs -- i.e. just a case of no overlap
+      warning("...because there was no overlap")
       result$status = "no_union"
       return(result)
+    } else {
+      warning("...because ? ..")
     }
   } 
   

@@ -74,6 +74,7 @@ Convert to new structure (mark with DONE, when converted and working)?
     - pdr_poly_manage_overlaps.R **DEFUNCT -- NOW IN HELPER FUNCS**
     - **DONE** pdr_modify.R 
     - pdr_spray_trim.R **SHOULD BE RGBA_TRIM**
+    - **DONE** pdr_get_info.R
 
 
 ## To do
