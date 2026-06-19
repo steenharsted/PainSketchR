@@ -141,3 +141,10 @@ data_with_paindrawings |>
     dorsal_area = pdr_get_alpha_area(dorsal),
     dorsal_intensity = pdr_get_alpha_intensity(dorsal)
   )
+
+
+data_with_paindrawings |>
+  filter_out(is.na(sex)) |>
+  mutate(
+    id = pdr_get_info(pdr = dorsal, ".id")
+  )
