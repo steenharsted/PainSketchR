@@ -1,65 +1,47 @@
-#' Calculate area of marking/stroke for pain drawings
+#' Calculate area of markings/strokes for pain drawings
 #'
-#' Calculate the area of each marking/stroke as a closed polygon. Either on a per-stroke basis, per-drawing basis or both.
+#' Calculate the areas either on a per-stroke basis, or a cummulated per-drawing basis.
 #' 
-#' @param p A list of tibbles of i,x and y columns (as integers) -- see [pdr_check_data] for more detail.
+#' @param pdr A valid pain drawing data list-col (see @pdr_check_data())
 #' @param by A string of either 'strokes', 'drawings' or 'both'. 
 #'
-#' @returns If `by` is "strokes", the function will return a list of tibbles of stroke areas (as integers) -- one list element (tibble) for each row in `p`. 
-#' If `by` is "drawings", the function returns a vector of collated drawing areas (as integers) of the same length as `p`. 
-#' If `by` is "both", it resutns a named list of both.
+#' @returns If `by` is "strokes", the function will return a list of tibbles of stroke areas (as integers) -- one list element (tibble) for each row in `pdr`. 
+#' If `by` is "drawings", the function returns a vector of collated drawing areas (as integers) of the same length as `pdr`. 
 #'
 #' @export
 #' @examples
-#' overlap <- pdr_poly_anatomy_overlap(pdr_demo_data[1:3,], pdr_Back_right_leg)
-#' pdr_poly_areas(overlap, by="both")
+#' tibble::tibble(pdr_data = pdr_example_anatomy) |>
+#'   dplyr::mutate(region = pdr_get_info(pdr_data, ".id")) |>
+#'   dplyr::filter(stringr::str_detect(region, "Back_right")) |>
+#'   dplyr::mutate(cum_area = pdr_poly_areas(pdr_data, by="drawings"))
+#'
+#' tibble::tibble(pdr_data = pdr_example_data[1:3]) |>
+#'   dplyr::mutate(region = pdr_get_info(pdr_data, ".id")) |>
+#'   dplyr::mutate(stroke_areas = pdr_poly_areas(pdr_data, by="strokes"))
+#' 
 #'  
-pdr_poly_areas <- function(p, by="drawings") {
-  # if p is a full pain drawing data set, add results as a column
-  if (pdr_check_data(p, verbose=FALSE)) {
-
+pdr_poly_areas <- function(pdr, by="drawings") {
+  # We expect a valid pain drawing list-col as this function
+  # is to be used in a mutate function call
+  
+  # Sanity check
+  if (!pdr_check_data(pdr, verbose=FALSE)) {
+    stop("Invalid data 'pdr' in function call 'pdr_poly_areas()'")
   }
 
-
-  # Calculate the area of each stroke/polygon -- this is necessary irrespective of 'by' parameter
-  p <- p |> 
-    purrr::map(\(df, i_df) {
-      if(tibble::is_tibble(df) && nrow(df)>2) {
-        # It has more than two coordinate pairs
-        df |>
-          dplyr::group_by(i) |>
-          dplyr::group_modify(\(dfgr, i_dfgr) {
-            tibble::tibble(area = as.integer(round(geometry::polyarea(c(dfgr$x,dfgr$x[[1]]), c(dfgr$y,dfgr$y[[1]]))))) ## dfgr$y[[1]] to close poly          
-          }) |> 
-          dplyr::ungroup()
-      } else if(tibble::is_tibble(df) && nrow(df)<3) {
-        # It is a single point or a two point line
-        0
-      } else {
-        NA
-      } # end if
-    }) # end map
-  
-  if(by=="drawings") {
-    p |> purrr::map_int(\(df) {
-      if(tibble::is_tibble(df)) {
-        sum(df$area)
-      } else {
-        as.integer(0)
-      }      
+  if (by=="strokes") {
+    pdr |> purrr::map(\(e) {
+      e$.points |> 
+        dplyr::group_by(.index) |>
+        dplyr::summarize(.area = wrap_geo_polyarea(.x, .y)) |>
+        dplyr::ungroup()
     })
-  } else if (by=="strokes") {
-    p
   } else {
-    list(drawings = {
-      p |> purrr::map_int(\(df) {
-        if(tibble::is_tibble(df)) {
-          sum(df$area)
-        } else {
-          as.integer(0)
-        }
-      })
-    },
-    strokes = p)
+    pdr |> purrr::map_int(\(e) {
+      e$.points |> 
+        dplyr::group_by(.index) |>
+        dplyr::summarize(.area = wrap_geo_polyarea(.x, .y)) |>
+        dplyr::pull(.area) |> sum()
+    })
   }
 }

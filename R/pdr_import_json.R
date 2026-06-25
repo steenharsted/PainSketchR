@@ -109,13 +109,17 @@ pdr_import_json <- function(files) {
         tmp$.strokes <- tmp$.strokes |>
           dplyr::rename(
             .index = strokeId,
+            .draw_input_type = drawInputType,
             .tool = tool,
             .tool_width = lineWidth,
             .color = color,
             .alpha = alpha,
             .spray_radius = sprayRadius,
             .point_density = sprayDensity
-          )
+          ) |>
+          mutate(.alpha = ifelse(
+            is.integer(.alpha), .alpha, as.integer(round(.alpha*255))
+          ))
         result <- c(result, list(tmp))
       }
     }

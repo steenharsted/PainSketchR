@@ -66,10 +66,16 @@ pdr_get_info <- function(pdr, var="id") {
     }
   }
 
+  # The following could be made more generic by testing the data type of {{var1}}
+  # so as to return a vector if data is <int> or <char>, etc, but a list if matrix...
 
   if(!{{var1}} %in% c(".strokes", ".points")) {
     # This should return a vector of same length as pdr
-    return(pdr |> purrr::map_depth(.depth=1, {{var1}}) |> purrr::as_vector())
+    if({{var1}} == ".rgba") {
+      return(pdr |> purrr::map_depth(.depth=1, {{var1}}) |> purrr::map(\(e) {e}))
+    } else {
+      return(pdr |> purrr::map_depth(.depth=1, {{var1}}) |> purrr::as_vector())
+    }    
   } else {
     # This should return a list of same length as pdr
     return(pdr |> purrr::map_depth(.depth=1, {{var1}}) |> purrr::map(\(e) {e |> dplyr::pull( {{var2}} )}))

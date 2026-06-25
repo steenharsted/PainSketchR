@@ -641,119 +641,70 @@ wrap_pc_offset <- function(A, d=5,e="round") {
     purrr::map_depth(.depth=2, \(e) {as.integer(round(e))}) 
 }
 
+wrap_geo_polyarea <- function(x,y) {
+  # Sanity checks?
+  
+  # Close polygon, if not unclosed
+  if(!all(
+          identical(x[1],x[nrow(x)]) &&
+          identical(y[1],y[nrow(y)]))){
+    x <- c(x, x[1])
+    y <- c(y, y[1])
+  }
+  
+  return(as.integer(round(
+    geometry::polyarea(x, y)
+  )))
+}
+
 is_polygon <- function(A) {
   return(length(wrap_pc_simplify(A))>0) 
 }
 
-polygons_are_similar <- function(A, B) {
-  # This function expects A and B to be in the format 
-  # required by polyclip::polyclip() - list(list(x,y))
-  
-  if(is_list_list(A) && is_list_list(B)) {
-    # Iterate self-recursively 
-    return(purrr::map2_lgl(A, B, \(a,b) {polygons_are_similar(a,b)}))
-  } else if(is_list_xy(A) && is_list_xy(B)) {
-    
-    # Test whether the two polygons A and B are 'essentially'
-    # identical, ie same vertexes, but not necessarily the 
-    # same starting vertex and possibly reverse order
-
-    # This function is called by attempt_unions, which is
-    # called by pdr_help_merge_overlapping_polygons -- we 
-    # can thus assume polygons are sanitized (open and 
-    # no duplicated vertexes)
-
-    # If strictly identical, just return TRUE
-    if(identical(A,B)) { return(TRUE) }
-
-    # If obviously not similar, just return FALSE
-    if(length(A) != length(B) ||
-      length(A$x) != length(A$y) ||
-      length(B$x) != length(B$y) ||
-      !setequal(A$x, B$x) || !setequal(A$y, B$y)
-      ) {return(FALSE)}
-
-    # ...otherwise, we may have polygons which are similar
-    # but in different direction (cw/ccw) and/or starting points.
-    # Build a 'double' vector of one polygon (A+A) and check 
-    # whether the other (B) is a contiguous subarray of it. 
-    # Ax, Ay, Bx, and By are all same length
-
-    Ax <- c(A$x, A$x)
-    Ay <- c(A$y, A$y)
-    Bx <- B$x
-    By <- B$y
-    # We now iterate a 'window' of fixed length len from the
-    # first element to the last element of the (single) A 
-    # vector and check for similarity to B
-    for(i in seq_len(length(A$x))) {
-      idx <- i:(i + length(A$x) -1)
-      if(
-        identical(Ax[idx], Bx) && identical(Ay[idx], By) ) {
-          return(TRUE)
-      }
-      if(
-        identical(Ax[idx], rev(Bx)) && identical(Ay[idx], rev(By)) ) {
-          return(TRUE)
-      }
-    }
-    # It seems they are not similar:
-    return(FALSE)
-  }
-}
-
-
-attempt_union <- function(A, B) {
+attempt_union <- function(A, B, edges) {
   # This function expects A and B to be in the format 
   # required by polyclip::polyclip()
-  result <- wrap_pc_union(A, B, op = "union")
+  
   # The polyclip function might (?) change the coordinates data
   # by moving the start vertex, by changing the direction
   # (clockwise/counterclockwise) and by un-closing the 
   # polygon. Also it may return a list of 1 or more
   # polygons -- we need to handle this complexity and 
   # return a result of a list of length 2 $x and $y
+
+  # If parameter edges is TRUE, polygons should be merged 
+  # even if only connected by an edge without overlap
+
+  if (edges) {
+    they_intersect <- length(wrap_pc_union(A, B, op="union")) == 1  
+  } else {
+    they_intersect <- length(wrap_pc_union(A, B, op="intersection")) > 0
+  }
   
-  ##### Something went wrong #####
-  if(length(result)==0) {
-    warning("Something went wrong")
-    return(list(list(x=NA,y=NA), status=NA))
-  } 
-  
-  ##### We have a single polygon result #####
-  if(length(result)==1) {
-    warning("Two polygons reduced to one")
-    result <- wrap_pc_simplify(result)
-    result$status = "union_ok"
-    return(result)
-  } 
-  
-  ##### We have two polygons in result #####
-  ##### and they are similar to input  #####
-  if (length(result)==2) {
-    warning("Two polygons remain -- not reduced")
-    if(polygons_are_similar(A, result[[1]]) && polygons_are_similar(B, result[[2]]) ||
-       polygons_are_similar(A, result[[2]]) && polygons_are_similar(B, result[[1]])) {
-      # It seems the two inputs are similar to the two outputs -- i.e. just a case of no overlap
-      warning("...because there was no overlap")
-      result$status = "no_union"
-      return(result)
+  if(!they_intersect) {
+    # As they do not intersect, we just need an indicator of
+    # 'no union' -- we do not need to return any polygons
+    return("FAIL")
+  } else {
+    # As they do intersect, we need to return the resulting
+    # merged polygon -- however we want simplified polygons
+    # and not complex polygons with holes, etc.
+    result <- wrap_pc_union(A, B, op="union")
+    if(length(result)==1) {
+      # This must be a simple polygon, so return it
+      return(result[[1]])
     } else {
-      warning("...because ? ..")
+      # This must be a complex polygon, so handle it by just
+      # picking the polygon with the largest bounding box
+      tmp_indx <- result |> purrr::map_int(\(e) {
+                bb_area = (max(e$x)-min(e$x))*(max(e$y)-min(e$y))
+              }) |> purrr::as_vector() |> which.max()
+      result[[tmp_indx]] 
     }
   } 
-  
-  ##### We have 2 or more polygons in result #####
-  ##### and they are not similar to input    #####
-  
-
-  result <- result[1] # Just pick element #1
-  result$status = "union_ok"
-  return(result)
-
 }
 
-pdr_help_merge_overlapping_polygons <- function(.points) {
+pdr_help_merge_overlapping_polygons <- function(.points, edges=FALSE) {
   # .points is a tibble with columns .index, .x, and .y 
   # As we are going to merge polygons, the .index values will no
   # longer be important -- should probably be recoded as 1:n
@@ -813,22 +764,20 @@ pdr_help_merge_overlapping_polygons <- function(.points) {
   #aan <- c("Back_left_buttock","Back_left_calf","Back_left_foot","Back_left_thigh","Back_right_buttock") # 10 13
   while (p1 < n_strokes) {
     while (p2 <= n_strokes) {
-      union_result <- attempt_union(pointsxy[[p1]], pointsxy[[p2]])
-      status <- union_result$status
-      union_result$status <- NULL
-
-      if(!identical(NA,status) && status == "union_ok") {
+      union_result <- attempt_union(pointsxy[[p1]], pointsxy[[p2]], edges)
+      if(is.character(union_result) && union_result == "FAIL") {
+        # These two strokes do not overlap -- so just move on
+        p2 <- p2 +1
+      } else {
         # Replace p1 data with union_result
-        pointsxy[p1] <- union_result
+        pointsxy[[p1]] <- union_result
         # Delete p2 data
         pointsxy[p2] <- NULL
         # Reset p2 pointer (p1+1)
         p2 <- p1 +1
         # Reset number of strokes (-1)
-        n_strokes <- n_strokes -1
-      } else {
-        p2 <- p2 +1
-      }
+        n_strokes <- n_strokes -1      
+      } # endif
     } # endwhile
     p1 <- p1 +1
     p2 <- p1 +1

@@ -24,8 +24,8 @@
 #'
 #' **`.strokes` tibble or NA (stroke metadata)**
 #' If tibble, must be structured as:
-#' * Columns: `.index`, `.q`, `.tool`, `.tool_width`, `.color`, `.alpha`
-#' * Types: integer, integer, character, integer, character, integer
+#' * Columns: `.index`, `.draw_input_type`, `.tool`, `.tool_width`, `.color`, `.spray_radius`, `.point_density`, `.alpha`
+#' * Types: integer, character, integer, character, integer, character, integer, integer, integer
 #' * One row per stroke (`.index` must be unique)
 #' * Exactly one unique value of `.color` per tibble
 #'
@@ -86,13 +86,15 @@ pdr_check_data <- function(d, verbose = TRUE) {
   # ---- validators for nested tibbles ----
   valid_strokes_tbl <- function(x) {
     tibble::is_tibble(x) &&
-      setequal(names(x), c(".index", ".q", ".tool", ".tool_width", ".color", ".alpha")) &&
+      setequal(names(x), c(".index", ".draw_input_type", ".tool", ".tool_width", ".color", ".alpha", ".point_density", ".spray_radius")) &&
       is.integer(x$.index) &&
-      is.integer(x$.q) &&
+      is.character(x$.draw_input_type) &&
       is.character(x$.tool) &&
       is.integer(x$.tool_width) &&
       is.character(x$.color) &&
       is.integer(x$.alpha) &&
+      is.integer(x$.point_density) &&
+      is.integer(x$.spray_radius) &&
       length(unique(x$.color)) == 1 &&
       !any(duplicated(x$.index))
   }
@@ -133,7 +135,7 @@ int_checker <- function(d) {
   # ---- column types ----
   if (!(is.character(d$.id) &&
         is.character(d$.file) &&
-        is.integer(d$.version) &&
+        is.character(d$.version) &&
         is.integer(d$.width) &&
         is.integer(d$.height) &&
         is.character(d$.units) &&

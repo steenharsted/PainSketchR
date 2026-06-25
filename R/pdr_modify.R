@@ -8,7 +8,7 @@
 #' 
 #' 
 #' @param pdr
-#' @param operations
+#' @param ops
 #'
 #' @returns
 #'
@@ -16,38 +16,47 @@
 #' @examples
 
 
-pdr_modify <- function(pdr, operations, delta=5) {
+pdr_modify <- function(pdr, ops, delta=5, templates = NULL) {
   # This function will:
   # a) perform sanity checks on input parameters
-  # b) perform each of the operations specified 
+  # b) perform each of the ops specified 
   # 
-  # Note that the operations are defined in separate functions
+  # Note that the ops are defined in separate functions
   # and are performed in a fixed sequence
 
 
   ########## Sanity checks ##########
-  accepted_operations <- c("drop_noarea", "buffer_noarea", "sanitize", "reduce_to_chull", "merge_overlaps")
+  accepted_ops <- c("flipy", "drop_noarea", "buffer_noarea", "sanitize", "reduce_to_chull", "merge_overlaps", "merge_edges", "reduce_to_templates")
 
   # This function takes a valid pain drawing data set as input
   if (!pdr_check_data(pdr, verbose = FALSE)) {
     pdr_check_data(pdr, verbose = TRUE) # Give user some info
     stop("Stopped: The function `pdr_modify()` expects valid pain data as parameter 'pdr'. Use `pdr_check_data()` for more details.")
   }
-  # Require 'operations' to be a character vector of fixed options
-  if(!is.character(operations)) {
-    stop("Stopped: The function `pdr_modify()` expects a character vector as parameter 'operations'.")
+  # Require 'ops' to be a character vector of fixed options
+  if(!is.character(ops)) {
+    stop("Stopped: The function `pdr_modify()` expects a character vector as parameter 'ops'.")
   } 
-  if(any(identical(NA, operations)) || any(operations == "")) {
-    warning("Unknown operations specified in function `pdr_modify()`.")
+  if(any(identical(NA, ops)) || any(ops == "")) {
+    warning("Unknown ops specified in function `pdr_modify()`.")
     return(pdr)
-  }     
-  if(any(!{operations %in% accepted_operations})) {
-    warning("Unknown operations specified in function `pdr_modify()`.")
   }
-  if(all(c("drop_noarea", "buffer_noarea") %in% operations)) {
-    warning(paste0("Both 'drop_noarea' and 'buffer_noarea' specified in 'operations' of
-    `pdr_modify()` -- defaulting to 'drop_noarea'."))
-    operations <- intersect(operations, accepted_operations) 
+  if(any(identical(ops, "reduce_to_templates")) && is.null(templates)) {
+    stop("Stopped: The function `pdr_modify()` expects a templates parameter when 'ops' includes 'reduce_to_templates.")
+  }
+  if(any(!{ops %in% accepted_ops})) {
+    warning("Unknown ops specified in function `pdr_modify()`.")
+  }
+  if(all(c("drop_noarea", "buffer_noarea") %in% ops)) {
+    warning("Both 'drop_noarea' and 'buffer_noarea' specified in 'ops' of `pdr_modify()` -- defaulting to 'drop_noarea'.")
+    ops <- ops[-which(ops == "buffer_noarea")]
+  }
+  if(all(c("merge_overlaps", "merge_edges") %in% ops)) {
+    warning("Both 'merge_overlaps' and 'merge_edges' specified in 'ops' of `pdr_modify()` -- defaulting to 'merge_overlaps'.")
+    ops <- ops[-which(ops == "merge_edges")]
+  }
+  if(any(c("merge_overlaps", "merge_edges", "reduce_to_templates") %in% ops) && !all("sanitize" %in% ops)) {
+    ops <- c("sanitize", ops)
   }
 
 
@@ -73,13 +82,26 @@ pdr_modify <- function(pdr, operations, delta=5) {
   }  
   ########## End helper functions ########## 
 
-  ########## Operations functions ##########
+  ########## ops functions ##########
+  flipy <- function(pdr) {
+    # This function flips (mirrors) the y-axis
+    # This solves a common problem because different platforms
+    # tend to use a traditional cartesion coordinates system
+    # with origo at the _lower_ left whereas computer screens
+    # typically place the origo in the _upper_ left
 
+    pdr <- pdr |> 
+      purrr::map(\(e) {
+        e$.points$.y <- e$.height - e$.points$.y
+        e
+      })
+    return(pdr)
+  }
     
   drop_noarea <- function(pdr) {
     # This functions removes those strokes in pain drawings
     # which have no geometric area, i.e. points and two-vertex
-    # line segments ... not it is possible for other geometries
+    # line segments ... NOTE! it is possible for other geometries
     # to also have no area
 
     pdr <- pdr |>
@@ -175,21 +197,28 @@ pdr_modify <- function(pdr, operations, delta=5) {
         e$.points <- e$.points |> # All coordinates for that drawing
           dplyr::group_by(.index) |>  # Now grouped by stroke index
           dplyr::group_modify(\(grp, indx) { # 
-            # We store wrap_pc_simplify in tmp (instead of
-            # checking is_polygon) to avoid double work
+            # We store wrap_pc_simplify in tmp to avoid double work
             tmp <- wrap_pc_simplify(list(x=grp$.x, y=grp$.y))
             if(length(tmp)==0) {
-              # When sanitizing this stroke yield an empty result
+              # Sanitizing this stroke yielded an empty result
               # Probably, the stroke is not a valid polygon (e.g a point)
               # So return an empty tibble
               tibble::tibble(.x=as.integer(), .y=as.integer())
-            } else {
-              # After sanitizing, this stroke, we have some
-              # polygon coordinates -- keep only first polygon (if mulitple)
+            } else if (length(tmp)==1) {
+              # After sanitizing, this stroke, we have 
+              # coordinates of a single polygon
               tmp |>
                 purrr::pluck(1) |>
                 tibble::as_tibble() |>
                 dplyr::rename(.x=x, .y=y)
+            } else {
+              # After sanitizing this stroke, we have
+              # coordinates of mulitple polygons -- the 
+              # outermost must have the largest bounding box
+              tmp_indx <- tmp |> purrr::map_int(\(e) {
+                bb_area = (max(e$x)-min(e$x))*(max(e$y)-min(e$y))
+              }) |> purrr::as_vector() |> which.max()
+              tmp[[tmp_indx]] |> tibble::as_tibble() |> dplyr::rename(.x=x, .y=y)
             }
           }) |>
           dplyr::ungroup()
@@ -213,30 +242,68 @@ pdr_modify <- function(pdr, operations, delta=5) {
     return(pdr)    
   }  
     
-  ########## End operations functions ########## 
+  merge_edges <- function(pdr) {
+    # This function merges any polygons that share aborder 
+    # in each drawing. It is identical to merge_overlaps
+    # except for the edges=TRUE parameter
+    
+    pdr <- pdr |> purrr::map(\(e) {
+      e$.points <- pdr_help_merge_overlapping_polygons(e$.points, edges=TRUE)
+      e$.strokes <- pdr_help_reduce_stroke_data(e$.strokes, unique(e$.points$.index))
+      e
+    }) # endmap
 
-  if("drop_noarea" %in% operations) {
+    return(pdr)    
+  }
+
+  reduce_to_templates <- function(pdr, templates) {
+    # This function reduces each polygon to the subset which
+    # is contained within a number of templates. This is 
+    # useful for, e.g. reducing pain drawings to that within
+    # the background template outline.
+    
+    # pdr <- pdr |> purrr::map(\(e) {
+    #   e$.points <- ..function..(e$.points, templates)
+    #   e$.strokes <- ..function..(e$.strokes, unique(e$.points$.index))
+    #   e
+    # }) # endmap
+    return(pdr)    
+  }
+
+  ########## End ops functions ########## 
+
+
+  if("flipy" %in% ops) {
+    pdr <- flipy(pdr)
+  }
+
+  if("drop_noarea" %in% ops) {
     pdr <- drop_noarea(pdr)
   }
 
-  if("buffer_noarea" %in% operations) {
+  if("buffer_noarea" %in% ops) {
     pdr <- buffer_noarea(pdr, delta)
   }
 
-  if("sanitize" %in% operations) {
+  if("sanitize" %in% ops) {
     pdr <- sanitize(pdr)
   }
 
-  if("reduce_to_chull" %in% operations) {
+  if("reduce_to_chull" %in% ops) {
     pdr <- reduce_to_chull(pdr)
   }
 
-  if("merge_overlaps" %in% operations) {
-    # Must be sanitized before attempting overlap merging
-    if (!{"sanitize" %in% operations}) {
-      pdr <- sanitize(pdr) # If we didn't already...
-    }
+  if("merge_overlaps" %in% ops) {
     pdr <- merge_overlaps(pdr)
   }
+
+  if("merge_edges" %in% ops) {
+    pdr <- merge_edges(pdr)
+  }
+
+  if("reduce_to_templates" %in% ops) {
+    pdr <- reduce_to_templates(pdr, templates)
+  }
+
   return(pdr)
 }

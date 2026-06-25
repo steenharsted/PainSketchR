@@ -69,10 +69,9 @@ Convert to new structure (mark with DONE, when converted and working)?
     - **DONE** pdr_implode.R
     - **DONE** pdr_import_json.R
     - pdr_import_mird.R --- this function expects a string - not a filename
-    - pdr_poly_anatomy_overlap.R **DEFUNCT -- TO BE REMOVED**
-    - pdr_poly_areas.R
-    - pdr_poly_manage_overlaps.R **DEFUNCT -- NOW IN HELPER FUNCS**
-    - **DONE** pdr_modify.R 
+    - **DONE** pdr_poly_areas.R
+    - **DONE** pdr_modify.R operations
+    - add operation to modify to 'reduce_to_templates'
     - pdr_spray_trim.R **SHOULD BE RGBA_TRIM**
     - **DONE** pdr_get_info.R
 

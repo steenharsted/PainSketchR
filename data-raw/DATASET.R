@@ -8,13 +8,13 @@ for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
   pdr_xa[[length(pdr_xa) + 1]] <- list(
     .id= as.character(fs::path_ext_remove(fs::path_file(c))), 
     .file = as.character(fs::path_file(c)),
-    .version = as.integer(1),
+    .version = "1",
     .width=as.integer(450),
     .height=as.integer(500),
     .units="px",
     .timestamp=as.character(Sys.time()),
     .app="PainDraweR package",
-    .strokes=tibble::tibble(.index=as.integer(1), .q=as.integer(1), .tool="pen", .tool_width=as.integer(1), .color="#FF0000", .alpha=as.integer(256)), 
+    .strokes=tibble::tibble(.index=as.integer(1), .draw_input_type="mouse", .tool="pen", .tool_width=as.integer(1), .color="#FF0000", .point_density=as.integer(1), .spray_radius=as.integer(0),  .alpha=as.integer(255)), 
     .points=tibble::tibble(.index=as.integer(1), .x=d[,1], .y=d[,2])
   )
 } 
@@ -47,7 +47,7 @@ special_cases <- tibble::tibble(
     paindrawing_LBP="(,115,115,100,100,100,130,130,130,130,100,115,115,)"
   )) |>
   dplyr::bind_rows(tibble::tibble(
-    id="close_polygon",
+    id="closed_polygon",
     paindrawing_LBP="(,100,100,100,130,130,130,130,100,)"
   )) |>
   dplyr::bind_rows(tibble::tibble(
@@ -55,9 +55,14 @@ special_cases <- tibble::tibble(
     paindrawing_LBP="(,100,100,100,130,130,130,130,100,100,100,),(,115,115,115,145,145,145,145,115,115,115,),(,110,110,110,120,120,120,120,110,110,110,),(,150,150,150,170,170,170,170,150,150,150,)"
   )) |>
   dplyr::bind_rows(tibble::tibble(
+    id="no_area_line",
+    paindrawing_LBP="(,100,100,100,105,100,115,100,130,100,140,100,135,)"
+  ))|>
+  dplyr::bind_rows(tibble::tibble(
     id="intersection",
-    paindrawing_LBP="(,100,100,100,130,130,130,130,100,),(,100,130,100,160,130,160,130,130,),(,100,170,100,200,130,200,130,170,)"
+    paindrawing_LBP="(,130,50,130,100,180,100,180,50,),(,100,100,100,130,130,130,130,100,),(,100,130,100,160,130,160,130,130,),(,100,170,100,200,130,200,130,170,)"
   ))
+
 
 pdr_example_data <- dplyr::bind_rows(
   special_cases, 
@@ -85,7 +90,7 @@ pdr_example_data <- dplyr::bind_rows(
 
 pdr_example_data <- pdr_example_data |>
   dplyr::mutate(.file="data/pdr_example_data.csv") |>
-  dplyr::mutate(.version=as.integer(2)) |>
+  dplyr::mutate(.version="2") |>
   dplyr::mutate(.width=as.integer(450)) |>
   dplyr::mutate(.height=as.integer(500)) |>
   dplyr::mutate(.units="px") |>
@@ -95,29 +100,40 @@ pdr_example_data <- pdr_example_data |>
 pdr_example_data$.strokes <- pdr_example_data$.strokes |> purrr::map(\(tb) {
   if(tibble::is_tibble(tb)) {
     tb |> dplyr::mutate(
-      .q=.index,
       .tool="pen",
+      .draw_input_type = "mouse",
       .tool_width=as.integer(1),
       .color="#FF0000",
-      .alpha=as.integer(128)
+      .point_density = as.integer(1),
+      .spray_radius = as.integer(0),
+      .alpha=as.integer(255)
     )
   } else {
     tb
   }
 })
 
-pdr_example_data <- pdr_example_data |>
-  dplyr::mutate(.id = ifelse(
-    .id == "0bca01979c68ee7cda553fa8ddd0345b", 
-    "chull_v_sanitize", .id
-  ))
+
 
 pdr_example_data <- pdr_example_data |>
   dplyr::relocate(.strokes, .after=last_col()) |>
   dplyr::relocate(.points, .after=last_col()) |>
   purrr::transpose()
 
+# We merged geometric example data and actual patient data into one
+# lets split them up again (as it is probably easier that way)
 
+pdr_example_geometry <- pdr_example_data |> 
+  purrr::keep(\(e) {e$.id %in% c("no_area", "duplicates", "convex_hull", "closed_polygon", "merge_overlaps", "no_area_line", "intersection", "selfintersection")})
+save(
+  pdr_example_geometry,
+  file="data/pdr_example_geometry.rda"
+)
 
-save(pdr_example_data, file="data/pdr_example_data.rda")
+pdr_example_data <- pdr_example_data |> 
+  purrr::keep(\(e) {!e$.id %in% c("no_area", "duplicates", "convex_hull", "closed_polygon", "merge_overlaps", "no_area_line", "intersection", "selfintersection")})
+save( 
+  pdr_example_data,
+  file="data/pdr_example_data.rda"
+)
   

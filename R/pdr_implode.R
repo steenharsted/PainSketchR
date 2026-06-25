@@ -74,18 +74,28 @@ pdr_implode <- function(pdr) {
   # For stroke and poitns, we concatenate multiple data frames 
   # into one (each)
 
+  one_or_multiple <- function(pdr, var) {
+    # This helper function returns either the string "multiple"
+    # or the one value found for 'var' in 'pdr'
+    # We use this to retain variable values where there is only one
+    # or replace multiple my "multiple" ... when imploding data
+    var_values <- pdr |> purrr::map_depth(.depth=1, {{var}}) |> purrr::as_vector()
+    ifelse(
+      length(unique(var_values))>1, 
+      "mulitple", 
+      unique(var_values))
+  }
+
   result <- list(
     list(
       .id = paste0("imploded_", Sys.time()),
-      .file = ifelse(length(unique(pdr |> purrr::map_chr(\(x) {x$.file})))>1,
-                      "multiple", pdr[[1]]$.file),
-      .version = min(pdr |> purrr::map_int(\(x) {x$.version})),
+      .file = one_or_multiple(pdr, ".file"),
+      .version = one_or_multiple(pdr, ".version"),
       .width = max(pdr |> purrr::map_int(\(x) {x$.width})),  
       .height = max(pdr |> purrr::map_int(\(x) {x$.height})),
       .units = pdr[[1]]$.units, 
       .timestamp = max(pdr |> purrr::map_chr(\(x) {x$.timestamp})),
-      .app = ifelse(length(unique(pdr |> purrr::map_chr(\(x) {x$.app})))>1,
-                      "multiple", pdr[[1]]$.app),
+      .app = one_or_multiple(pdr, ".app"),
       .strokes = {pdr |> 
         purrr::imap_dfr(\(x, indx) {rbind(x$.strokes) |> dplyr::mutate(pdr_indx = indx)}) |>
           dplyr::group_by(pdr_indx, .index) |>
