@@ -40,8 +40,8 @@ pdr_anatomy_post_low <-
   pull(pdr_data) |>
   pdr_implode()
 tibble(pdr_data = pdr_anatomy_post_low) |>
-  mutate(pdr_data = pdr_modify(pdr_data, "merge_overlaps")) |> 
-  pdr_plot_drawing()
+  mutate(pdr_data = pdr_modify(pdr_data, "merge_edges")) |> 
+  pdr_plot_drawing(type = "polygon", background_image = here("inst", "extdata", "mird_body_background.png"))
 
 
 ###########################################################

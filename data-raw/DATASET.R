@@ -137,3 +137,20 @@ save(
   file="data/pdr_example_data.rda"
 )
   
+pdr_example_tibble <- tibble::tibble(
+  pdr_data = pdr_example_data,
+  sex = sample(0:1, length(pdr_example_data), replace=TRUE),
+  age = round(rnorm(length(pdr_example_data), 45, 20),1),
+  duration = sample(c("Acute", "Subacute", "Chronic"), length(pdr_example_data), replace=TRUE),
+  pain = as.integer(round(rnorm(length(pdr_example_data), 5, 4)))
+) |> dplyr::mutate(
+  age = ifelse(age > 98, 98, age),
+  age = ifelse(age < 18, 18, age),
+  pain = ifelse(pain > 10, 10, pain),
+  pain = ifelse(pain <0 , 0, pain)
+)
+save( 
+  pdr_example_tibble,
+  file="data/pdr_example_tibble.rda"
+)
+ 

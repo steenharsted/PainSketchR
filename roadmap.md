@@ -56,6 +56,8 @@ New names in pain drawing definition:
 Convert to new structure (mark with DONE, when converted and working)?
 * Both SFH + SON
     - helper_functions.R
+    - DOCUMENTATION !!
+    
 * SFH:
     - pdr_add_rgba.R
     - pdr_alpha.R
@@ -74,6 +76,9 @@ Convert to new structure (mark with DONE, when converted and working)?
     - add operation to modify to 'reduce_to_templates'
     - pdr_spray_trim.R **SHOULD BE RGBA_TRIM**
     - **DONE** pdr_get_info.R
+    - pdr_subtract_template -- fjern in/out ift skabelon
+    - pdr_get_summary -- n strokes, n points, polyarea, alphaarea, alphaintensity, tool, ?
+
 
 
 ## To do
