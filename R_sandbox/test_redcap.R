@@ -16,6 +16,10 @@ paindraw_data <- tibble(
   pdr_data = pdr_import_json(here("R_sandbox", "REDCap_export", json_files))
 )
 
+
+paindraw_data |>
+  mutate(id = pdr_get_info(pdr_data, ".id"))
+
 # Extract ID
 ## First get drawing id
 
