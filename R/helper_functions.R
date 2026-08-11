@@ -2,80 +2,6 @@
 # HELPER FUNCTIONS
 # ==============================================================================
 
-#' Validate Heatmap Inputs
-#' @noRd
-validate_heatmap_inputs <- function(
-  .data,
-  variables,
-  n_groups,
-  grid_size,
-  label_format,
-  color_scale
-) {
-  # Variables exist
-  if (is.null(variables) || length(variables) == 0) {
-    stop(
-      "'variables' must be a character vector of length 1 or 2",
-      call. = FALSE
-    )
-  }
-  if (length(variables) > 2) {
-    stop("'variables' can have at most 2 elements", call. = FALSE)
-  }
-  missing_vars <- setdiff(variables, names(.data))
-  if (length(missing_vars) > 0) {
-    stop(
-      "Variables not found in data: ",
-      paste(missing_vars, collapse = ", "),
-      call. = FALSE
-    )
-  }
-
-  # n_groups matches variables length
-  if (length(n_groups) != length(variables)) {
-    stop(
-      "'n_groups' must have the same length as 'variables' (",
-      length(variables),
-      ")",
-      call. = FALSE
-    )
-  }
-
-  # Grid size warning
-  if (grid_size < 5 || grid_size > 50) {
-    warning(
-      "grid_size = ",
-      grid_size,
-      " is outside the recommended range (5-50).\n",
-      "Very small values may be slow; very large values may produce coarse grids.",
-      call. = FALSE
-    )
-  }
-
-  # Label format is valid
-  if (!label_format %in% c("pct", "num", "both")) {
-    stop("'label_format' must be one of: 'pct', 'num', 'both'", call. = FALSE)
-  }
-
-  # Color scale is valid
-  if (is.character(color_scale)) {
-    if (!color_scale %in% c("max", "facet")) {
-      stop(
-        "'color_scale' must be 'max', 'facet', or a numeric value",
-        call. = FALSE
-      )
-    }
-  } else if (!is.numeric(color_scale) || length(color_scale) != 1) {
-    stop(
-      "'color_scale' must be 'max', 'facet', or a single numeric value",
-      call. = FALSE
-    )
-  }
-
-  invisible(TRUE)
-}
-
-
 #' Stratify Data by Creating Group Variables
 #' @noRd
 stratify_data <- function(.data, variables, n_groups, label_format) {
@@ -119,7 +45,7 @@ stratify_data <- function(.data, variables, n_groups, label_format) {
           levels_present,
           " groups."
         )
-        n_grp = levels_present
+        n_grp <- levels_present
       }
 
       # Use as factor
@@ -611,7 +537,12 @@ psr_example <- function(path = NULL) {
 }
 
 is_list_list <- function(x) {
-  if(is.list(x) && purrr::every(x, \(e) {is.list(e)})) {
+  if (
+    is.list(x) &&
+      purrr::every(x, \(e) {
+        is.list(e)
+      })
+  ) {
     return(TRUE)
   } else {
     return(FALSE)
@@ -619,69 +550,88 @@ is_list_list <- function(x) {
 }
 
 is_list_xy <- function(x) {
-  if(is.list(x) && length(x) == 2 && {purrr::every(x, \(e) {is.integer(e) || is.numeric(e)})}) {
-      return(TRUE) 
+  if (
+    is.list(x) &&
+      length(x) == 2 &&
+      {
+        purrr::every(x, \(e) {
+          is.integer(e) || is.numeric(e)
+        })
+      }
+  ) {
+    return(TRUE)
   } else {
     return(FALSE)
   }
 }
 
-wrap_pc_union <- function(A, B, op="union") {
-  polyclip::polyclip(A, B, op) |> 
-    purrr::map_depth(.depth=2, \(e) {as.integer(round(e))})    
+wrap_pc_union <- function(A, B, op = "union") {
+  polyclip::polyclip(A, B, op) |>
+    purrr::map_depth(.depth = 2, \(e) {
+      as.integer(round(e))
+    })
 }
 
 wrap_pc_simplify <- function(A) {
-  A |> polyclip::polysimplify(A) |>
-    purrr::map_depth(.depth=2, \(e) {as.integer(round(e))})
+  A |>
+    polyclip::polysimplify(A) |>
+    purrr::map_depth(.depth = 2, \(e) {
+      as.integer(round(e))
+    })
 }
 
-wrap_pc_offset <- function(A, d=5,e="round") {
-  A |> polyclip::polylineoffset(A, delta=d, endtype = e) |>
-    purrr::map_depth(.depth=2, \(e) {as.integer(round(e))}) 
+wrap_pc_offset <- function(A, d = 5, e = "round") {
+  A |>
+    polyclip::polylineoffset(A, delta = d, endtype = e) |>
+    purrr::map_depth(.depth = 2, \(e) {
+      as.integer(round(e))
+    })
 }
 
-wrap_geo_polyarea <- function(x,y) {
+wrap_geo_polyarea <- function(x, y) {
   # Sanity checks?
-  
+
   # Close polygon, if not unclosed
-  if(!all(
-          identical(x[1],x[nrow(x)]) &&
-          identical(y[1],y[nrow(y)]))){
+  if (
+    !all(
+      identical(x[1], x[nrow(x)]) &&
+        identical(y[1], y[nrow(y)])
+    )
+  ) {
     x <- c(x, x[1])
     y <- c(y, y[1])
   }
-  
+
   return(as.integer(round(
     geometry::polyarea(x, y)
   )))
 }
 
 is_polygon <- function(A) {
-  return(length(wrap_pc_simplify(A))>0) 
+  return(length(wrap_pc_simplify(A)) > 0)
 }
 
 attempt_union <- function(A, B, edges) {
-  # This function expects A and B to be in the format 
+  # This function expects A and B to be in the format
   # required by polyclip::polyclip()
-  
+
   # The polyclip function might (?) change the coordinates data
   # by moving the start vertex, by changing the direction
-  # (clockwise/counterclockwise) and by un-closing the 
+  # (clockwise/counterclockwise) and by un-closing the
   # polygon. Also it may return a list of 1 or more
-  # polygons -- we need to handle this complexity and 
+  # polygons -- we need to handle this complexity and
   # return a result of a list of length 2 $x and $y
 
-  # If parameter edges is TRUE, polygons should be merged 
+  # If parameter edges is TRUE, polygons should be merged
   # even if only connected by an edge without overlap
 
   if (edges) {
-    they_intersect <- length(wrap_pc_union(A, B, op="union")) == 1  
+    they_intersect <- length(wrap_pc_union(A, B, op = "union")) == 1
   } else {
-    they_intersect <- length(wrap_pc_union(A, B, op="intersection")) > 0
+    they_intersect <- length(wrap_pc_union(A, B, op = "intersection")) > 0
   }
-  
-  if(!they_intersect) {
+
+  if (!they_intersect) {
     # As they do not intersect, we just need an indicator of
     # 'no union' -- we do not need to return any polygons
     return("FAIL")
@@ -689,23 +639,26 @@ attempt_union <- function(A, B, edges) {
     # As they do intersect, we need to return the resulting
     # merged polygon -- however we want simplified polygons
     # and not complex polygons with holes, etc.
-    result <- wrap_pc_union(A, B, op="union")
-    if(length(result)==1) {
+    result <- wrap_pc_union(A, B, op = "union")
+    if (length(result) == 1) {
       # This must be a simple polygon, so return it
       return(result[[1]])
     } else {
       # This must be a complex polygon, so handle it by just
       # picking the polygon with the largest bounding box
-      tmp_indx <- result |> purrr::map_int(\(e) {
-                bb_area = (max(e$x)-min(e$x))*(max(e$y)-min(e$y))
-              }) |> purrr::as_vector() |> which.max()
-      result[[tmp_indx]] 
+      tmp_indx <- result |>
+        purrr::map_int(\(e) {
+          bb_area <- (max(e$x) - min(e$x)) * (max(e$y) - min(e$y))
+        }) |>
+        purrr::as_vector() |>
+        which.max()
+      result[[tmp_indx]]
     }
-  } 
+  }
 }
 
-pdr_help_merge_overlapping_polygons <- function(.points, edges=FALSE) {
-  # .points is a tibble with columns .index, .x, and .y 
+pdr_help_merge_overlapping_polygons <- function(.points, edges = FALSE) {
+  # .points is a tibble with columns .index, .x, and .y
   # As we are going to merge polygons, the .index values will no
   # longer be important -- should probably be recoded as 1:n
   # We therefor recast .points as a list of lists of x and y
@@ -714,24 +667,29 @@ pdr_help_merge_overlapping_polygons <- function(.points, edges=FALSE) {
   ##########################################
   ## -- if less than 2 points quit now -- ##
   ##########################################
-  if(identical(NA, .points)) {return(NA)}
-  if(length(unique(.points$.index))<2) {return(.points)} 
-  
+  if (identical(NA, .points)) {
+    return(NA)
+  }
+  if (length(unique(.points$.index)) < 2) {
+    return(.points)
+  }
+
   ## As this function is called from pdr_modify, we can assume
   ## that all polygon data has been sanitized
-      
 
-  # Reshape points data to fit the required format for polyclip 
+  # Reshape points data to fit the required format for polyclip
   pointsxy <- .points |>
-    tidyr::nest(.by=.index) |>
+    tidyr::nest(.by = .index) |>
     dplyr::pull(data) |>
-    purrr::map(\(e) {list(x=e$.x, y=e$.y)}) 
+    purrr::map(\(e) {
+      list(x = e$.x, y = e$.y)
+    })
 
   # Number of strokes -- NOTE:This will change in the while loop if there are overlaps
-  n_strokes <- length(pointsxy) 
+  n_strokes <- length(pointsxy)
   # Hold the actual indexes of each strokes
   i_strokes <- 1:n_strokes
-  
+
   p1 <- 1 # pointer 1
   p2 <- 2 # pointer 2
 
@@ -747,12 +705,12 @@ pdr_help_merge_overlapping_polygons <- function(.points, edges=FALSE) {
   # p1 -> 1
   #       2 <- p2
   #       3
-  #       4 
+  #       4
   #       5
   #       6
 
   # If the two polygons at indexes p1 and p2 overlap, they are merged to replace the p1
-  # polygon, the p2 polygon is deleted and the p2 pointer is reset to p1+1. 
+  # polygon, the p2 polygon is deleted and the p2 pointer is reset to p1+1.
   # When p2 reaches the end of indexes, p1 is advanced and p2  .. until it reaches reach the end.
 
   # Note that we rely on 'intersection' to identify overlaps (as opposed to 'union') -- this
@@ -765,30 +723,33 @@ pdr_help_merge_overlapping_polygons <- function(.points, edges=FALSE) {
   while (p1 < n_strokes) {
     while (p2 <= n_strokes) {
       union_result <- attempt_union(pointsxy[[p1]], pointsxy[[p2]], edges)
-      if(is.character(union_result) && union_result == "FAIL") {
+      if (is.character(union_result) && union_result == "FAIL") {
         # These two strokes do not overlap -- so just move on
-        p2 <- p2 +1
+        p2 <- p2 + 1
       } else {
         # Replace p1 data with union_result
         pointsxy[[p1]] <- union_result
         # Delete p2 data
         pointsxy[p2] <- NULL
         # Reset p2 pointer (p1+1)
-        p2 <- p1 +1
+        p2 <- p1 + 1
         # Reset number of strokes (-1)
-        n_strokes <- n_strokes -1      
+        n_strokes <- n_strokes - 1
       } # endif
     } # endwhile
-    p1 <- p1 +1
-    p2 <- p1 +1
+    p1 <- p1 + 1
+    p2 <- p1 + 1
   } # endwhile
 
   # Now re-cast .points in the usual format
   pointsxy <- pointsxy |>
-    purrr::imap(\(e, i) {tibble::tibble(
-      .index=as.integer(round(i)), 
-      .x=as.integer(round(e$x)), 
-      .y=as.integer(round(e$y)))}) |> 
+    purrr::imap(\(e, i) {
+      tibble::tibble(
+        .index = as.integer(round(i)),
+        .x = as.integer(round(e$x)),
+        .y = as.integer(round(e$y))
+      )
+    }) |>
     purrr::list_rbind()
 
   return(pointsxy)
@@ -796,7 +757,7 @@ pdr_help_merge_overlapping_polygons <- function(.points, edges=FALSE) {
 
 pdr_help_reduce_stroke_data <- function(.strokes, .index) {
   # When reducing a set of pain drawings strokes, e.g. when
-  # merging overlapping strokes, we need to reduce the 
+  # merging overlapping strokes, we need to reduce the
   # strokes meta data also -- not just point data .
 
   # Principle: For each stroke variable (e.g. 'color'),
@@ -821,9 +782,9 @@ pdr_help_reduce_stroke_data <- function(.strokes, .index) {
   .strokes <- .strokes |>
     dplyr::select(-.index) |>
     dplyr::summarise_all(
-      ~ ifelse(length(unique(.x))==1, .x, NA)
-    ) 
-  
+      ~ ifelse(length(unique(.x)) == 1, .x, NA)
+    )
+
   # ..the merge this with input parameter .index (.strokes
   # will be repeated as necessary)
   return(

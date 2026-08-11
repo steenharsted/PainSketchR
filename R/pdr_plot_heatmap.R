@@ -49,13 +49,7 @@
 #'   [ggtext::element_markdown()], enabling markdown and HTML formatting in
 #'   facet labels. Required when `label_format = "both"`. Default is `TRUE`.
 #'
-#' @return A named list with two elements:
-#'   \item{plot}{A [ggplot2::ggplot()] object with the faceted heatmap.}
-#'   \item{data}{A tibble with the density calculations underlying the plot,
-#'     containing columns `.id`, `.index`, `.q`, `.tool`, `.tool_width`,
-#'     `.color`, `.alpha`, `.spray_radius`, `.point_density`, grouping columns
-#'     (`.VAR1_grp`, optionally `.VAR2_grp`), `.x`, `.y`, `x_bin`, `y_bin`,
-#'     `n_id_at_location`, `n_group`, and `pct`.}
+#' @return A [ggplot2::ggplot()] object with the faceted heatmap.
 #'
 #' @details
 #' The function processes data in the following steps:
@@ -142,24 +136,16 @@ pdr_plot_heatmap <- function(
   message("Validating inputs...")
 
   # Making sure data has required columns
-  pdr_check_data(.data$pdr_data, verbose = FALSE)
-
-  # Unnest list
-  .data <- .data |> tidyr::unnest_wider({{ paindrawr_data }})
-
-  # Validating input specific to pdr_plot_heatmap
-  validate_heatmap_inputs(
-    .data = .data,
-    variables = variables,
-    n_groups = n_groups,
-    grid_size = grid_size,
-    label_format = label_format,
-    color_scale = color_scale
-  )
+  .data |> dplyr::pull({{ paindrawr_data }}) |> pdr_check_data(verbose = FALSE)
 
   # Adjust n_groups if only one variable provided
   if (length(variables) == 1) {
     n_groups <- n_groups[1]
+  }
+
+  # Adjust n_groups if no variable provided
+  if (is.null(variables)) {
+    n_groups <- 1
   }
 
   # Warn about large facet counts
@@ -171,6 +157,9 @@ pdr_plot_heatmap <- function(
       call. = FALSE
     )
   }
+
+  # Unnest list
+  .data <- .data |> tidyr::unnest_wider({{ paindrawr_data }})
 
   # ============================================================================
   # STEP 2: Extract canvas dimensions
@@ -329,8 +318,5 @@ pdr_plot_heatmap <- function(
   # ============================================================================
 
   message("\nDone!")
-  return(list(
-    plot = plot_out,
-    data = density_data
-  ))
+  plot_out
 }
