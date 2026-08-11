@@ -217,7 +217,7 @@ pdr_plot_drawing <- function(
       x = .x,
       y = .y,
       color = .color,
-      alpha = .alpha
+      alpha = .alpha / 255
     ))
 
   ### If background image is provided, we plot it now

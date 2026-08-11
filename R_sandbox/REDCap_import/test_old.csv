@@ -10,4 +10,3 @@ record_id,redcap_survey_identifier,sex,hand_nrs,parkinsons,baseline_complete,sme
 9,,2,2,2,2,,PID4154-R9F-background_image_palmar-E13828-I1.json,2,,PID4154-R9F-background_image_dorsal-E13828-I1.json,2,PID4154-R9F-spiral-E13828-I1.json,2
 10,,2,5,2,2,,PID4154-R10F-background_image_palmar-E13828-I1.json,2,,PID4154-R10F-background_image_dorsal-E13828-I1.json,2,PID4154-R10F-spiral-E13828-I1.json,2
 11,,2,6,2,2,,PID4154-R11F-background_image_palmar-E13828-I1.json,2,,PID4154-R11F-background_image_dorsal-E13828-I1.json,2,PID4154-R11F-spiral-E13828-I1.json,2
-12,,1,8,1,2,,PID4154-R12F-background_image_palmar-E13828-I1.json,2,,PID4154-R12F-background_image_dorsal-E13828-I1.json,2,PID4154-R12F-spiral-E13828-I1.json,2

@@ -73,6 +73,8 @@ base_data_with_paindrawings <- base_data |>
   left_join(paindraw_data_wide)
 
 
+### START HERE
+
 # Test heatmap
 base_data_with_paindrawings |>
   pdr_plot_heatmap(
@@ -118,10 +120,9 @@ base_data_with_paindrawings |>
 
 
 base_data_with_paindrawings |>
-  mutate(" " = "") |>
   pdr_plot_heatmap(
     paindrawr_data = spiral,
-    variables = c(" ", "parkinsons"),
+    variables = c(NA, "parkinsons"),
     background_image = "inst/extdata/spiral.png",
     point_size = 4,
     min_alpha = 1,
@@ -214,4 +215,13 @@ base_data_with_paindrawings |>
     mean_area = mean(spiral_area),
     mean_intensity = mean(spiral_intensity),
     .by = parkinsons
+  )
+
+
+## TEST OF DRAWING
+base_data_with_paindrawings |>
+  filter(record_id == 12) |>
+  pdr_plot_drawing(
+    paindrawr_data = palmar,
+    background_image = "inst/extdata/lower_arm_palmar.png"
   )
