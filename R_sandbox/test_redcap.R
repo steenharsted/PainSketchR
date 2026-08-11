@@ -17,24 +17,16 @@ paindraw_data <- tibble(
 )
 
 
-paindraw_data |>
-  mutate(id = pdr_get_info(pdr_data, ".id"))
-
 # Extract ID
 ## First get drawing id
-
 paindraw_data <- paindraw_data |>
-  mutate(
-    drawing_id = map_chr(
-      .x = pdr_data,
-      .f = \(list) list$.id
-    )
-  )
+  mutate(id = pdr_get_info(pdr_data, ".id"))
+
 
 ## Id is nested in the drawing id string
 paindraw_data <- paindraw_data |>
   mutate(
-    record_id = str_extract(drawing_id, "R[0-9]+F") |>
+    record_id = str_extract(id, "R[0-9]+F") |>
       str_remove("^R") |>
       str_remove("F$") |>
       as.double()
@@ -50,11 +42,11 @@ paindraw_data |> left_join(data)
 ### First extract image type
 paindraw_data_wide <- paindraw_data |>
   mutate(
-    view = str_extract(drawing_id, "_image_.+-") |>
+    view = str_extract(id, "_image_.+-") |>
       str_remove("^_image_") |>
       str_remove("-.+$")
   ) |>
-  select(-drawing_id) |>
+  select(-id) |>
   pivot_wider(
     names_from = view,
     values_from = pdr_data
@@ -66,6 +58,7 @@ data_with_paindrawings <- data |>
 
 # Test heatmap
 data_with_paindrawings |>
+  filter_out(is.na(sex)) |>
   pdr_plot_heatmap(
     paindrawr_data = dorsal,
     variables = c("sex", "age")
