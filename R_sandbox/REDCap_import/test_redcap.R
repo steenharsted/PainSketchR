@@ -72,11 +72,47 @@ paindraw_data_wide <- paindraw_data |>
 base_data_with_paindrawings <- base_data |>
   left_join(paindraw_data_wide)
 
+
 # Test heatmap
 base_data_with_paindrawings |>
   pdr_plot_heatmap(
     paindrawr_data = dorsal,
-    variables = c("sex", "hand_nrs"),
+    background_image = "inst/extdata/lower_arm_dorsal.png"
+  )
+
+# Split by sex
+base_data_with_paindrawings |>
+  pdr_plot_heatmap(
+    paindrawr_data = dorsal,
+    variables = c("sex"),
+    background_image = "inst/extdata/lower_arm_dorsal.png"
+  )
+
+# Split by pain score
+base_data_with_paindrawings |>
+  pdr_plot_heatmap(
+    paindrawr_data = dorsal,
+    variables = c(NA, "hand_nrs"),
+    background_image = "inst/extdata/lower_arm_dorsal.png"
+  )
+
+# Split by pain score multible groups
+base_data_with_paindrawings |>
+  pdr_plot_heatmap(
+    paindrawr_data = dorsal,
+    variables = c(NA, "hand_nrs"),
+    n_groups = c(1, 3),
+    background_image = "inst/extdata/lower_arm_dorsal.png"
+  )
+
+
+# Split by pain score multible groups
+base_data_with_paindrawings |>
+  pdr_plot_heatmap(
+    paindrawr_data = dorsal,
+    variables = c(NA, "hand_nrs"),
+    n_groups = c(1, 4),
+    label_format = "both",
     background_image = "inst/extdata/lower_arm_dorsal.png"
   )
 
@@ -87,6 +123,16 @@ base_data_with_paindrawings |>
     paindrawr_data = spiral,
     variables = c(" ", "parkinsons"),
     background_image = "inst/extdata/spiral.png",
+    point_size = 4,
+    min_alpha = 1,
+    equal_n = FALSE
+  )
+
+# Spiral
+base_data_with_paindrawings |>
+  pdr_plot_heatmap(
+    paindrawr_data = spiral,
+    background_image = "inst/extdata/spiral.png",
     point_size = 3,
     min_alpha = 1,
     equal_n = FALSE
@@ -94,7 +140,6 @@ base_data_with_paindrawings |>
 
 
 base_data_with_paindrawings |>
-  mutate(" " = "") |>
   pdr_plot_heatmap(
     paindrawr_data = spiral,
     variables = c("parkinsons"),
@@ -106,9 +151,8 @@ base_data_with_paindrawings |>
 
 
 # Recreate drawing
-data_with_paindrawings |>
-  filter_out(is.na(sex)) |>
-  filter(row_number() == 2) |>
+base_data_with_paindrawings |>
+  filter(record_id == 6) |>
   pdr_plot_drawing(
     paindrawr_data = dorsal,
     background_image = "inst/extdata/lower_arm_dorsal.png",
@@ -116,41 +160,58 @@ data_with_paindrawings |>
 
 
 # Recreate drawingS
-data_with_paindrawings |>
-  filter_out(is.na(sex)) |>
+base_data_with_paindrawings |>
+  filter(record_id < 4) |>
   pdr_plot_drawing(
     paindrawr_data = dorsal,
-    background_image = "inst/extdata/lower_arm_dorsal.png",
+    background_image = "inst/extdata/lower_arm_dorsal.png"
   )
 
 
 ## Add RGBA arrays
-
-data_with_paindrawings <- data_with_paindrawings |>
-  filter_out(is.na(sex)) |>
+base_data_with_paindrawings <- base_data_with_paindrawings |>
   mutate(
-    dorsal = pdr_add_rgba(dorsal)
+    dorsal = pdr_add_rgba(dorsal),
+    spiral = pdr_add_rgba(spiral)
   )
 
+base_data_with_paindrawings
 
-# TEST THAT RGBAs look correct
-grid::grid.newpage()
-data_with_paindrawings$dorsal[[2]]$.rgba |> grid::grid.raster()
-
-grid::grid.newpage()
-data_with_paindrawings$dorsal[[3]]$.rgba |> grid::grid.raster()
-
-
-# Extract alpha
-data_with_paindrawings |>
+# Extract alpha area and intensity
+base_data_with_paindrawings <- base_data_with_paindrawings |>
   mutate(
     dorsal_area = pdr_get_alpha_area(dorsal),
-    dorsal_intensity = pdr_get_alpha_intensity(dorsal)
+    dorsal_intensity = pdr_get_alpha_intensity(dorsal),
+    spiral_area = pdr_get_alpha_area(spiral),
+    spiral_intensity = pdr_get_alpha_intensity(spiral)
   )
 
 
-data_with_paindrawings |>
-  filter_out(is.na(sex)) |>
-  mutate(
-    id = pdr_get_info(pdr = dorsal, ".id")
+base_data_with_paindrawings
+
+
+# Look at drawing with the smallest area
+base_data_with_paindrawings |>
+  filter(dorsal_area == min(dorsal_area)) |>
+  pdr_plot_drawing(
+    paindrawr_data = dorsal,
+    background_image = "inst/extdata/lower_arm_dorsal.png"
+  )
+
+# Summarise area and intensity dorsal drawing
+base_data_with_paindrawings |>
+  summarise(
+    mean_area = mean(dorsal_area),
+    mean_intensity = mean(dorsal_intensity),
+    .by = sex
+  )
+
+
+# Spiral measures
+# Summarise area and intensity dorsal drawing
+base_data_with_paindrawings |>
+  summarise(
+    mean_area = mean(spiral_area),
+    mean_intensity = mean(spiral_intensity),
+    .by = parkinsons
   )

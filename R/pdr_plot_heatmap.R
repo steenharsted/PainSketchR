@@ -15,13 +15,17 @@
 #'   `.point_density`.
 #' @param variables Character vector of length 1 or 2 specifying the grouping
 #'   variable names present in `.data`. Numeric variables are binned into
-#'   quantile groups; categorical variables use their existing levels.
+#'   quantile groups; categorical variables use their existing levels. Use `NA`
+#'   in either position to leave that faceting dimension empty (a hidden dummy
+#'   variable will be inserted). Defaults to `c(NA, NA)`, producing a single
+#'   unfaceted heatmap.
 #' @param n_groups Integer vector matching the length of `variables`. Specifies
 #'   the number of groups to create for each variable. Default is `c(2, 2)`.
 #'   For categorical variables, this must match the number of unique levels;
 #'   if it does not, the actual number of levels is used with a message.
 #' @param equal_n Logical. If `TRUE`, balances sample sizes across groups by
-#'   sampling. Default is `TRUE`.
+#'   sampling down to the size of the smallest group (capped at `max_n`).
+#'   Default is `TRUE`.
 #' @param max_n Integer. Maximum number of observations per group when
 #'   `equal_n = TRUE`. Default is `1000`.
 #' @param background_image Optional background image displayed behind the
@@ -32,24 +36,33 @@
 #'   Defaults to `NULL` (no background).
 #' @param grid_size Integer. Coordinate binning resolution in pixels. Smaller
 #'   values create finer grids but increase computation time. Default is `10`.
-#'   Recommended range is 5–50 pixels; a warning is issued outside this range.
-#' @param point_size Numeric. Size of points in the heatmap. Default is `0.25`.
-#' @param min_alpha Numeric. Minimum alpha value for points. Default is `0.1`.
+#'   Recommended range is 5–50 pixels.
+#' @param point_size Numeric. Controls both the `size` and jitter `width`/
+#'   `height` of points passed to [ggplot2::geom_jitter()]. Default is `0.25`.
+#' @param min_alpha Numeric. Currently unused. Point transparency is driven
+#'   directly by `pct^2 / 2` via [ggplot2::scale_alpha_identity()]. Default
+#'   is `0.1`.
 #' @param color_scale Character or numeric. How to scale colours across facets:
 #'   * `"max"` (default) — scales all facets to the global maximum density.
 #'   * `"facet"` — each facet is scaled independently.
 #'   * A numeric value — sets a specific upper limit for the colour scale.
 #' @param label_format Character. Format for quantile group labels:
-#'   * `"pct"` (default) — percentage ranges.
-#'   * `"num"` — numeric ranges.
-#'   * `"both"` — combined markdown labels (requires `strips_in_markdown = TRUE`).
-#' @param show_n Logical. If `TRUE`, displays sample sizes as text in facet
-#'   strips. Default is `TRUE`.
+#'   * `"pct"` (default) — percentage ranges (e.g. `"< 50%"`).
+#'   * `"num"` — numeric ranges (e.g. `"(1.0–5.5)"`).
+#'   * `"both"` — combined markdown labels showing both formats, rendered via
+#'     `<br>` line breaks.
+#' @param show_n Logical. If `TRUE`, displays sample sizes as text labels
+#'   inside each facet panel. Default is `FALSE`.
 #' @param strips_in_markdown Logical. If `TRUE`, renders strip text using
 #'   [ggtext::element_markdown()], enabling markdown and HTML formatting in
-#'   facet labels. Required when `label_format = "both"`. Default is `TRUE`.
+#'   facet labels. Also affects the plot subtitle and y-axis title. Default is
+#'   `TRUE`.
 #'
-#' @return A [ggplot2::ggplot()] object with the faceted heatmap.
+#' @return A [ggplot2::ggplot()] object with the faceted heatmap. The first
+#'   variable in `variables` maps to the row facet (y-axis label); the second
+#'   maps to the column facet (subtitle). Point colour encodes pain density
+#'   (percentage of participants with a mark at each grid cell) using the
+#'   `"plasma"` viridis palette.
 #'
 #' @details
 #' The function processes data in the following steps:
@@ -58,24 +71,37 @@
 #'     [tidyr::unnest_wider()].
 #'   \item Extracts canvas dimensions from `.width` and `.height`; all drawings
 #'     must share identical dimensions.
-#'   \item Creates stratification groups (quantile binning for numeric
-#'     variables, existing levels for categorical variables).
-#'   \item Optionally balances sample sizes across groups.
+#'   \item Inserts hidden dummy factor columns for any `NA` positions in
+#'     `variables`, preserving the row/column slot assignment.
+#'   \item Creates stratification groups via [pdr_quantile()] for numeric
+#'     variables (quantile binning) or [base::factor()] for categorical
+#'     variables.
+#'   \item Optionally balances sample sizes by sampling down to the smallest
+#'     group size (up to `max_n`) using [dplyr::slice_sample()].
 #'   \item Unnests `.strokes` and `.points` and joins them on `.id` and
 #'     `.index`.
-#'   \item Recreates spray effects for any rows where `.tool == "spray"`.
-#'   \item Bins coordinates into grid cells and calculates pain density as the
-#'     percentage of participants with a mark at each location.
-#'   \item Renders a faceted heatmap with a viridis colour scale.
+#'   \item Recreates spray effects for any rows where `.tool == "spray"` by
+#'     expanding each point `point_density` times with a random offset within
+#'     `spray_radius`.
+#'   \item Bins coordinates into grid cells of size `grid_size` and calculates
+#'     pain density as the percentage of participants with a mark at each
+#'     location, per group.
+#'   \item Renders a faceted heatmap using the `"plasma"` viridis colour scale.
+#'     Point alpha is set to `pct^2 / 2` via [ggplot2::scale_alpha_identity()].
 #' }
 #'
 #' @section Warnings:
 #' The function will warn when:
 #' \itemize{
 #'   \item More than 16 facets are created (may be slow).
-#'   \item `grid_size` is outside the recommended range of 5–50 pixels.
 #'   \item NA values are removed from grouping variables.
+#'   \item `n_groups` does not match the number of levels for a categorical
+#'     variable (continues with a message using the actual number of levels).
+#'   \item A numeric variable has insufficient variation to create distinct
+#'     quantile groups.
 #'   \item Both pen and spray tools are detected in the same dataset.
+#'   \item `equal_n = TRUE` reduces any group below its original size (strip
+#'     labels still reflect ranges from the full dataset).
 #' }
 #'
 #' @examples
@@ -104,12 +130,14 @@
 #'   )
 #' }
 #'
-#' @importFrom dplyr select mutate filter full_join join_by n_distinct slice_sample summarize all_of count left_join distinct pull n count left_join distinct pull
-#' @importFrom tidyr unnest_wider
-#' @importFrom tidyr unnest uncount
+#' @importFrom dplyr select mutate filter full_join join_by n_distinct slice_sample summarize all_of count left_join distinct pull n
+#' @importFrom tidyr unnest_wider unnest uncount
 #' @importFrom png readPNG
 #' @importFrom scales percent
-#' @importFrom ggplot2 ggplot aes coord_fixed theme_minimal scale_colour_viridis_c geom_jitter facet_wrap facet_grid annotation_raster labs theme element_rect element_blank element_text geom_text guide_colorbar guides vars
+#' @importFrom stringr str_replace fixed
+#' @importFrom rlang sym
+#' @importFrom stats runif quantile
+#' @importFrom ggplot2 ggplot aes coord_fixed theme_minimal scale_colour_viridis_c scale_alpha_identity geom_jitter geom_text facet_wrap facet_grid annotation_raster labs theme element_rect element_blank element_text guide_colorbar guides vars label_wrap_gen
 #' @importFrom ggtext element_markdown
 #' @importFrom vctrs vec_ptype_abbr
 #'
@@ -117,7 +145,7 @@
 pdr_plot_heatmap <- function(
   .data,
   paindrawr_data = pdr_data,
-  variables = NULL,
+  variables = c(NA, NA),
   n_groups = c(2, 2),
   equal_n = TRUE,
   max_n = 1000,
@@ -127,7 +155,7 @@ pdr_plot_heatmap <- function(
   min_alpha = 0.1,
   color_scale = "max",
   label_format = "pct",
-  show_n = TRUE,
+  show_n = FALSE,
   strips_in_markdown = TRUE
 ) {
   # ============================================================================
@@ -137,16 +165,6 @@ pdr_plot_heatmap <- function(
 
   # Making sure data has required columns
   .data |> dplyr::pull({{ paindrawr_data }}) |> pdr_check_data(verbose = FALSE)
-
-  # Adjust n_groups if only one variable provided
-  if (length(variables) == 1) {
-    n_groups <- n_groups[1]
-  }
-
-  # Adjust n_groups if no variable provided
-  if (is.null(variables)) {
-    n_groups <- 1
-  }
 
   # Warn about large facet counts
   if (prod(n_groups) > 16) {
@@ -160,6 +178,24 @@ pdr_plot_heatmap <- function(
 
   # Unnest list
   .data <- .data |> tidyr::unnest_wider({{ paindrawr_data }})
+
+  # Create dummy variables and levels if less than two variables are provided
+  .DUMMY_COL <- factor("")
+
+  if (length(variables) > 2) {
+    stop("`variables` must be NULL, or of length 1 or 2.", call. = FALSE)
+  }
+  # Pad to length 2 WITHOUT removing NAs (preserves slot positions)
+  variables <- c(variables, rep(NA_character_, 2 - length(variables)))
+
+  # Fill each empty slot in place -> keeps user's row/col choice
+  for (i in seq_along(variables)) {
+    if (is.na(variables[i])) {
+      dummy_name <- paste0(".DUMMY", i)
+      .data[[dummy_name]] <- .DUMMY_COL
+      variables[i] <- dummy_name
+    }
+  }
 
   # ============================================================================
   # STEP 2: Extract canvas dimensions
@@ -298,6 +334,16 @@ pdr_plot_heatmap <- function(
   # ============================================================================
   message("\nCreating heatmap plot...")
 
+  # Change .DUMMY1 and 2 names to blank for more beautiful plotting
+  variables <- variables |>
+    stringr::str_replace(stringr::fixed(".DUMMY1"), " ") |>
+    stringr::str_replace(stringr::fixed(".DUMMY2"), "  ")
+
+  names(density_data) <- names(density_data) |>
+    stringr::str_replace(stringr::fixed(".DUMMY1"), " ") |>
+    stringr::str_replace(stringr::fixed(".DUMMY2"), "  ")
+
+  # Plot
   plot_out <- create_heatmap_plot(
     density_data = density_data,
     variables = variables,
