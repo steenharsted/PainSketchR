@@ -59,8 +59,8 @@
 #'   `TRUE`.
 #'
 #' @return A [ggplot2::ggplot()] object with the faceted heatmap. The first
-#'   variable in `variables` maps to the row facet (y-axis label); the second
-#'   maps to the column facet (subtitle). Point colour encodes pain density
+#'   variable in `variables` maps to the column facet (subtitle); the second
+#'   maps to the row facet (y-axis label). Point colour encodes pain density
 #'   (percentage of participants with a mark at each grid cell) using the
 #'   `"plasma"` viridis palette.
 #'

@@ -99,7 +99,7 @@ base_data_with_paindrawings |>
 base_data_with_paindrawings |>
   pdr_plot_heatmap(
     paindrawr_data = dorsal,
-    variables = c(NA, "hand_nrs"),
+    variables = c("hand_nrs"),
     background_image = "inst/extdata/lower_arm_dorsal.png"
   )
 
@@ -107,8 +107,8 @@ base_data_with_paindrawings |>
 base_data_with_paindrawings |>
   pdr_plot_heatmap(
     paindrawr_data = dorsal,
-    variables = c(NA, "hand_nrs"),
-    n_groups = c(1, 3),
+    variables = c("hand_nrs"),
+    n_groups = c(3, 1),
     background_image = "inst/extdata/lower_arm_dorsal.png"
   )
 

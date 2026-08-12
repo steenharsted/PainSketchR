@@ -282,8 +282,8 @@ create_heatmap_plot <- function(
   } else {
     p <- p +
       ggplot2::facet_grid(
-        rows = ggplot2::vars(.VAR1_grp),
-        cols = ggplot2::vars(.VAR2_grp),
+        cols = ggplot2::vars(.VAR1_grp),
+        rows = ggplot2::vars(.VAR2_grp),
         switch = "y",
         labeller = ggplot2::label_wrap_gen(width = 15, multi_line = TRUE)
       )
