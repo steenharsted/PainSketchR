@@ -39,8 +39,11 @@ paindraw_data <- tibble(
 
 # Extract ID
 ## First get drawing id
+#paindraw_data <- paindraw_data |>
+#  mutate(id = pdr_get_info(pdr_data, ".id"))
+
 paindraw_data <- paindraw_data |>
-  mutate(id = pdr_get_info(pdr_data, ".id"))
+  mutate(id = map_chr(.x = pdr_data, .f = ~ .x$.id |> unique()))
 
 
 ## Id is nested in the drawing id string
@@ -74,6 +77,8 @@ base_data_with_paindrawings <- base_data |>
 
 
 ### START HERE
+base_data_with_paindrawings
+
 
 # Test heatmap
 base_data_with_paindrawings |>
@@ -220,8 +225,27 @@ base_data_with_paindrawings |>
 
 ## TEST OF DRAWING
 base_data_with_paindrawings |>
-  filter(record_id == 12) |>
+  filter(record_id == 15) |>
   pdr_plot_drawing(
     paindrawr_data = palmar,
     background_image = "inst/extdata/lower_arm_palmar.png"
   )
+
+
+base_data_with_paindrawings |>
+  filter(record_id == 16) |>
+  pdr_plot_drawing(
+    paindrawr_data = spiral,
+    background_image = "inst/extdata/spiral_grey.png",
+    type = "path"
+  )
+
+
+# Test of RGBA arrays
+## Plot a spiral (pen) RGBA arrays
+grid::grid.newpage()
+base_data_with_paindrawings$spiral[[16]]$.rgba |> grid::grid.raster()
+
+## Plot a dorsal (spray)  RGBA arrays
+grid::grid.newpage()
+base_data_with_paindrawings$dorsal[[16]]$.rgba |> grid::grid.raster()

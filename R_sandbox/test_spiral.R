@@ -105,3 +105,18 @@ ggsave(
   height = 500,
   units = "px"
 )
+
+
+spiral_out_grey <- ggplot(df1, aes(x, y)) +
+  geom_path(col = 'grey50', linewidth = 1.5, lineend = "round") +
+  coord_equal(xlim = c(-65, 75), ylim = c(-70, 65)) +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "white", color = "white"))
+
+ggsave(
+  filename = "inst/extdata/spiral_grey.png",
+  plot = spiral_out_grey,
+  width = 500,
+  height = 500,
+  units = "px"
+)
