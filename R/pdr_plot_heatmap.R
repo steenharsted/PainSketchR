@@ -19,10 +19,12 @@
 #'   in either position to leave that faceting dimension empty (a hidden dummy
 #'   variable will be inserted). Defaults to `c(NA, NA)`, producing a single
 #'   unfaceted heatmap.
-#' @param n_groups Integer vector matching the length of `variables`. For
-#'   numeric variables, specifies the number of quantile bins to create.
-#'   Ignored for factor or character variables, which always use their existing
-#'   levels. Default is `c(2, 2)`.
+#' @param n_groups Integer. For numeric variables, specifies the number of
+#'   quantile bins to create. A single value is recycled across all variables
+#'   in `variables`. If both variables are numeric and different bin counts are
+#'   desired, supply a vector of length 2 (e.g. `c(2, 3)`). Ignored for factor
+#'   or character variables, which always use their existing levels. Default
+#'   is `2`.
 #' @param equal_n Logical. If `TRUE`, balances sample sizes across groups by
 #'   sampling down to the size of the smallest group (capped at `max_n`).
 #'   Default is `TRUE`.
@@ -98,8 +100,6 @@
 #' \itemize{
 #'   \item More than 16 facets are created (may be slow).
 #'   \item NA values are removed from grouping variables.
-#'   \item `n_groups` is supplied for a categorical variable (ignored; the
-#'     actual number of levels is used with a message).
 #'   \item A numeric variable has insufficient variation to create distinct
 #'     quantile groups.
 #'   \item Both pen and spray tools are detected in the same dataset.
@@ -149,7 +149,7 @@ pdr_plot_heatmap <- function(
   .data,
   paindrawr_data = pdr_data,
   variables = c(NA, NA),
-  n_groups = c(2, 2),
+  n_groups = 2,
   equal_n = TRUE,
   max_n = 1000,
   background_image = NULL,
@@ -194,6 +194,9 @@ pdr_plot_heatmap <- function(
   }
   # Pad to length 2 WITHOUT removing NAs (preserves slot positions)
   variables <- c(variables, rep(NA_character_, 2 - length(variables)))
+
+  # Recycle n_groups to match length of variables
+  n_groups <- rep_len(n_groups, length(variables))
 
   # Fill each empty slot in place -> keeps user's row/col choice
   for (i in seq_along(variables)) {

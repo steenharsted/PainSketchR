@@ -288,7 +288,7 @@ base_data_with_paindrawings |>
     paindrawr_data = spiral,
     background_image = "inst/extdata/spiral.png",
     variables = c("hand_nrs", "parkinsons"),
-    n_groups = c(3, 1),
+    n_groups = 3,
     point_size = 4,
     equal_n = FALSE,
     show_n = TRUE,
@@ -302,6 +302,18 @@ base_data_with_paindrawings |>
     paindrawr_data = spiral,
     background_image = "inst/extdata/spiral.png",
     variables = "parkinsons",
+    point_size = 4,
+    show_n = TRUE,
+    alpha_scale = c(0.01, 0.2)
+  )
+
+
+base_data_with_paindrawings |>
+  pdr_plot_heatmap(
+    paindrawr_data = spiral,
+    background_image = "inst/extdata/spiral.png",
+    variables = c("parkinsons", "hand_nrs"),
+    n_groups = 3,
     point_size = 4,
     show_n = TRUE,
     alpha_scale = c(0.01, 0.2)
