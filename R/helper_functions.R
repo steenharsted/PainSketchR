@@ -28,35 +28,10 @@ stratify_data <- function(.data, variables, n_groups, label_format) {
     if (var_type %in% c("fct", "chr", "ord")) {
       # Categorical variable
       levels_present <- length(unique(var_data))
-
-      if (n_grp != levels_present) {
-        message(
-          "Variable '",
-          var_name,
-          "' has ",
-          levels_present,
-          " unique levels but n_groups[",
-          i,
-          "] = ",
-          n_grp,
-          ".\n",
-          "For categorical variables, n_groups must match the number of levels.\n",
-          "Continuing with ",
-          levels_present,
-          " groups."
-        )
-        n_grp <- levels_present
-      }
+      n_grp <- levels_present
 
       # Use as factor
       result[[grp_col_name]] <- factor(var_data)
-      message(
-        "  '",
-        var_name,
-        "' treated as categorical (",
-        levels_present,
-        " levels)"
-      )
     } else {
       # Numeric variable - use pdr_quantile for binning
       result[[grp_col_name]] <- pdr_quantile(
@@ -189,7 +164,7 @@ create_heatmap_plot <- function(
   image_height,
   n_vars,
   point_size,
-  min_alpha,
+  alpha_scale,
   color_scale,
   show_n,
   label_format,
@@ -229,7 +204,7 @@ create_heatmap_plot <- function(
     ggplot2::geom_jitter(
       ggplot2::aes(
         colour = pct,
-        alpha = pct^2 / 2
+        alpha = pct
       ),
       width = point_size,
       height = point_size,
@@ -237,9 +212,7 @@ create_heatmap_plot <- function(
     ) +
 
     # Scale Alpha
-
-    #ggplot2::scale_alpha_continuous(range = c(min_alpha, 1), guide = "none")
-    ggplot2::scale_alpha_identity()
+    ggplot2::scale_alpha_continuous(range = alpha_scale, guide = "none")
 
   # Add color scale
   if (is.null(scale_limits)) {
@@ -276,38 +249,24 @@ create_heatmap_plot <- function(
       )
     )
 
-  # Add faceting (1 or 2 variables)
-  if (n_vars == 1) {
-    p <- p + ggplot2::facet_wrap(~.VAR1_grp)
-  } else {
-    p <- p +
-      ggplot2::facet_grid(
-        cols = ggplot2::vars(.VAR1_grp),
-        rows = ggplot2::vars(.VAR2_grp),
-        switch = "y",
-        labeller = ggplot2::label_wrap_gen(width = 15, multi_line = TRUE)
-      )
-  }
+  # Add faceting
+  p <- p +
+    ggplot2::facet_grid(
+      cols = ggplot2::vars(.VAR1_grp),
+      rows = ggplot2::vars(.VAR2_grp),
+      switch = "y",
+      labeller = ggplot2::label_wrap_gen(width = 15, multi_line = TRUE)
+    )
 
   # Add sample sizes if requested
   if (show_n) {
-    if (n_vars == 1) {
-      n_data <- density_data |>
-        dplyr::distinct(.VAR1_grp, n_group) |>
-        dplyr::mutate(
-          label = paste0("n = ", n_group),
-          x = image_width * 0.45,
-          y = image_height * 0.1 # bottom-left, away from body
-        )
-    } else {
-      n_data <- density_data |>
-        dplyr::distinct(.VAR1_grp, .VAR2_grp, n_group) |>
-        dplyr::mutate(
-          label = paste0("n = ", n_group),
-          x = image_width * 0.45,
-          y = image_height * 0.1 # bottom-left, away from body
-        )
-    }
+    n_data <- density_data |>
+      dplyr::distinct(.VAR1_grp, .VAR2_grp, n_group) |>
+      dplyr::mutate(
+        label = paste0("n = ", n_group),
+        x = image_width * 0.45,
+        y = image_height * 0.1 # bottom-left, away from body
+      )
 
     p <- p +
       ggplot2::geom_text(
@@ -325,8 +284,8 @@ create_heatmap_plot <- function(
   # Apply theme
   p <- p +
     ggplot2::labs(
-      subtitle = paste0(variables[2]),
-      y = paste0(variables[1])
+      subtitle = paste0(variables[1]),
+      y = paste0(variables[2])
     ) +
     ggplot2::coord_fixed(xlim = c(0, image_width), ylim = c(0, image_height)) +
     ggplot2::theme_minimal(base_size = 16) +
@@ -449,11 +408,11 @@ pdr_quantile <- function(x, n_groups, txt = "pct") {
     labels <- character(n_groups)
     for (i in seq_len(n_groups)) {
       pct_part <- if (i == 1) {
-        paste0("\u003c ", pct_upper[i], "%")
+        paste0("\u003c ", pct_upper[i] |> round(1), "%")
       } else if (i == n_groups) {
-        paste0("\u2265 ", pct_lower[i], "%")
+        paste0("\u2265 ", pct_lower[i] |> round(1), "%")
       } else {
-        paste0(pct_lower[i], "-", pct_upper[i], "%")
+        paste0(pct_lower[i] |> round(1), "-", pct_upper[i] |> round(1), "%")
       }
 
       num_part <- paste0(

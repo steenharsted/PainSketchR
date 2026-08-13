@@ -70,7 +70,7 @@ grid::grid.raster(drawing_with_rgba$.rgba)
 # Multiple drawings at once
 drawings_with_rgba <- pdr_example_data |> pdr_add_rgba()
 
-# Tibble workflow 
+# Tibble workflow
 
 ## Data
 pd <- tibble(pdr_data = pdr_example_data)
@@ -79,7 +79,7 @@ pd <- tibble(pdr_data = pdr_example_data)
 pd |> dplyr::mutate(pdr_data = pdr_add_rgba(pdr_data))
 
 ## add rgba arrays in a separate list-column
-pd |> 
+pd |>
   dplyr::mutate(
     rgba_arrays = pdr_add_rgba(pdr_data, rgba_only = TRUE)
     )
