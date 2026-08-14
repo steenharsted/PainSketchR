@@ -36,7 +36,7 @@
 #'
 #' @export
 
-pdr_get_info <- function(pdr, var="id") {
+pdr_get_info <- function(pdr, var=".id") {
   # pdr is expected to be a valid pdr list-col
   # var should be a vector of length 1 or 2 -- first element
   # should be an element name in pdr (list), second element 

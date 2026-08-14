@@ -4,7 +4,7 @@
 \alias{pdr_modify}
 \title{Modify pain drawing elements}
 \usage{
-pdr_modify(pdr, operations, delta = 5)
+pdr_modify(pdr, ops, delta = 5, templates = NULL)
 }
 \description{
 This function takes a valid pain drawing list as input

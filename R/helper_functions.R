@@ -631,6 +631,11 @@ wrap_pc_union <- function(A, B, op="union") {
     purrr::map_depth(.depth=2, \(e) {as.integer(round(e))})    
 }
 
+wrap_pc_intersection <- function(A, B, op="intersection") {
+  polyclip::polyclip(A, B, op) |> 
+    purrr::map_depth(.depth=2, \(e) {as.integer(round(e))})    
+}
+
 wrap_pc_simplify <- function(A) {
   A |> polyclip::polysimplify(A) |>
     purrr::map_depth(.depth=2, \(e) {as.integer(round(e))})
@@ -659,6 +664,25 @@ wrap_geo_polyarea <- function(x,y) {
 
 is_polygon <- function(A) {
   return(length(wrap_pc_simplify(A))>0) 
+}
+
+t2l <- function(.points) {
+  if(!tibble::is_tibble(.points) ||
+     !setequal(names(.points), c(".index", ".x", ".y")) ||
+     !is.integer()
+    ) {
+      warning("Invalid data passed to t2l -- .points:")
+      warning(str(.points))
+      return(NA)
+    }  
+  .points |>
+    tidyr::nest(.by=.index) |>
+    dplyr::pull(data) |>
+    purrr::map(\(e) {list(x=e$.x, y=e$.y)}) 
+}
+
+l2t <- function(l) {
+
 }
 
 attempt_union <- function(A, B, edges) {
@@ -702,6 +726,10 @@ attempt_union <- function(A, B, edges) {
       result[[tmp_indx]] 
     }
   } 
+}
+
+attempt_intersection <- function(A, B) {
+  return( wrap_pc_intersection(A, B) )
 }
 
 pdr_help_merge_overlapping_polygons <- function(.points, edges=FALSE) {
@@ -830,3 +858,4 @@ pdr_help_reduce_stroke_data <- function(.strokes, .index) {
     dplyr::bind_cols(tibble::tibble(.index), .strokes)
   )
 }
+

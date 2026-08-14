@@ -2,25 +2,31 @@
 % Please edit documentation in R/pdr_poly_areas.R
 \name{pdr_poly_areas}
 \alias{pdr_poly_areas}
-\title{Calculate area of marking/stroke for pain drawings}
+\title{Calculate area of markings/strokes for pain drawings}
 \usage{
-pdr_poly_areas(p, by = "drawings")
+pdr_poly_areas(pdr, by = "drawings")
 }
 \arguments{
-\item{p}{A list of tibbles of i,x and y columns (as integers) -- see \link{pdr_check_data} for more detail.}
+\item{pdr}{A valid pain drawing data list-col (see @pdr_check_data())}
 
 \item{by}{A string of either 'strokes', 'drawings' or 'both'.}
 }
 \value{
-If \code{by} is "strokes", the function will return a list of tibbles of stroke areas (as integers) -- one list element (tibble) for each row in \code{p}.
-If \code{by} is "drawings", the function returns a vector of collated drawing areas (as integers) of the same length as \code{p}.
-If \code{by} is "both", it resutns a named list of both.
+If \code{by} is "strokes", the function will return a list of tibbles of stroke areas (as integers) -- one list element (tibble) for each row in \code{pdr}.
+If \code{by} is "drawings", the function returns a vector of collated drawing areas (as integers) of the same length as \code{pdr}.
 }
 \description{
-Calculate the area of each marking/stroke as a closed polygon. Either on a per-stroke basis, per-drawing basis or both.
+Calculate the areas either on a per-stroke basis, or a cummulated per-drawing basis.
 }
 \examples{
-overlap <- pdr_poly_anatomy_overlap(pdr_demo_data[1:3,], pdr_Back_right_leg)
-pdr_poly_areas(overlap, by="both")
+tibble::tibble(pdr_data = pdr_example_anatomy) |>
+  dplyr::mutate(region = pdr_get_info(pdr_data, ".id")) |>
+  dplyr::filter(stringr::str_detect(region, "Back_right")) |>
+  dplyr::mutate(cum_area = pdr_poly_areas(pdr_data, by="drawings"))
+
+tibble::tibble(pdr_data = pdr_example_data[1:3]) |>
+  dplyr::mutate(region = pdr_get_info(pdr_data, ".id")) |>
+  dplyr::mutate(stroke_areas = pdr_poly_areas(pdr_data, by="strokes"))
+
  
 }

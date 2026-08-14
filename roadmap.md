@@ -40,7 +40,6 @@ New names in pain drawing definition:
 * .app
 * .strokes
     - .index
-    - .q ?
     - .tool
     - .tool_width
     - .color

@@ -26,7 +26,7 @@ pdr_modify <- function(pdr, ops, delta=5, templates = NULL) {
 
 
   ########## Sanity checks ##########
-  accepted_ops <- c("flipy", "drop_noarea", "buffer_noarea", "sanitize", "reduce_to_chull", "merge_overlaps", "merge_edges", "reduce_to_templates")
+  accepted_ops <- c("flipy", "drop_noarea", "buffer_noarea", "sanitize", "reduce_to_chull", "merge_overlaps", "merge_edges", "reduce_by_template")
 
   # This function takes a valid pain drawing data set as input
   if (!pdr_check_data(pdr, verbose = FALSE)) {
@@ -41,8 +41,8 @@ pdr_modify <- function(pdr, ops, delta=5, templates = NULL) {
     warning("Unknown ops specified in function `pdr_modify()`.")
     return(pdr)
   }
-  if(any(identical(ops, "reduce_to_templates")) && is.null(templates)) {
-    stop("Stopped: The function `pdr_modify()` expects a templates parameter when 'ops' includes 'reduce_to_templates.")
+  if(any(identical(ops, "reduce_by_template")) && is.null(templates)) {
+    stop("Stopped: The function `pdr_modify()` expects a templates parameter when 'ops' includes 'reduce_to_template'.")
   }
   if(any(!{ops %in% accepted_ops})) {
     warning("Unknown ops specified in function `pdr_modify()`.")
@@ -55,7 +55,7 @@ pdr_modify <- function(pdr, ops, delta=5, templates = NULL) {
     warning("Both 'merge_overlaps' and 'merge_edges' specified in 'ops' of `pdr_modify()` -- defaulting to 'merge_overlaps'.")
     ops <- ops[-which(ops == "merge_edges")]
   }
-  if(any(c("merge_overlaps", "merge_edges", "reduce_to_templates") %in% ops) && !all("sanitize" %in% ops)) {
+  if(any(c("merge_overlaps", "merge_edges", "reduce_by_template") %in% ops) && !all("sanitize" %in% ops)) {
     ops <- c("sanitize", ops)
   }
 
@@ -228,7 +228,7 @@ pdr_modify <- function(pdr, ops, delta=5, templates = NULL) {
     return(pdr)
   }
     
-  merge_overlaps <- function(pdr) {
+  merge_overlap <- function(pdr) {
     # This function merges any overlapping polygons in each drawing
     # It iterates the elements of pdr ... i.e one function
     # call per pain drawing
@@ -242,7 +242,7 @@ pdr_modify <- function(pdr, ops, delta=5, templates = NULL) {
     return(pdr)    
   }  
     
-  merge_edges <- function(pdr) {
+  merge_edge <- function(pdr) {
     # This function merges any polygons that share aborder 
     # in each drawing. It is identical to merge_overlaps
     # except for the edges=TRUE parameter
@@ -256,17 +256,17 @@ pdr_modify <- function(pdr, ops, delta=5, templates = NULL) {
     return(pdr)    
   }
 
-  reduce_to_templates <- function(pdr, templates) {
+  reduce_by_template <- function(pdr, template) {
     # This function reduces each polygon to the subset which
-    # is contained within a number of templates. This is 
+    # is contained within the template. This is 
     # useful for, e.g. reducing pain drawings to that within
     # the background template outline.
     
-    # pdr <- pdr |> purrr::map(\(e) {
-    #   e$.points <- ..function..(e$.points, templates)
-    #   e$.strokes <- ..function..(e$.strokes, unique(e$.points$.index))
-    #   e
-    # }) # endmap
+    pdr <- pdr |> purrr::map(\(e) {
+      e$.points <- attempt_reduction(e$.points, template)
+      e$.strokes <- pdr_help_reduce_stroke_data(e$.strokes, unique(e$.points$.index))
+      e
+    }) # endmap
     return(pdr)    
   }
 
@@ -294,15 +294,15 @@ pdr_modify <- function(pdr, ops, delta=5, templates = NULL) {
   }
 
   if("merge_overlaps" %in% ops) {
-    pdr <- merge_overlaps(pdr)
+    pdr <- merge_overlap(pdr)
   }
 
   if("merge_edges" %in% ops) {
-    pdr <- merge_edges(pdr)
+    pdr <- merge_edge(pdr)
   }
 
-  if("reduce_to_templates" %in% ops) {
-    pdr <- reduce_to_templates(pdr, templates)
+  if("reduce_by_templates" %in% ops) {
+    pdr <- reduce_by_template(pdr, template)
   }
 
   return(pdr)

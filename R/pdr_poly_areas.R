@@ -20,7 +20,7 @@
 #'   dplyr::mutate(stroke_areas = pdr_poly_areas(pdr_data, by="strokes"))
 #' 
 #'  
-pdr_poly_areas <- function(pdr, by="drawings") {
+pdr_poly_areas <- function(pdr = pdr_data, by="drawings") {
   # We expect a valid pain drawing list-col as this function
   # is to be used in a mutate function call
   
