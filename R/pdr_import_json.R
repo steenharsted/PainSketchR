@@ -93,14 +93,14 @@ pdr_import_json <- function(files) {
           purrr::imap_dfr(\(element, indx) {
             tibble::tibble(i = indx, x = element[, 1], y = element[, 2])
           })
-        tmp$.id = tmp$id
+        tmp$.id <- tmp$id
         #tmp$.file = tmp$file
-        tmp$.version = tmp$v
-        tmp$.width = tmp$w
-        tmp$.height = tmp$h
-        tmp$.units = tmp$units
-        tmp$.timestamp = tmp$ts
-        tmp$.app = tmp$app
+        tmp$.version <- tmp$v
+        tmp$.width <- tmp$w
+        tmp$.height <- tmp$h
+        tmp$.units <- tmp$units
+        tmp$.timestamp <- tmp$ts
+        tmp$.app <- tmp$app
         tmp <- tmp[startsWith(names(tmp), ".")]
         tmp$.points <- tmp$.points |>
           dplyr::rename(.index = i, .x = x, .y = y) |>
@@ -116,10 +116,7 @@ pdr_import_json <- function(files) {
             .alpha = alpha,
             .spray_radius = sprayRadius,
             .point_density = sprayDensity
-          ) |>
-          mutate(.alpha = ifelse(
-            is.integer(.alpha), .alpha, as.integer(round(.alpha*255))
-          ))
+          )
         result <- c(result, list(tmp))
       }
     }

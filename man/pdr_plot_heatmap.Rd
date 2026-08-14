@@ -7,17 +7,17 @@
 pdr_plot_heatmap(
   .data,
   paindrawr_data = pdr_data,
-  variables = NULL,
+  variables = c(NA, NA),
   n_groups = c(2, 2),
   equal_n = TRUE,
   max_n = 1000,
   background_image = NULL,
   grid_size = 10,
   point_size = 0.25,
-  min_alpha = 0.1,
+  alpha_scale = c(0.1, 0.5),
   color_scale = "max",
   label_format = "pct",
-  show_n = TRUE,
+  show_n = FALSE,
   strips_in_markdown = TRUE
 )
 }
@@ -38,7 +38,10 @@ expected to include \code{.id}, \code{.width}, \code{.height}, \code{.strokes}, 
 
 \item{variables}{Character vector of length 1 or 2 specifying the grouping
 variable names present in \code{.data}. Numeric variables are binned into
-quantile groups; categorical variables use their existing levels.}
+quantile groups; categorical variables use their existing levels. Use \code{NA}
+in either position to leave that faceting dimension empty (a hidden dummy
+variable will be inserted). Defaults to \code{c(NA, NA)}, producing a single
+unfaceted heatmap.}
 
 \item{n_groups}{Integer vector matching the length of \code{variables}. Specifies
 the number of groups to create for each variable. Default is \code{c(2, 2)}.
@@ -46,7 +49,8 @@ For categorical variables, this must match the number of unique levels;
 if it does not, the actual number of levels is used with a message.}
 
 \item{equal_n}{Logical. If \code{TRUE}, balances sample sizes across groups by
-sampling. Default is \code{TRUE}.}
+sampling down to the size of the smallest group (capped at \code{max_n}).
+Default is \code{TRUE}.}
 
 \item{max_n}{Integer. Maximum number of observations per group when
 \code{equal_n = TRUE}. Default is \code{1000}.}
@@ -56,17 +60,21 @@ heatmap. Accepts either:
 \itemize{
 \item A file path to a PNG file (character string), or
 \item A numeric array as returned by \code{\link[png:readPNG]{png::readPNG()}}.
-}
-
-Defaults to \code{NULL} (no background).}
+Defaults to \code{NULL} (no background).
+}}
 
 \item{grid_size}{Integer. Coordinate binning resolution in pixels. Smaller
 values create finer grids but increase computation time. Default is \code{10}.
-Recommended range is 5–50 pixels; a warning is issued outside this range.}
+Recommended range is 5–50 pixels.}
 
-\item{point_size}{Numeric. Size of points in the heatmap. Default is \code{0.25}.}
+\item{point_size}{Numeric. Controls both the \code{size} and jitter \code{width}/
+\code{height} of points passed to \code{\link[ggplot2:geom_jitter]{ggplot2::geom_jitter()}}. Default is \code{0.25}.}
 
-\item{min_alpha}{Numeric. Minimum alpha value for points. Default is \code{0.1}.}
+\item{alpha_scale}{Numeric vector of length 2 giving the \code{range} passed to
+\code{\link[ggplot2:scale_alpha_continuous]{ggplot2::scale_alpha_continuous()}}. Point opacity is mapped linearly from
+density onto this \code{c(min, max)} range: cells with the lowest density take
+\code{alpha_scale[1]} and the highest take \code{alpha_scale[2]}. Pass two equal values
+(e.g. \code{c(0.5, 0.5)}) to give every point the same opacity. Defaults to \code{c(0.1, 0.5)}.}
 
 \item{color_scale}{Character or numeric. How to scale colours across facets:
 \itemize{
@@ -77,56 +85,46 @@ Recommended range is 5–50 pixels; a warning is issued outside this range.}
 
 \item{label_format}{Character. Format for quantile group labels:
 \itemize{
-\item \code{"pct"} (default) — percentage ranges.
-\item \code{"num"} — numeric ranges.
-\item \code{"both"} — combined markdown labels (requires \code{strips_in_markdown = TRUE}).
+\item \code{"pct"} (default) — percentage ranges (e.g. \code{"< 50\%"}).
+\item \code{"num"} — numeric ranges (e.g. \code{"(1.0–5.5)"}).
+\item \code{"both"} — combined markdown labels showing both formats, rendered via
+\verb{<br>} line breaks.
 }}
 
-\item{show_n}{Logical. If \code{TRUE}, displays sample sizes as text in facet
-strips. Default is \code{TRUE}.}
+\item{show_n}{Logical. If \code{TRUE}, displays sample sizes as text labels
+inside each facet panel. Default is \code{FALSE}.}
 
 \item{strips_in_markdown}{Logical. If \code{TRUE}, renders strip text using
 \code{\link[ggtext:element_markdown]{ggtext::element_markdown()}}, enabling markdown and HTML formatting in
-facet labels. Required when \code{label_format = "both"}. Default is \code{TRUE}.}
+facet labels. Also affects the plot subtitle and y-axis title. Default is
+\code{TRUE}.}
 }
 \value{
-A named list with two elements:
-\item{plot}{A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object with the faceted heatmap.}
-\item{data}{A tibble with the density calculations underlying the plot,
-containing columns \code{.id}, \code{.index}, \code{.q}, \code{.tool}, \code{.tool_width},
-\code{.color}, \code{.alpha}, \code{.spray_radius}, \code{.point_density}, grouping columns
-(\code{.VAR1_grp}, optionally \code{.VAR2_grp}), \code{.x}, \code{.y}, \code{x_bin}, \code{y_bin},
-\code{n_id_at_location}, \code{n_group}, and \code{pct}.}
+A \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} object with the faceted heatmap. The first
+variable in \code{variables} maps to the column facet (subtitle); the second
+maps to the row facet (y-axis label). Point colour encodes pain density
+(percentage of participants with a mark at each grid cell) using the
+\code{"plasma"} viridis palette.
 }
 \description{
 across one or two stratification variables.
 }
 \details{
-The function processes data in the following steps:
-\enumerate{
-\item Validates inputs and unpacks the \code{paindrawr_data} list-column with
-\code{\link[tidyr:unnest_wider]{tidyr::unnest_wider()}}.
-\item Extracts canvas dimensions from \code{.width} and \code{.height}; all drawings
-must share identical dimensions.
-\item Creates stratification groups (quantile binning for numeric
-variables, existing levels for categorical variables).
-\item Optionally balances sample sizes across groups.
-\item Unnests \code{.strokes} and \code{.points} and joins them on \code{.id} and
-\code{.index}.
-\item Recreates spray effects for any rows where \code{.tool == "spray"}.
-\item Bins coordinates into grid cells and calculates pain density as the
-percentage of participants with a mark at each location.
-\item Renders a faceted heatmap with a viridis colour scale.
-}
+
 }
 \section{Warnings}{
 
 The function will warn when:
 \itemize{
 \item More than 16 facets are created (may be slow).
-\item \code{grid_size} is outside the recommended range of 5–50 pixels.
 \item NA values are removed from grouping variables.
+\item \code{n_groups} does not match the number of levels for a categorical
+variable (continues with a message using the actual number of levels).
+\item A numeric variable has insufficient variation to create distinct
+quantile groups.
 \item Both pen and spray tools are detected in the same dataset.
+\item \code{equal_n = TRUE} reduces any group below its original size (strip
+labels still reflect ranges from the full dataset).
 }
 }
 

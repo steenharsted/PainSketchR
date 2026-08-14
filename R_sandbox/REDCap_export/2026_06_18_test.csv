@@ -1,6 +1,0 @@
-record_id,sex,age,demographics_complete,background_image_palmar,smerter_palmart_complete,background_image_dorsal,smerter_dorsalt_complete
-1,,,0,,0,,0
-2,1,45,2,paindraw.json,2,paindraw.json,2
-3,2,70,2,paindraw.json,0,paindraw.json,2
-4,1,56,2,paindraw.json,2,paindraw.json,2
-5,2,25,2,paindraw.json,2,paindraw.json,2
