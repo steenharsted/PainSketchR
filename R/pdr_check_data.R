@@ -10,7 +10,7 @@
 #' * An unnamed list with one element per pain drawing
 #' 
 #' **Second-level structure**
-#' * A list with one named elment per variable
+#' * A list with one named element per variable
 #'     - Must contain elements: `.id`, `.file`, `.version`, `.units`, `.width`, `.height`, `.timestamp`, `.app`, `.strokes`, `.points`
 #'
 #' **Second-level element types**
@@ -23,14 +23,14 @@
 #' * `.id` values must be unique
 #'
 #' **`.strokes` tibble or NA (stroke metadata)**
-#' If tibble, must be structured as:
+#' If .strokes is a tibble, it must be structured as:
 #' * Columns: `.index`, `.draw_input_type`, `.tool`, `.tool_width`, `.color`, `.spray_radius`, `.point_density`, `.alpha`
 #' * Types: integer, character, integer, character, integer, character, integer, integer, integer
 #' * One row per stroke (`.index` must be unique)
 #' * Exactly one unique value of `.color` per tibble
 #'
 #' **`.points` tibble or NA (stroke coordinates)**
-#' If tibble, must be structured as:
+#' If .points is a tibble, it must be structured as:
 #' * Columns: `.index`, `.x`, `.y`
 #' * All integer
 #' * `.index` values correspond to those in the matching `.strokes` tibble
@@ -41,6 +41,7 @@
 #' * The `.index` column links them:
 #'   - `.strokes$.index`: unique stroke identifiers
 #'   - `.points$.index`: repeats to associate coordinates with a stroke
+#' * If one is NA, the other must also be NA
 #' 
 #' 
 #' @param d An object to validate.
@@ -121,7 +122,7 @@ int_checker <- function(d) {
 
   # ---- top-level list ----
   if (!is.list(d)) {
-    return(fail("Data is a list: FAIL -- NOTE data should not simply be a list of columns '.id', '.units', '.width', '.height', '.timestamp', '.strokes', '.points', but a list of such lists."))
+    return(fail("Data is a list: FAIL -- NOTE data should not simply be a list of elements '.id', '.units', '.width', '.height', '.timestamp', '.strokes', '.points', but a list of a list of such elements."))
   }
   ok("Data is a list: OK")
 
@@ -141,8 +142,9 @@ int_checker <- function(d) {
         is.character(d$.units) &&
         is.character(d$.timestamp) &&
         is.character(d$.app) &&
-        is.list(d$.strokes) &&
-        is.list(d$.points))) {
+        (tibble::is_tibble(d$.strokes) || is.na(d$.strokes)) &&
+        (tibble::is_tibble(d$.points) || is.na(d$.points)))) {
+    warning(str(d))
     return(fail("Element types incorrect"))
   }
   ok("Element types: OK")
@@ -157,17 +159,27 @@ int_checker <- function(d) {
   if (!is_na_scalar(d$.strokes) && !valid_strokes_tbl(d$.strokes)) {
     return(fail("Invalid column in '.strokes'"))
   }
-  ok("'s' column valid: OK")
+  ok("'.strokes' column valid: OK")
 
   # ---- list column '.points' (allow NA) ----
   if (!is_na_scalar(d$.points) && !valid_points_tbl(d$.points)) {
     return(fail("Invalid column in '.points'"))
   }
-  ok("'p' column valid: OK")
+  ok("'.points' column valid: OK")
+
+  # ---- if .points is NA so must .strokes and vice versa ----
+  if(is_na_scalar(d$.points) && !is_na_scalar(d$.points)) {
+    return(fail(".points is NA, but .strokes is not"))
+  }
+  if(is_na_scalar(d$.points) && !is_na_scalar(d$.points)) {
+    return(fail(".strokes is NA, but .points is not"))
+  }
 
   # ---- identical '.index' in list column '.points' and '.strokes' 
-  if (!setequal(unique(d$.points$.index), d$.strokes$.index)) {
-    return(fail("Discrepancies in column '.index' in columns '.points' and '.strokes'"))
+  if(!is_na_scalar(d$.points) && !is_na_scalar(d$.points)) {
+    if (!setequal(unique(d$.points$.index), d$.strokes$.index)) {
+      return(fail("Discrepancies in column '.index' in columns '.points' and '.strokes'"))
+    }
   }
   ok("Column '.index' in list columns '.poins' and '.strokes' have same values")
 

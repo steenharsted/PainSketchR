@@ -778,3 +778,118 @@ pdr_help_reduce_stroke_data <- function(.strokes, .index) {
     dplyr::bind_cols(tibble::tibble(.index), .strokes)
   )
 }
+
+
+pdr_pdr2sf <- function(.data, data_col = pdr_data, buffer=5) {
+  # This function takes the specified data column from the
+  # specified .data, which is presumed to be a list-col of
+  # pain drawing data -- see pdr_check_data.R
+  
+  # It modifies the data_col by adding a new list element.
+  # This new element is called .sf_multipoly) and contains
+  # a MULTIPOLYGON object of the sf package.
+
+  # The raw data .points may include geometries non-polygon 
+  # geometries like (POINTS, LINESTRING) and these will be 
+  # polygonized and buffered.
+
+
+  # This helper function closes any open polygons, as
+  # required by the sf package
+  # close_poly <- function(t) {
+  #   # t is a tibble of .index, .x and .y
+  #   t <- t |>
+  #     dplyr::group_by(.index) |>
+  #     dplyr::group_modify(\(g, indx) {
+  #       if(identical(g[1,], g[nrow(g),])) {
+  #         g
+  #       } else {
+  #         rbind(g, g[1,])
+  #       }
+  #     })
+  #   return(dplyr::ungroup(t))
+  # }
+
+  buffer_if_no_area <- function(.points, buff=5) {
+    # This helper functions takes as input all strokes 
+    # from the pain drawing raw data. 
+    # It iterates on a per-stroke basis and recursively 
+    # handles each by buffering strokes which have no area,
+    # ie points and lines.
+    
+    if(tibble::is_tibble(.points)) {
+      
+      ##### THIS IS INITIAL 'PARENT' INVOCATION
+      
+      # If .points is a tibble (i.e. .points from raw data),
+      # solve by recursive iteraton on a per-stroke basis, 
+      # by converting to an st_polygon, buffering it and then 
+      # recast as coordinates in the .points tibble
+      .points |> 
+        dplyr::group_by(.index) |>
+        dplyr::group_modify(\(s, indx) {
+          buffer_if_no_area(sf::st_polygon(list(s)), buff) |>
+          sf::st_coordinates()
+        }) # ..return the complete data set (all strokes)
+
+    } else if (sf::st_is(.points, "POLYGON")) { 
+      
+      ##### THIS IS RECURSIVE 'CHILD' INVOCATION
+      
+      # This invocation is dealing with a single stroke  
+      # which may be a point or a line with no area, or a 
+      # regular polygon.    
+      if(sf::st_area(.points) == 0) {
+        # Area = zero, means it is a point or line
+        bbx <-  sf::st_bbox(.points) # Bounding box
+        if(bbx$xmin == bbx$xmax & bbx$ymin == bbx$ymax) {
+          # It is a point - sf will not buffer a point so 
+          # manually make a box just ±1 on x and y
+          coordinates <- sf::st_coordinates(.points)
+          x <- coordinates[1,'X']
+          y <- coordinates[1,'Y']
+          .points <- sf::st_polygon(list(matrix(
+            c(x-1,y-1, x+1,y-1, x+1,y+1, x-1,y+1, x-1,y-1),
+            ncol=2, byrow=TRUE
+          )))
+          sf::st_buffer(.points, buff, 8) |>
+            sf::st_coordinates(.points) |>
+            dplyr::select('X', 'Y') |>
+            round() |>
+            tibble::as_tibble() |>
+            dplyr::rename(.x="X", .y="Y")
+            return() # Return this stroke to recursive parent
+        } else {
+          # It is a line
+          sf::st_buffer(.points, buff, 8) |>
+            sf::st_coordinates(.points) |>
+            dplyr::select("'X', 'Y'") |>
+            round() |> 
+            tibble::as_tibble() |>
+            dplyr::rename(.x="X", .y="Y") # ..return this stroke to recursive parent
+        } # endelse
+      } # endif
+    } # endelseif
+  } 
+
+
+  .data <- .data |>
+    mutate({{ data_col }} := 
+      {{ data_col }} |> purrr::map(\(pdr) {
+        print(paste0("Looking at id ", pdr$.id))
+        pdr$.sf_multipoly <- 
+          if(is.null(pdr$.points)) {
+            NULL
+          } else {            
+            pdr$.points |>  
+              buffer_if_no_area() |>
+              #close_poly() #|>
+              #as.matrix(ncol=3, byrow=TRUE) |>
+              sfheaders::sf_multipolygon(x=".x", y=".y", polygon_id=".index", close=TRUE) #|> 
+          }
+        pdr # return
+      }) # endmap
+    )
+
+  .data # return
+  }
