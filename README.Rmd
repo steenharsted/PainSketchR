@@ -92,6 +92,21 @@ pdr_example_tibble |>
   pdr_plot_drawing()
 ```
 
+
+### Adding bakground image
+
+Plots of individual drawings and heatmaps are more interpretable when they include the background image that used during datacollection.
+
+```{r}
+background <- png::readPNG("inst/extdata/mird_body_background.png")
+
+pdr_example_tibble |>
+  head(1) |>
+  pdr_plot_drawing(
+    background_image = background
+  )
+```
+
 ### Heatmaps across groups
 
 `pdr_plot_heatmap()` aggregates many drawings into density heatmaps, optionally
@@ -100,7 +115,9 @@ duration:
 
 ```{r plot-heatmap, message = FALSE}
 pdr_example_tibble |>
-  pdr_plot_heatmap(variables = "duration")
+  pdr_plot_heatmap(
+    variables = "duration", 
+    background_image = background)
 ```
 
 

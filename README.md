@@ -122,6 +122,23 @@ pdr_example_tibble |>
 
 <img src="man/figures/README-plot-drawing-1.png" alt="" width="100%" />
 
+### Adding bakground image
+
+Plots of individual drawings and heatmaps are more interpretable when
+they include the background image that used during datacollection.
+
+``` r
+background <- png::readPNG("inst/extdata/mird_body_background.png")
+
+pdr_example_tibble |>
+  head(1) |>
+  pdr_plot_drawing(
+    background_image = background
+  )
+```
+
+<img src="man/figures/README-unnamed-chunk-3-1.png" alt="" width="100%" />
+
 ### Heatmaps across groups
 
 `pdr_plot_heatmap()` aggregates many drawings into density heatmaps,
@@ -130,7 +147,9 @@ by symptom duration:
 
 ``` r
 pdr_example_tibble |>
-  pdr_plot_heatmap(variables = "duration")
+  pdr_plot_heatmap(
+    variables = "duration", 
+    background_image = background)
 ```
 
 <img src="man/figures/README-plot-heatmap-1.png" alt="" width="100%" />
