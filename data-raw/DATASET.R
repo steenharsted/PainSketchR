@@ -21,7 +21,7 @@ for(c in fs::dir_ls("data-raw/regions_of_full_body_template/")) {
   )
 } 
 pdr_xa <- tibble::tibble(pdr_data = pdr_xa) |>
-  dplyr::mutate(id = pdr_get_info(pdr_data, 'id'))
+  dplyr::mutate(id = pdr_get_info(pdr_data, '.id'))
 
 # This is a bit quirky ... but necessary to ensure the variable is named correctly in rda:
 var_name <- "pdr_example_anatomy"
@@ -126,7 +126,8 @@ pdr_example_data <- pdr_example_data |>
     age = ifelse(age < 18, 18, age),
     pain = ifelse(pain > 10, 10, pain),
     pain = ifelse(pain <0 , 0, pain)
-  )
+  ) |>
+  mutate(pdr_data = pdr_modify(pdr_data, ops="flipy"))
 
 save( 
   pdr_example_data,
