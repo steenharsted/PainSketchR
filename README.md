@@ -58,21 +58,20 @@ the `pdr_data` column plus a few covariates:
 library(paindrawr)
 library(tidyverse)
 
-pdr_example_data <- pdr_example_data |> as_tibble()
 pdr_example_data
 #> # A tibble: 50 × 6
 #>    id                               pdr_data          sex     age duration  pain
 #>    <chr>                            <list>            <fct> <dbl> <fct>    <dbl>
-#>  1 6d63804892233bbb18bc21bcf0d81d0d <named list [10]> 1      34.6 Acute        9
-#>  2 c8b12cd45d08e94241d4de9990d60f71 <named list [10]> 1      64.6 Acute        0
-#>  3 25062ac7dbeb08d8b532ac474a7849ca <named list [10]> 1      43.6 Acute       10
-#>  4 0dc657fa6ed70150f9596fe692f2f9a0 <named list [10]> 1      52.7 Subacute     0
-#>  5 fb61c33ffa09270a5c7931813e9d2d71 <named list [10]> 0      33   Subacute     3
-#>  6 328d31503202db3e5c1b8e78f287810e <named list [10]> 0      18   Chronic      4
-#>  7 e07d8d7e7034ba3ae7f907de022af58d <named list [10]> 1      21.5 Acute        4
-#>  8 9996f1a95c8e939c6ab6258bfc76f722 <named list [10]> 0      31.8 Chronic     10
-#>  9 41aa308e694ad270b7cfaea054c7c1a2 <named list [10]> 1      83.3 Chronic      0
-#> 10 0bcfd36a71b799e857f13c29011d21ff <named list [10]> 0      59   Acute        5
+#>  1 6d63804892233bbb18bc21bcf0d81d0d <named list [10]> Fema…  49.1 Subacute     4
+#>  2 c8b12cd45d08e94241d4de9990d60f71 <named list [10]> Fema…  58.9 Subacute    10
+#>  3 25062ac7dbeb08d8b532ac474a7849ca <named list [10]> Male   37.1 Subacute     4
+#>  4 0dc657fa6ed70150f9596fe692f2f9a0 <named list [10]> Male   65.6 Chronic      1
+#>  5 fb61c33ffa09270a5c7931813e9d2d71 <named list [10]> Fema…  72.2 Acute        0
+#>  6 328d31503202db3e5c1b8e78f287810e <named list [10]> Male   37.3 Subacute     0
+#>  7 e07d8d7e7034ba3ae7f907de022af58d <named list [10]> Male   87.9 Subacute     9
+#>  8 9996f1a95c8e939c6ab6258bfc76f722 <named list [10]> Fema…  62.6 Chronic     10
+#>  9 41aa308e694ad270b7cfaea054c7c1a2 <named list [10]> Male   82.1 Chronic      1
+#> 10 0bcfd36a71b799e857f13c29011d21ff <named list [10]> Male   57   Acute        1
 #> # ℹ 40 more rows
 ```
 
@@ -87,16 +86,16 @@ pdr_example_data|>
 #> # A tibble: 50 × 7
 #>    id                              pdr_data     sex     age duration  pain width
 #>    <chr>                           <list>       <fct> <dbl> <fct>    <dbl> <int>
-#>  1 6d63804892233bbb18bc21bcf0d81d… <named list> 1      34.6 Acute        9   450
-#>  2 c8b12cd45d08e94241d4de9990d60f… <named list> 1      64.6 Acute        0   450
-#>  3 25062ac7dbeb08d8b532ac474a7849… <named list> 1      43.6 Acute       10   450
-#>  4 0dc657fa6ed70150f9596fe692f2f9… <named list> 1      52.7 Subacute     0   450
-#>  5 fb61c33ffa09270a5c7931813e9d2d… <named list> 0      33   Subacute     3   450
-#>  6 328d31503202db3e5c1b8e78f28781… <named list> 0      18   Chronic      4   450
-#>  7 e07d8d7e7034ba3ae7f907de022af5… <named list> 1      21.5 Acute        4   450
-#>  8 9996f1a95c8e939c6ab6258bfc76f7… <named list> 0      31.8 Chronic     10   450
-#>  9 41aa308e694ad270b7cfaea054c7c1… <named list> 1      83.3 Chronic      0   450
-#> 10 0bcfd36a71b799e857f13c29011d21… <named list> 0      59   Acute        5   450
+#>  1 6d63804892233bbb18bc21bcf0d81d… <named list> Fema…  49.1 Subacute     4   450
+#>  2 c8b12cd45d08e94241d4de9990d60f… <named list> Fema…  58.9 Subacute    10   450
+#>  3 25062ac7dbeb08d8b532ac474a7849… <named list> Male   37.1 Subacute     4   450
+#>  4 0dc657fa6ed70150f9596fe692f2f9… <named list> Male   65.6 Chronic      1   450
+#>  5 fb61c33ffa09270a5c7931813e9d2d… <named list> Fema…  72.2 Acute        0   450
+#>  6 328d31503202db3e5c1b8e78f28781… <named list> Male   37.3 Subacute     0   450
+#>  7 e07d8d7e7034ba3ae7f907de022af5… <named list> Male   87.9 Subacute     9   450
+#>  8 9996f1a95c8e939c6ab6258bfc76f7… <named list> Fema…  62.6 Chronic     10   450
+#>  9 41aa308e694ad270b7cfaea054c7c1… <named list> Male   82.1 Chronic      1   450
+#> 10 0bcfd36a71b799e857f13c29011d21… <named list> Male   57   Acute        1   450
 #> # ℹ 40 more rows
 ```
 

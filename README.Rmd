@@ -71,7 +71,6 @@ The example dataset contains 50 respondents, each with a pain drawing in the
 library(paindrawr)
 library(tidyverse)
 
-pdr_example_data <- pdr_example_data |> as_tibble()
 pdr_example_data
 ```
 
