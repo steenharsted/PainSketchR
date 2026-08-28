@@ -7,7 +7,7 @@
 #' the same length. It is thus suited for `mutate()` operations.
 #' 
 #' 
-#' @param pdr
+#' @param pdr_data
 #' @param ops
 #'
 #' @returns
@@ -84,21 +84,27 @@ pdr_modify <- function(pdr, ops, delta=5, templates = NULL) {
 
   ########## ops functions ##########
   flipy <- function(pdr) {
-    # This function flips (mirrors) the y-axis
-    # This solves a common problem because different platforms
-    # tend to use a traditional cartesion coordinates system
-    # with origo at the _lower_ left whereas computer screens
-    # typically place the origo in the _upper_ left
+      # pdr should be a valid list-col of pain drawing data
+      # see pdr_check_data() for details.
 
-    pdr <- pdr |> 
-      purrr::map(\(e) {
-        e$.points$.y <- e$.height - e$.points$.y
-        e
-      })
-    return(pdr)
+      # This function flips (mirrors) the y-axis
+      # This solves a common problem where different platforms
+      # tend to use a traditional cartesion coordinates system
+      # with origo at the _lower_ left whereas computer screens
+      # typically place the origo in the _upper_ left
+
+      pdr <- pdr |> 
+        purrr::map(\(e) {
+          e$.points$.y <- e$.height - e$.points$.y
+          e
+        })
+      return(pdr)
   }
     
   drop_noarea <- function(pdr) {
+    # pdr should be a valid list-col of pain drawing data
+    # see pdr_check_data() for details.
+
     # This functions removes those strokes in pain drawings
     # which have no geometric area, i.e. points and two-vertex
     # line segments ... NOTE! it is possible for other geometries

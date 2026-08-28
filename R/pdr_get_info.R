@@ -27,10 +27,10 @@
 #'
 #' @examples
 #' # Extract ids
-#' pdr_get_info(pdr_example_data, ".id")
+#' pdr_example_data |> pdr_get_info(pdr_data, ".id")
 #'
 #' # Extract x coordinates from the .points tibble
-#' pdr_get_info(pdr_example_data, c(".strokes", ".alpha"))
+#' pdr_example_data |> pdr_get_info(pdr_data, c(".strokes", ".alpha"))
 #'#'
 #' @seealso [pdr_check_data()]
 #'
