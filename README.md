@@ -57,31 +57,22 @@ the `pdr_data` column plus a few covariates:
 ``` r
 library(paindrawr)
 library(tidyverse)
-#> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-#> ✔ dplyr     1.2.1     ✔ readr     2.2.0
-#> ✔ forcats   1.0.1     ✔ stringr   1.6.0
-#> ✔ ggplot2   4.0.3     ✔ tibble    3.3.1
-#> ✔ lubridate 1.9.5     ✔ tidyr     1.3.2
-#> ✔ purrr     1.2.2     
-#> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-#> ✖ dplyr::filter() masks stats::filter()
-#> ✖ dplyr::lag()    masks stats::lag()
-#> ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
 
-pdr_example_tibble
-#> # A tibble: 50 × 5
-#>    pdr_data            sex   age duration  pain
-#>    <list>            <int> <dbl> <chr>    <dbl>
-#>  1 <named list [10]>     0  47.6 Subacute     4
-#>  2 <named list [10]>     1  66.4 Acute        2
-#>  3 <named list [10]>     1  25.8 Subacute     2
-#>  4 <named list [10]>     1  23.1 Acute        5
-#>  5 <named list [10]>     1  54.5 Chronic      3
-#>  6 <named list [10]>     1  24.2 Subacute    10
-#>  7 <named list [10]>     0  86.8 Acute        6
-#>  8 <named list [10]>     1  18   Subacute    10
-#>  9 <named list [10]>     0  52.5 Chronic     10
-#> 10 <named list [10]>     0  39.7 Subacute     4
+pdr_example_data <- pdr_example_data |> as_tibble()
+pdr_example_data
+#> # A tibble: 50 × 6
+#>    id                               pdr_data          sex     age duration  pain
+#>    <chr>                            <list>            <fct> <dbl> <fct>    <dbl>
+#>  1 6d63804892233bbb18bc21bcf0d81d0d <named list [10]> 1      34.6 Acute        9
+#>  2 c8b12cd45d08e94241d4de9990d60f71 <named list [10]> 1      64.6 Acute        0
+#>  3 25062ac7dbeb08d8b532ac474a7849ca <named list [10]> 1      43.6 Acute       10
+#>  4 0dc657fa6ed70150f9596fe692f2f9a0 <named list [10]> 1      52.7 Subacute     0
+#>  5 fb61c33ffa09270a5c7931813e9d2d71 <named list [10]> 0      33   Subacute     3
+#>  6 328d31503202db3e5c1b8e78f287810e <named list [10]> 0      18   Chronic      4
+#>  7 e07d8d7e7034ba3ae7f907de022af58d <named list [10]> 1      21.5 Acute        4
+#>  8 9996f1a95c8e939c6ab6258bfc76f722 <named list [10]> 0      31.8 Chronic     10
+#>  9 41aa308e694ad270b7cfaea054c7c1a2 <named list [10]> 1      83.3 Chronic      0
+#> 10 0bcfd36a71b799e857f13c29011d21ff <named list [10]> 0      59   Acute        5
 #> # ℹ 40 more rows
 ```
 
@@ -91,21 +82,21 @@ add drawing-level metadata as new columns with `mutate()` — for example
 the canvas width of each drawing:
 
 ``` r
-pdr_example_tibble |>
+pdr_example_data|>
   mutate(width = pdr_get_info(pdr_data, var = ".width"))
-#> # A tibble: 50 × 6
-#>    pdr_data            sex   age duration  pain width
-#>    <list>            <int> <dbl> <chr>    <dbl> <int>
-#>  1 <named list [10]>     0  47.6 Subacute     4   450
-#>  2 <named list [10]>     1  66.4 Acute        2   450
-#>  3 <named list [10]>     1  25.8 Subacute     2   450
-#>  4 <named list [10]>     1  23.1 Acute        5   450
-#>  5 <named list [10]>     1  54.5 Chronic      3   450
-#>  6 <named list [10]>     1  24.2 Subacute    10   450
-#>  7 <named list [10]>     0  86.8 Acute        6   450
-#>  8 <named list [10]>     1  18   Subacute    10   450
-#>  9 <named list [10]>     0  52.5 Chronic     10   450
-#> 10 <named list [10]>     0  39.7 Subacute     4   450
+#> # A tibble: 50 × 7
+#>    id                              pdr_data     sex     age duration  pain width
+#>    <chr>                           <list>       <fct> <dbl> <fct>    <dbl> <int>
+#>  1 6d63804892233bbb18bc21bcf0d81d… <named list> 1      34.6 Acute        9   450
+#>  2 c8b12cd45d08e94241d4de9990d60f… <named list> 1      64.6 Acute        0   450
+#>  3 25062ac7dbeb08d8b532ac474a7849… <named list> 1      43.6 Acute       10   450
+#>  4 0dc657fa6ed70150f9596fe692f2f9… <named list> 1      52.7 Subacute     0   450
+#>  5 fb61c33ffa09270a5c7931813e9d2d… <named list> 0      33   Subacute     3   450
+#>  6 328d31503202db3e5c1b8e78f28781… <named list> 0      18   Chronic      4   450
+#>  7 e07d8d7e7034ba3ae7f907de022af5… <named list> 1      21.5 Acute        4   450
+#>  8 9996f1a95c8e939c6ab6258bfc76f7… <named list> 0      31.8 Chronic     10   450
+#>  9 41aa308e694ad270b7cfaea054c7c1… <named list> 1      83.3 Chronic      0   450
+#> 10 0bcfd36a71b799e857f13c29011d21… <named list> 0      59   Acute        5   450
 #> # ℹ 40 more rows
 ```
 
@@ -115,7 +106,7 @@ pdr_example_tibble |>
 coordinates. Pipe in a single row of the tibble:
 
 ``` r
-pdr_example_tibble |>
+pdr_example_data|>
   head(1) |>
   pdr_plot_drawing()
 ```
@@ -130,7 +121,7 @@ they include the background image that used during datacollection.
 ``` r
 background <- png::readPNG("inst/extdata/mird_body_background.png")
 
-pdr_example_tibble |>
+pdr_example_data|>
   head(1) |>
   pdr_plot_drawing(
     background_image = background
@@ -146,7 +137,7 @@ optionally stratified by one or two grouping variables. Here we stratify
 by symptom duration:
 
 ``` r
-pdr_example_tibble |>
+pdr_example_data|>
   pdr_plot_heatmap(
     variables = "duration", 
     background_image = background)

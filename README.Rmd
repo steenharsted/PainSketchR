@@ -66,10 +66,13 @@ The example dataset contains 50 respondents, each with a pain drawing in the
 `pdr_data` column plus a few covariates:
 
 ```{r example}
+#| message: false
+#| warning: false
 library(paindrawr)
 library(tidyverse)
 
-pdr_example_tibble
+pdr_example_data <- pdr_example_data |> as_tibble()
+pdr_example_data
 ```
 
 Metadata stored inside each drawing can be pulled out with `pdr_get_info()`.
@@ -77,7 +80,7 @@ Because the drawings live in a list-column, you can add drawing-level metadata
 as new columns with `mutate()` — for example the canvas width of each drawing:
 
 ```{r get-info}
-pdr_example_tibble |>
+pdr_example_data|>
   mutate(width = pdr_get_info(pdr_data, var = ".width"))
 ```
 
@@ -87,7 +90,7 @@ pdr_example_tibble |>
 Pipe in a single row of the tibble:
 
 ```{r plot-drawing}
-pdr_example_tibble |>
+pdr_example_data|>
   head(1) |>
   pdr_plot_drawing()
 ```
@@ -100,7 +103,7 @@ Plots of individual drawings and heatmaps are more interpretable when they inclu
 ```{r}
 background <- png::readPNG("inst/extdata/mird_body_background.png")
 
-pdr_example_tibble |>
+pdr_example_data|>
   head(1) |>
   pdr_plot_drawing(
     background_image = background
@@ -114,7 +117,7 @@ stratified by one or two grouping variables. Here we stratify by symptom
 duration:
 
 ```{r plot-heatmap, message = FALSE}
-pdr_example_tibble |>
+pdr_example_data|>
   pdr_plot_heatmap(
     variables = "duration", 
     background_image = background)
