@@ -43,6 +43,8 @@ pdr_get_info <- function(data_col, var=".id") {
   # (if present) should be a column name in .strokes or 
   # .points (which should be element 1 or 2)
 
+  
+
   var1 <- var[1]
   if(length(var)>1) {var2 <- var[2]}
 
