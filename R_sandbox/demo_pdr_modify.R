@@ -10,44 +10,64 @@ library(here)
 ##### Create a full body outline from anatomy regions #####
 ###########################################################
 
+# Lets look first at the anatomy regions defined in the
+# example data set pdr_example_anatomy
+pdr_example_anatomy |> pdr_plot_drawing()
+
+# This is messy to look at, so let's implode these 46 pain
+# drawings into a single pain drawing with 46 strokes.  
 # Note that pdr_implode is a summarizing function, it returns
-# a valid pdr list-col, but NOT with the same number of 
-# elements as the input. Therefor not suited for use as a
-# list-col in a tibble
-pdr_all_anatomy <- pdr_example_anatomy |> pdr_implode()
+# a valid pain drawing tibble, but NOT with the same number  
+# of elements as the input. 
+pdr_all_anatomy <- pdr_example_anatomy |> 
+  pdr_implode()
 
-# pdr_example_anatomy consists of 46 pdr elements, each with
-# just one stroke, conversely, pdr_all_anatomy now consists
-# of a single element with 46 strokes.
-tibble(pdr_data = pdr_all_anatomy) |>
-  pdr_plot_drawing()
+# Let's look at this one pain drawing:
+pdr_all_anatomy |> pdr_plot_drawing()
 
-tibble(pdr_data = pdr_all_anatomy) |>
+# Let's include the original background raster:
+pdr_all_anatomy |>
   pdr_plot_drawing(background_image=here("inst","extdata", "mird_body_background.png"))
 
-# We now need to merge/union all 46 strokes pairwise
-tibble(pdr_data = pdr_all_anatomy) |>
+################################################################
+##### Convert the raw data into polgygons                  #####
+################################################################
+
+# To manipulate these geometries, we convert them into 
+# polygons. In part to avail ourselves of the 'sf' package, 
+# and in part to leave the raw data unaltered
+
+# We store the polygon data in the same list-columns as the
+# raw data. The buffer parameter determines how to handle
+# invalid polygons like points and line-segments.
+pdr_all_anatomy <- pdr_all_anatomy |>
+  mutate(pdr_data = pdr_polygonize(pdr_data, buffer=10))
+
+# Nothing much seemed to happen, but the pdr_data col-list
+# now contains an extra list element .polygons.
+# Let us use these polygons for something useful -- e.g. to
+# calculate the geometric areas of each region
+pdr_all_anatomy <- pdr_all_anatomy |>
+  mutate(area = pdr_poly_areas(pdr_data, by="strokes"))
+
+# Now let's merge all 46 strokes pairwise
+pdr_all_anatomy |>
   mutate(pdr_merged = pdr_modify(pdr_data, "merge_edges")) |>
   pdr_plot_drawing(pdr_merged, background_image=here("inst","extdata", "mird_body_background.png"))
 
 ################################################################
-##### Create a body outline of posterior low back  #####
+##### Create a body outline of posterior low back          #####
 ################################################################
 
-# Again note that we rely on pdr_implode which means breaking 
-# out of the first tibble (using pull)
+# ...
 pdr_anatomy_lowback <- 
-  tibble(pdr_data = pdr_example_anatomy) |>
+  pdr_example_anatomy |>
   mutate(anatomy_region = pdr_get_info(pdr_data, ".id")) |>
   filter(str_detect(anatomy_region, "(Mid_back_bottom)|(Back.+(lowerback|buttock))")) |>
-  pull(pdr_data) |>
-  pdr_implode()
-tibble(pdr_data = pdr_anatomy_lowback) |>
-  mutate(pdr_data = pdr_modify(pdr_data, "merge_edges")) |> 
-  pdr_plot_drawing(background_image = here("inst", "extdata", "mird_body_background.png"))
-tibble(pdr_data = pdr_anatomy_lowback) |>
-  mutate(pdr_data = pdr_modify(pdr_data, "merge_edges")) |> 
-  pdr_plot_drawing(type = "polygon", background_image = here("inst", "extdata", "mird_body_background.png"))
+  pdr_implode() |> 
+  mutate(pdr_data = pdr_polygonize(pdr_data)) |>
+  mutate(pdr_data = pdr_modify_polygons(pdr_data, ops = ))
+
 
 
 ###########################################################

@@ -34,10 +34,12 @@
 #' pd_demo_anatomy |> dplyr::filter(id %in% c("Front_left_thigh", "Front_left_leg", "Front_left_foot")) |> pd_recreate_drawing(background_image = bi)#' 
 #' pd_demo_anatomy |> dplyr::filter(id %in% c("Front_left_thigh", "Front_left_leg", "Front_left_foot")) |> pd_implode() |> pd_recreate_drawing(background_image = bi)
 #' 
-pdr_implode <- function(pdr) {
+pdr_implode <- function(.data, paindrawr_data = pdr_data) {
+  pdr <- .data |> dplyr::pull({{paindrawr_data}})
+
   # Sanity checks
-  # pdr must be valid pain drawing data
-  if (!pdr_check_data(pdr, verbose=FALSE)) { stop("`pdr` must be a valid pain drawing data structure")}
+  # If only one pain drawing -- return input
+  if(length(pdr)==1) { return(pdr)}
   # pdr should include only one type of units 
   if (length(unique(pdr |> purrr::map_chr(\(x) {x$.units})))>1) {
     warning("Can not implode pain drawings with more than one type of unit.")
@@ -48,11 +50,10 @@ pdr_implode <- function(pdr) {
      length(unique(pdr |> purrr::map_int(\(x) {x$.height})))>1) {
     warning("Different canvas widths and/or heights -- all coerced to max width and height, respectively.")
   }
-  # If only one pain drawing -- return input
-  if(length(pdr)==1) { return(pdr)}
-
-  # Result needs to be just a single pain drawing -- i.e a list
-  # of just one element (a list of .id ... .points)
+  
+  # Result needs to be a tibble with just a single pain 
+  # drawing -- i.e 'pdr_data' should be a list of just one 
+  # element (.id ... .points)
   # We build that by hand keeping a close eye on data types
   #   * `.id`: character (unique identifier)
   #   * `.version`, `.width`, `.height`: integer
@@ -86,9 +87,10 @@ pdr_implode <- function(pdr) {
       unique(var_values))
   }
 
+  tmp_id <- paste0("imploded_", Sys.time())
   result <- list(
     list(
-      .id = paste0("imploded_", Sys.time()),
+      .id = tmp_id,
       .file = one_or_multiple(pdr, ".file"),
       .version = one_or_multiple(pdr, ".version"),
       .width = max(pdr |> purrr::map_int(\(x) {x$.width})),  
@@ -110,5 +112,11 @@ pdr_implode <- function(pdr) {
           dplyr::select(-pdr_indx)}
     )
   )
+
+  result <- tibble::tibble(
+    id=tmp_id,
+    pdr_data=result
+  )
+
   return(result)
 }

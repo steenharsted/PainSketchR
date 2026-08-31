@@ -69,6 +69,10 @@ pdr_example_geometry <- tibble::tibble(
   dplyr::bind_rows(tibble::tibble(
     id = "intersection",
     paindrawing_LBP = "(,130,50,130,100,180,100,180,50,),(,100,100,100,130,130,130,130,100,),(,100,130,100,160,130,160,130,130,),(,100,170,100,200,130,200,130,170,)"
+  )) |>
+  dplyr::bind_rows(tibble::tibble(
+    id = "empty",
+    paindrawing_LBP = "(,,)"
   ))
 
 n <- nrow(pdr_example_geometry)
@@ -79,7 +83,7 @@ pdr_example_geometry <- pdr_example_geometry |>
       id,
       file = "data/pdr_example_data.csv",
       version = "2",
-      width = as.integer(450),
+      width = as.integer(450), # Try to add different canvas dimensions?
       height = as.integer(500),
       units = "px",
       timestamp = as.character(Sys.time()),
@@ -147,7 +151,7 @@ pdr_example_data <- pdr_example_data |>
     pain = ifelse(pain < 0, 0, pain)
   ) |>
   mutate(pdr_data = pdr_modify(pdr_data, ops = "flipy")) |>
-  as_tibble()
+  tibble::as_tibble()
 
 save(
   pdr_example_data,

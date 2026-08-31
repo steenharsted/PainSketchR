@@ -52,11 +52,13 @@
 #'
 #' @export
 #' @examples
-#' pdr_check_data(pdr_demo_data, verbose = FALSE) # Will return TRUE
+#' pdr_example_data |> pdr_check_data(pdr_data, verbose = FALSE) # Will return TRUE
 #'
 #' pdr_check_data(letters[1:10]) # Will return FALSE and provide details
 #'
-pdr_check_data <- function(d, verbose = TRUE) {
+pdr_check_data <- function(.data, paindrawr_data = pdr_data, verbose = TRUE) {
+  d <- .data |> dplyr::pull({{paindrawr_data}})
+
   if (!is.list(d)) {
     warning("Data 'd' is not a list", call. = FALSE)
     return(FALSE)

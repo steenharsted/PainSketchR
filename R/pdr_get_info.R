@@ -49,11 +49,6 @@ pdr_get_info <- function(data_col, var=".id") {
   if(length(var)>1) {var2 <- var[2]}
 
   # Sanity check
-  # Is data_col valid pain drawing data?
-  if(!pdr_check_data(data_col, verbose=FALSE)) {
-    pdr_check_data(data_col, verbose=TRUE) # Get some debug info for user
-    stop("Invalid 'data_col' parameter in functional call pdr_get_info()")
-  }
   # Is the var parameters (first element) a name in data_col?
   if(!{{var1}} %in% names(data_col[[1]])) {
     stop("Invalid first 'var' parameter in pdr_get_info()

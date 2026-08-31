@@ -21,27 +21,17 @@
 #' 
 #'  
 pdr_poly_areas <- function(pdr = pdr_data, by="drawings") {
-  # We expect a valid pain drawing list-col as this function
-  # is to be used in a mutate function call
+    
+   tmp <- pdr |> 
+     purrr::map(\(e) {
+      e$.polygons |> 
+        sf::st_area()
+    })
   
-  # Sanity check
-  if (!pdr_check_data(pdr, verbose=FALSE)) {
-    stop("Invalid data 'pdr' in function call 'pdr_poly_areas()'")
-  }
-
   if (by=="strokes") {
-    pdr |> purrr::map(\(e) {
-      e$.points |> 
-        dplyr::group_by(.index) |>
-        dplyr::summarize(.area = wrap_geo_polyarea(.x, .y)) |>
-        dplyr::ungroup()
-    })
+    tmp # return
   } else {
-    pdr |> purrr::map_int(\(e) {
-      e$.points |> 
-        dplyr::group_by(.index) |>
-        dplyr::summarize(.area = wrap_geo_polyarea(.x, .y)) |>
-        dplyr::pull(.area) |> sum()
-    })
+    tmp |>
+      purrr::map_int(\(e) {sum(e)})
   }
 }
