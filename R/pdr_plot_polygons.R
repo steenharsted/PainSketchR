@@ -24,6 +24,7 @@
 #'   mutate(pdr_data = pdr_polygonize(pdr_data, buffer=5)) |> 
 #'   mutate(pdr_data = pdr_modify_polygons(pdr_data, "merge_overlaps")) |> 
 #'   pdr_plot_polygons()
+
 pdr_plot_polygons <- function(
   .data,
   paindrawr_data = pdr_data,
@@ -38,12 +39,10 @@ pdr_plot_polygons <- function(
   # This function is a simple wrapper for the 
   # dpr_plot_drawing() function
 
-  # Make a copy of the pdr list-col, then
-  # extract coordinates from the polygons and substitute 
+  # Extract coordinates from the polygons and substitute 
   # them for .points
-  .data <- .data |> mutate(pdr = {{ paindrawr_data }})
   .data <- .data |>
-    mutate(pdr = pdr |> 
+    mutate({{ paindrawr_data}} := {{ paindrawr_data}} |> 
       purrr::map(\(e) {
         e$.points <- e$.polygons |> sf::st_coordinates() |>
           tibble::as_tibble() |>
@@ -52,10 +51,14 @@ pdr_plot_polygons <- function(
       })
     )
   
-
+  ##########################################################
+  #### We probably should reduce the .strokes tibble to ####
+  #### reflect the new values in .points                ####
+  ##########################################################
+  
   pdr_plot_drawing(
     .data,
-    pdr,
+    {{ paindrawr_data }},
     background_image,
     include_id,
     rasterize,

@@ -4,7 +4,7 @@
 \alias{pdr_implode}
 \title{Implode multiple pain drawwings into one.}
 \usage{
-pdr_implode(pdr)
+pdr_implode(.data, paindrawr_data = pdr_data)
 }
 \arguments{
 \item{pdr}{must be a valid pain drawing data structure.

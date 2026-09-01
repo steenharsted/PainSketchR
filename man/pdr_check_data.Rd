@@ -4,7 +4,7 @@
 \alias{pdr_check_data}
 \title{Validate a pain drawing data structure}
 \usage{
-pdr_check_data(d, verbose = TRUE)
+pdr_check_data(.data, paindrawr_data = pdr_data, verbose = TRUE)
 }
 \arguments{
 \item{d}{An object to validate.}
@@ -28,7 +28,7 @@ A valid pain drawing data structure must satisfy all of the following:
 
 \strong{Second-level structure}
 \itemize{
-\item A list with one named elment per variable
+\item A list with one named element per variable
 \itemize{
 \item Must contain elements: \code{.id}, \code{.file}, \code{.version}, \code{.units}, \code{.width}, \code{.height}, \code{.timestamp}, \code{.app}, \code{.strokes}, \code{.points}
 }
@@ -48,7 +48,7 @@ A valid pain drawing data structure must satisfy all of the following:
 }
 
 \strong{\code{.strokes} tibble or NA (stroke metadata)}
-If tibble, must be structured as:
+If .strokes is a tibble, it must be structured as:
 \itemize{
 \item Columns: \code{.index}, \code{.draw_input_type}, \code{.tool}, \code{.tool_width}, \code{.color}, \code{.spray_radius}, \code{.point_density}, \code{.alpha}
 \item Types: integer, character, integer, character, integer, character, integer, integer, integer
@@ -57,7 +57,7 @@ If tibble, must be structured as:
 }
 
 \strong{\code{.points} tibble or NA (stroke coordinates)}
-If tibble, must be structured as:
+If .points is a tibble, it must be structured as:
 \itemize{
 \item Columns: \code{.index}, \code{.x}, \code{.y}
 \item All integer
@@ -73,10 +73,11 @@ If tibble, must be structured as:
 \item \code{.strokes$.index}: unique stroke identifiers
 \item \code{.points$.index}: repeats to associate coordinates with a stroke
 }
+\item If one is NA, the other must also be NA
 }
 }
 \examples{
-pdr_check_data(pdr_demo_data, verbose = FALSE) # Will return TRUE
+pdr_example_data |> pdr_check_data(pdr_data, verbose = FALSE) # Will return TRUE
 
 pdr_check_data(letters[1:10]) # Will return FALSE and provide details
 

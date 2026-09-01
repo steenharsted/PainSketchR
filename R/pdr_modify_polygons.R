@@ -1,4 +1,3 @@
-
 #' Modify pain drawing elements
 #' 
 #' This function takes a valid pain drawing list as input
@@ -7,19 +6,34 @@
 #' the same length. It is thus suited for `mutate()` operations.
 #' 
 #' 
-#' @param pdr_data
-#' @param ops
+#' @param .data A valid pain drawing tibble
+#' @param paindrawr_data The name of the pain drawing list-col in .data
+#' @param ops A string vector of operations to perform. See below:
+#' 
+#' Parameter 'ops' can be one of the following, which will be performed the listd order:
+#' * "make_valid" Removes self-intersection and other issue hich invalidate polygons -- see `sf::st_make_valid()`
+#' * "reduce_to_chull" Reduces polygons to their convex hull -- see `sf::st_convex_hull()`
+#' * "merge_overlaps" Merges (union) overlapping polygons into one -- see `sf::st_union()`
 #'
-#' @returns
+#' @returns A valid pain drawing tibble
 #'
-#' @export
 #' @examples
-
+#' # Plot gross anatomical regions
+#' pdr_example_anatomy |>
+#'   pdr_implode() |>
+#'   mutate(pdr_data = pdr_polygonize(pdr_data)) |>
+#'   pdr_plot_polygons(pdr_data)
+#' 
+#' # Plot merged anatomical regions for body outline
+#' pdr_example_anatomy |>
+#'   pdr_implode() |>
+#'   mutate(pdr_data = pdr_polygonize(pdr_data)) |>
+#'   mutate(pdr_data = pdr_modify_polygons(pdr_data, "merge_overlaps")) |>
+#'   pdr_plot_polygons(pdr_data)
+ 
 
 pdr_modify_polygons <- function(paindrawr_data, ops) {
   lcol <- paindrawr_data
-  rm(paindrawr_data)
-
 
   ########## Sanity checks ##########
   accepted_ops <- c("reduce_to_chull", "merge_overlaps", "make_valid", "merge_edges", "reduce_by_template")
@@ -59,6 +73,21 @@ pdr_modify_polygons <- function(paindrawr_data, ops) {
 
 
   ########## End ops functions ########## 
+  if("make_valid" %in% ops) {
+    lcol <- lcol |>
+      purrr::map_depth(.depth=1, \(pd) {
+        pd <- pd |> 
+          purrr::imap(\(element,indx) {
+            if(indx==".polygons") {
+              element |> 
+                purrr::map(\(poly) {sf::st_make_valid(poly)}) |>
+                sf::st_sfc()
+            } else {
+              element
+            }
+          })
+      })
+  }
 
   if("reduce_to_chull" %in% ops) {
     lcol <- lcol |>
@@ -92,29 +121,6 @@ pdr_modify_polygons <- function(paindrawr_data, ops) {
       })
   }
 
-  if("make_valid" %in% ops) {
-    lcol <- lcol |>
-      purrr::map_depth(.depth=1, \(pd) {
-        pd <- pd |> 
-          purrr::imap(\(element,indx) {
-            if(indx==".polygons") {
-              element |> 
-                purrr::map(\(poly) {sf::st_make_valid(poly)}) |>
-                sf::st_sfc()
-            } else {
-              element
-            }
-          })
-      })
-  }
 
-  # if("merge_edges" %in% ops) {
-  #   pdr <- merge_edge(pdr)
-  # }
-
-  # if("reduce_by_templates" %in% ops) {
-  #   pdr <- reduce_by_template(pdr, template)
-  # }
-
-  lcol # return
+  lcol # return this
 }

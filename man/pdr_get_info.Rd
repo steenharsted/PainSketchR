@@ -4,10 +4,10 @@
 \alias{pdr_get_info}
 \title{Extract information from pain drawing objects}
 \usage{
-pdr_get_info(pdr, var = "id")
+pdr_get_info(data_col, var = ".id")
 }
 \arguments{
-\item{pdr}{A valid pain drawing object (typically a list-column) as checked
+\item{data_col}{A valid pain drawing object (typically a list-column) as checked
 by \code{\link[=pdr_check_data]{pdr_check_data()}}.}
 
 \item{var}{A character vector of length 1 or 2 specifying what information
@@ -21,25 +21,25 @@ If \code{var} has length 2, the first element must be either \code{".strokes"} o
 corresponding tibble (e.g. \code{c(".strokes", ".alpha")}).}
 }
 \value{
-If \code{var[1]} refers to a regular element, a vector of length \code{length(pdr)} is
+If \code{var[1]} refers to a regular element, a vector of length \code{length(data_col)} is
 returned.
 
-If \code{var[1]} is \code{".strokes"} or \code{".points"}, a list of length \code{length(pdr)}
+If \code{var[1]} is \code{".strokes"} or \code{".points"}, a list of length \code{length(data_col)}
 is returned, where each element contains the selected column from the
 corresponding tibble.
 }
 \description{
-Extracts metadata or variables from a pain drawing (\code{pdr}) list-column.
+Extracts metadata or variables from a pain drawing (\code{data_col}) list-column.
 Simple elements (such as \code{".id"} or \code{".timestamp"}) are returned as a vector,
 whereas columns within the nested \code{.strokes} or \code{.points} tibbles are
 returned as a list with one element per pain drawing.
 }
 \examples{
 # Extract ids
-pdr_get_info(pdr_example_data, ".id")
+pdr_example_data |> pdr_get_info(pdr_data, ".id")
 
 # Extract x coordinates from the .points tibble
-pdr_get_info(pdr_example_data, c(".strokes", ".alpha"))
+pdr_example_data |> pdr_get_info(pdr_data, c(".strokes", ".alpha"))
 #'
 }
 \seealso{

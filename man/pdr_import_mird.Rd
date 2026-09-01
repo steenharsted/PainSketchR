@@ -4,27 +4,83 @@
 \alias{pdr_import_mird}
 \title{Convert MiRD pain drawing strings to coordinate data}
 \usage{
-pdr_import_mird(mird_string, flip_y = TRUE)
+pdr_import_mird(
+  mird_string = "mird_string",
+  ids = "id",
+  file = "",
+  version = "",
+  width = as.integer(0),
+  height = as.integer(0),
+  units = "px",
+  timestamp = as.character(Sys.time()),
+  app = "",
+  tool = "pen",
+  draw_input_type = "mouse",
+  tool_width = as.integer(1),
+  point_density = as.integer(1),
+  spray_radius = as.integer(1),
+  alpha = as.integer(255),
+  color = "#FFFFFF"
+)
 }
 \arguments{
 \item{mird_string}{Character vector of MiRD-encoded pain drawing strings.}
 
-\item{flip_y}{Logical. If \code{TRUE} (default), flip y-coordinates to a
-lower-left origin coordinate system.}
+\item{ids}{A list or vector of unique strings which must be of same length as mird_string.}
+
+\item{file}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string}
+
+\item{version}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string}
+
+\item{width}{An list or vector (integers) which is empty, of length 1 or of same length as mird_string}
+
+\item{height}{An list or vector (integers) which is empty, of length 1 or of same length as mird_string}
+
+\item{units}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string}
+
+\item{timestamp}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string}
+
+\item{app}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string}
+
+\item{tool}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string. If
+tool is a list of the same length as mird_string, each element should be a list or vector
+which is of length 1 or same length as the number of strokes in that mird string.}
+
+\item{draw_input_type}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string. If
+dar_input_type is a list of the same length as mird_string, each element should be a list or vector
+which is of length 1 or same length as the number of strokes in that mird string.}
+
+\item{tool_width}{A list or vector (integers) which is empty, of length 1 or of same length as mird_string. If
+tool_width is a list of the same length as mird_string, each element should be a list or vector
+which is of length 1 or same length as the number of strokes in that mird string.}
+
+\item{point_density}{A list or vector (integers) which is empty, of length 1 or of same length as mird_string. If
+point_density is a list of the same length as mird_string, each element should be a list or vector
+which is of length 1 or same length as the number of strokes in that mird string.}
+
+\item{spray_radius}{A list or vector (integers) which is empty, of length 1 or of same length as mird_string. If
+spray_radius is a list of the same length as mird_string, each element should be a list or vector
+which is of length 1 or same length as the number of strokes in that mird string.}
+
+\item{alpha}{A list or vector (integers) which is empty, of length 1 or of same length as mird_string. If
+alpha is a list of the same length as mird_string, each element should be a list or vector
+which is of length 1 or same length as the number of strokes in that mird string.}
+
+\item{color}{A list or vector (strings) which is empty, of length 1 or of same length as mird_string. If
+color is a list of the same length as mird_string, each element should be a list or vector
+which is of length 1 or same length as the number of strokes in that mird string.}
 }
 \value{
-A list of tibbles (one per input element). Each tibble contains:
-\itemize{
-\item \code{i} (integer): stroke index
-\item \code{x}, \code{y} (integer): coordinates
-}
-
-Elements corresponding to missing or invalid input are \code{NA}.
+A list of lists adhering to the format of a pain drawing
+list-col. Any of the other data stored in a pain drawing
+lost-col can be included as parameters -- sush as 'file',
+'version', etc. This also applies to parameters stored in
+the '.strokes. element, such as 'tool', 'alpha', etc.
 }
 \description{
 Parses pain drawing data stored in the legacy \emph{MiRD} string format and
 converts it into a list-column of stroke coordinate tibbles compatible with
-the \code{p} column of a pain drawing data structure (see \code{\link[=pdr_check_data]{pdr_check_data()}}).
+the \code{pdr_data} column of a pain drawing data structure (see \code{\link[=pdr_check_data]{pdr_check_data()}}).
 }
 \details{
 Each input string represents one pain drawing and is converted into a tibble
@@ -50,29 +106,27 @@ This function:
 \strong{Coordinate system}
 
 MiRD uses a coordinate system with origin in the upper-left corner.
-If \code{flip_y = TRUE}, the y-axis is flipped to match a lower-left origin
-(e.g. for plotting), using a fixed canvas height of 500 units.
+so it may be necessary to 'flip' the y axis -- see pdr_modify()
 
 \strong{Missing or invalid input}
 \itemize{
-\item \code{NA} or malformed strings return \code{NA}
+\item \code{NA} or malformed strings return \code{NA} in place of .points and .strokes
 \item No validation of coordinate consistency (e.g. odd-length sequences) is performed
 }
 }
 \examples{
-mird <- c(
-  NA,
-  "(,293,201,300,202,303,202,)",
-  "(,198,104,206,103,),(,203,100,209,108,)",
-  "(,335,215,336,215,),(,331,211,331,212,331,213,331,214,),(,341,263,),(,341,272,),(,341,287,)"
+mird_tibble <- tibble::tibble(
+  ids = letters[1:4],
+  mird_string = c(
+    NA,
+    "(,293,201,300,202,303,202,)",
+    "(,198,104,206,103,),(,203,100,209,108,)",
+    "(,335,215,336,215,),(,331,211,331,212,331,213,331,214,),(,341,263,),(,341,272,),(,341,287,)"
+    )
 )
 
 # Convert to list-column of coordinate tibbles
-p <- pdr_import_mird(mird)
+mird_tibble |> mutate(pdr_data =  pdr_import_mird(mird_string, ids, app = "my_app", file = c("file1", "file2", "file3", "file4")))
 
-# Use inside a data pipeline
-pdr_df <- tibble::tibble(id = c("A", "B", "C"), mird_string = mird)
-pdr_df <- pdr_df |>
-  dplyr::mutate(p = pdr_import_mird(mird_string))
 
 }

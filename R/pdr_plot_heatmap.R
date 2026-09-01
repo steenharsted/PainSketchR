@@ -93,7 +93,7 @@
 #'     Point alpha is mapped from `pct` onto `alpha_scale` via
 #'     [ggplot2::scale_alpha_continuous()].
 #'   }
-#' }
+#'
 #'
 #' @section Warnings:
 #' The function will warn when:

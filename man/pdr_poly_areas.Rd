@@ -4,7 +4,7 @@
 \alias{pdr_poly_areas}
 \title{Calculate area of markings/strokes for pain drawings}
 \usage{
-pdr_poly_areas(pdr, by = "drawings")
+pdr_poly_areas(pdr = pdr_data, by = "drawings")
 }
 \arguments{
 \item{pdr}{A valid pain drawing data list-col (see @pdr_check_data())}

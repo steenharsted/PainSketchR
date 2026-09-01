@@ -8,7 +8,7 @@ pdr_plot_heatmap(
   .data,
   paindrawr_data = pdr_data,
   variables = c(NA, NA),
-  n_groups = c(2, 2),
+  n_groups = 2,
   equal_n = TRUE,
   max_n = 1000,
   background_image = NULL,
@@ -43,10 +43,12 @@ in either position to leave that faceting dimension empty (a hidden dummy
 variable will be inserted). Defaults to \code{c(NA, NA)}, producing a single
 unfaceted heatmap.}
 
-\item{n_groups}{Integer vector matching the length of \code{variables}. Specifies
-the number of groups to create for each variable. Default is \code{c(2, 2)}.
-For categorical variables, this must match the number of unique levels;
-if it does not, the actual number of levels is used with a message.}
+\item{n_groups}{Integer. For numeric variables, specifies the number of
+quantile bins to create. A single value is recycled across all variables
+in \code{variables}. If both variables are numeric and different bin counts are
+desired, supply a vector of length 2 (e.g. \code{c(2, 3)}). Ignored for factor
+or character variables, which always use their existing levels. Default
+is \code{2}.}
 
 \item{equal_n}{Logical. If \code{TRUE}, balances sample sizes across groups by
 sampling down to the size of the smallest group (capped at \code{max_n}).
@@ -110,7 +112,31 @@ maps to the row facet (y-axis label). Point colour encodes pain density
 across one or two stratification variables.
 }
 \details{
-
+The function processes data in the following steps:
+\enumerate{
+\item Validates inputs and unpacks the \code{paindrawr_data} list-column with
+\code{\link[tidyr:unnest_wider]{tidyr::unnest_wider()}}.
+\item Extracts canvas dimensions from \code{.width} and \code{.height}; all drawings
+must share identical dimensions.
+\item Inserts hidden dummy factor columns for any \code{NA} positions in
+\code{variables}, preserving the row/column slot assignment.
+\item Creates stratification groups for numeric
+variables (quantile binning) or \code{\link[base:factor]{base::factor()}} for categorical
+variables.
+\item Optionally balances sample sizes by sampling down to the smallest
+group size (up to \code{max_n}) using \code{\link[dplyr:slice_sample]{dplyr::slice_sample()}}.
+\item Unnests \code{.strokes} and \code{.points} and joins them on \code{.id} and
+\code{.index}.
+\item Recreates spray effects for any rows where \code{.tool == "spray"} by
+expanding each point \code{point_density} times with a random offset within
+\code{spray_radius}.
+\item Bins coordinates into grid cells of size \code{grid_size} and calculates
+pain density as the percentage of participants with a mark at each
+location, per group.
+\item Renders a faceted heatmap using the \code{"plasma"} viridis colour scale.
+Point alpha is mapped from \code{pct} onto \code{alpha_scale} via
+\code{\link[ggplot2:scale_alpha_continuous]{ggplot2::scale_alpha_continuous()}}.
+}
 }
 \section{Warnings}{
 
@@ -118,8 +144,6 @@ The function will warn when:
 \itemize{
 \item More than 16 facets are created (may be slow).
 \item NA values are removed from grouping variables.
-\item \code{n_groups} does not match the number of levels for a categorical
-variable (continues with a message using the actual number of levels).
 \item A numeric variable has insufficient variation to create distinct
 quantile groups.
 \item Both pen and spray tools are detected in the same dataset.

@@ -7,16 +7,21 @@
 #' the same length. It is thus suited for `mutate()` operations.
 #' 
 #' 
-#' @param pdr_data
-#' @param ops
+#' @param .data A valid pain drawing tibble
+#' @param paindrawr_data The pain drawing data list-col in .data (defaults to pdr_data) 
+#' @param ops A string specifying operation. See below:
+#' 
+#' The parameter `ops` can take one of the following values:
+#' * "flipy" -- flips the y-coordinates which can be useful to re-locate origo to/from top/bottom of canvas.
 #'
-#' @returns
+#' @returns A valid pain drawing tibble
 #'
 #' @export
 #' @examples
+#' # Flip the y-coordinates and store in a new pain drawing list-col
+#' pdr_example_data |> mutate(pdr_data_flipped = pdr_mutate(pdr_data, "flipy"))
 
-
-pdr_modify <- function(pdr, ops="flipy") {
+pdr_modify <- function(.data, paindrawr_data, ops="flipy") {
 
   ########## Sanity checks ##########
   accepted_ops <- c("flipy")

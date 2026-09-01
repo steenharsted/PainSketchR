@@ -4,11 +4,30 @@
 \alias{pdr_modify}
 \title{Modify pain drawing elements}
 \usage{
-pdr_modify(pdr, ops, delta = 5, templates = NULL)
+pdr_modify(.data, paindrawr_data, ops = "flipy")
+}
+\arguments{
+\item{.data}{A valid pain drawing tibble}
+
+\item{paindrawr_data}{The pain drawing data list-col in .data (defaults to pdr_data)}
+
+\item{ops}{A string specifying operation. See below:
+
+The parameter \code{ops} can take one of the following values:
+\itemize{
+\item "flipy" -- flips the y-coordinates which can be useful to re-locate origo to/from top/bottom of canvas.
+}}
+}
+\value{
+A valid pain drawing tibble
 }
 \description{
 This function takes a valid pain drawing list as input
 and performs one or more operations sequentially on those
 data before returning a valid pain drawing list-column of
 the same length. It is thus suited for \code{mutate()} operations.
+}
+\examples{
+# Flip the y-coordinates and store in a new pain drawing list-col
+pdr_example_data |> mutate(pdr_data_flipped = pdr_mutate(pdr_data, "flipy"))
 }
