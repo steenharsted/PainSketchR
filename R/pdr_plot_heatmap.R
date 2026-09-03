@@ -166,9 +166,6 @@ pdr_plot_heatmap <- function(
   # ============================================================================
   message("Validating inputs...")
 
-  # Making sure data has required columns
-  .data |> dplyr::pull({{ paindrawr_data }}) |> pdr_check_data(verbose = FALSE)
-
   # Test alpha_scale arguments
   if (!is.numeric(alpha_scale) || length(alpha_scale) != 2) {
     stop("`alpha_scale` must be a numeric vector of length 2.", call. = FALSE)

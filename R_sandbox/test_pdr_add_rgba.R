@@ -4,14 +4,11 @@ library(tidyverse)
 load_all()
 
 # Load sample data
+pdr_example_data
 
-pd <- pdr_example_data
-
-
-load_all()
 
 # multi pdr list in multi pdr list with .rgba added out
-pdr_add_rgba(paindrawr_data = pdr_example_data)
+pdr_add_rgba(paindrawr_data = pd[1])
 
 # multi pdr list in multi list of rgba arrays out
 pdr_add_rgba(
@@ -20,7 +17,7 @@ pdr_add_rgba(
 )
 
 # single pdr named list in single pdr named list out with .rgba added
-pdr_example_data[[1]] |> pdr_add_rgba()
+pdr_example_data[1] |> pdr_add_rgba()
 
 ## Intended use
 pd <- pd |> mutate(new_pdr_data = pdr_add_rgba(paindrawr_data = pdr_data))

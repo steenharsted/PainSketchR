@@ -99,9 +99,6 @@ pdr_plot_drawing <- function(
   dpi = 96,
   type = "path"
 ) {
-  # Making sure data has required columns
-  #pdr_check_data(.data, verbose = FALSE)
-
   # Unnest list
   .data <- .data |> tidyr::unnest_wider({{ paindrawr_data }})
 

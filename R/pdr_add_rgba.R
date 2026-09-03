@@ -105,10 +105,6 @@ pdr_add_rgba <- function(
     )
   }
 
-  # Check data
-  pdr_check_data(paindrawr_data, verbose = FALSE)
-
-  #
   method <- match.arg(method, choices = c("memory", "file"))
 
   .data <- tibble::tibble(
