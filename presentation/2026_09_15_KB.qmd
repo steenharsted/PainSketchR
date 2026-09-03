@@ -1,0 +1,65 @@
+---
+title: "paindraw and paindrawr"
+subtitle: "Software for capturing, vizualising and analyzing pain drawings"
+author: "Steen Flammild Harsted and Søren O'Neill"
+date: today
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    toc: false
+    transition: slide
+    incremental: false
+    preview-links: auto
+    css: custom.css
+    code-fold: true
+    embed-resources: true
+    scrollable: true
+execute: 
+  warning: false
+  message: false
+  echo: false
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r}
+#| include: false
+#| echo: false
+#| code-fold: false
+
+# USE THIS CODE in TERMINAL TO RENDER
+# quarto preview /home/steen/projects/paindrawr/presentation/2026_09_15_KB.qmd --no-browser --no-watch-inputs
+
+library(tidyverse)
+library(here)
+library(patchwork)
+library(colorspace)
+library(glue)
+library(gt)
+library(gtsummary)
+library(devtools)
+
+load_all()
+
+theme_set(theme_classic(base_size = 14))
+theme_gtsummary_compact()
+
+# Load background images
+bg_palmar <- here("inst/extdata/lower_arm_palmar.png")
+bg_mird <- here("inst/extdata/mird_body_background.png")
+bg_zealand <- here("inst/extdata/zealand.png")
+```
+
+
+```{r}
+#| include: false
+#| echo: false
+#| code-fold: false
+
+# Get the Data 
+
+```
+
+# test
