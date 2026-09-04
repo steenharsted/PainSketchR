@@ -10,6 +10,8 @@
 #' For a description of parameters and other details, 
 #' see `pdr_plot_drawing()` documentation.
 #' 
+#' @export
+#' 
 #' @examples
 #' # Plot the raw data from geometry examples
 #' pdr_example_geometry |> pdr_plot_drawing()
@@ -51,6 +53,9 @@ pdr_plot_polygons <- function(
       })
     )
   
+  stroke_indexes <- .data |> 
+    dplyr::pull({{ paindrawr_data}}) |>
+    
   ##########################################################
   #### We probably should reduce the .strokes tibble to ####
   #### reflect the new values in .points                ####

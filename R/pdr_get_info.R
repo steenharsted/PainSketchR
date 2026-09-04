@@ -36,45 +36,27 @@
 #'
 #' @export
 
-pdr_get_info <- function(data_col, var=".id") {
+pdr_get_info <- function(paindrawr_data, cols=".id") {
   # data_col is expected to be a valid data_col list-col
   # var should be a vector of length 1 or 2 -- first element
   # should be an element name in data_col (list), second element 
   # (if present) should be a column name in .strokes or 
   # .points (which should be element 1 or 2)
 
-  
-
-  var1 <- var[1]
-  if(length(var)>1) {var2 <- var[2]}
-
-  # Sanity check
-  # Is the var parameters (first element) a name in data_col?
-  if(!{{var1}} %in% names(data_col[[1]])) {
-    stop("Invalid first 'var' parameter in pdr_get_info()
-     -- should be an element name of the data_col parameter")
-  }
-  if({{var1}} %in% c(".strokes", ".points")) {
-    # Get col names from .strokes or .points tibbles of 1st list element
-    tmp_names <- data_col[[1]] |> purrr::pluck(var1) |> names()
-    if(!var2 %in% tmp_names) {
-      stop("Invalid second 'var' parameter in pdr_get_info()
-      -- should be an column name of the first var element of 'data_col'.")
-    }
-  }
-
-  # The following could be made more generic by testing the data type of {{var1}}
-  # so as to return a vector if data is <int> or <char>, etc, but a list if matrix...
-
-  if(!{{var1}} %in% c(".strokes", ".points")) {
-    # This should return a vector of same length as data_col
-    if({{var1}} == ".rgba") {
-      return(data_col |> purrr::map_depth(.depth=1, {{var1}}) |> purrr::map(\(e) {e}))
+  if(length(cols)==1) {
+    paindrawr_data |> 
+      purrr::map(cols) |>    # Just the one element
+      purrr::list_simplify() # Convert to int, chr, num, ..
+  } else if(length(cols)==2) {
+    if(cols[[2]]=="") {
+      paindrawr_data |>
+        purrr::map(cols[[1]])
     } else {
-      return(data_col |> purrr::map_depth(.depth=1, {{var1}}) |> purrr::as_vector())
-    }    
+      paindrawr_data |>
+        purrr::map(cols[[1]]) |>
+        purrr::map(~.x |> dplyr::pull(cols[[2]]))  
+    }
   } else {
-    # This should return a list of same length as data_col
-    return(data_col |> purrr::map_depth(.depth=1, {{var1}}) |> purrr::map(\(e) {e |> dplyr::pull( {{var2}} )}))
+    NA
   }
 }

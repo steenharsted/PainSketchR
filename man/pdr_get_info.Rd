@@ -4,7 +4,7 @@
 \alias{pdr_get_info}
 \title{Extract information from pain drawing objects}
 \usage{
-pdr_get_info(data_col, var = ".id")
+pdr_get_info(paindrawr_data, cols = ".id")
 }
 \arguments{
 \item{data_col}{A valid pain drawing object (typically a list-column) as checked

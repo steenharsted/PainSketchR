@@ -16,7 +16,9 @@
 #' * "merge_overlaps" Merges (union) overlapping polygons into one -- see `sf::st_union()`
 #'
 #' @returns A valid pain drawing tibble
-#'
+#' 
+#' @export 
+#' 
 #' @examples
 #' # Plot gross anatomical regions
 #' pdr_example_anatomy |>
